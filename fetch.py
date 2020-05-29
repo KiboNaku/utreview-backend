@@ -62,11 +62,10 @@ def fetch_depts():
     return depts
 
 
-# mode: c = courses, p = professors
-def fetch_course_info(sem="spring", year=2020, mode="c"):
+def fetch_course_info(sem="spring", year=2020):
 
-    data = []
-    depts = fetch_depts()[0:1]
+    f_courses = []
+    depts = fetch_depts()
 
     # fetching courses for each department
     for dept in depts:
@@ -84,16 +83,59 @@ def fetch_course_info(sem="spring", year=2020, mode="c"):
 
                 info = course.findAll("td")
 
-                my_info = None
-                if mode=="p":
-                    my_info = collapse_prof_info(info, courses=data)
-                else:
-                    my_info = collapse_course_info(info, courses=data)
+                my_info = collapse_course_info(info, courses=f_courses)
 
                 if my_info is not None:
-                    data.append(my_info)
+                    f_courses.append(my_info)
 
-    return data
+    return f_courses
+
+
+def fetch_prof_info(sem="spring", year=2020):
+
+    f_profs = []
+    depts = fetch_depts()
+
+    # fetching courses for each department
+    for dept in depts:
+
+        c_html = fetch_html(get_course_url(sem=sem, year=year, dept=dept))
+
+        if c_html is not None:
+
+            c_soup = BSoup(c_html, "html.parser")
+
+            courses = c_soup.findAll("tr", {"class": ["tboff", "tbon"]})
+
+            # fetching information for each course in the department
+            for course in courses:
+
+                info = course.findAll("td")
+
+                my_info = collapse_prof_info(info, profs=f_profs)
+
+                if my_info is not None:
+                    f_profs.append(my_info)
+
+    return f_profs
+
+
+def collapse_prof_info(info, profs=[]):
+
+    p_name = info[5].find("a", {"target", "_blank"}).text
+
+    for prof in profs:
+        if prof.get("name") == p_name:
+            return None
+
+    ecis_search = ("http://utdirect.utexas.edu/ctl/ecis/results/index.WBX?&s_in_action_sw=S&s_in_search_type_sw=N&"
+                   f"s_in_search_name={p_name.replace(' ', '+').replace(',', '%2C')}")
+    ecis = fetch_ecis_scores(ecis_search, scores=[], name=True)
+
+    return {
+        "name": p_name,
+        "ecis": ecis
+    }
 
 
 def collapse_course_info(info, courses=[]):
@@ -103,7 +145,7 @@ def collapse_course_info(info, courses=[]):
     c_name = info[3].text
 
     for course in courses:
-        if course.get("dept") == dept and course.get("c_num") == c_num:
+        if course.get("dept") == dept and course.get("num") == c_num:
             return None
 
     ecis_search = ("http://utdirect.utexas.edu/ctl/ecis/results/index.WBX?s_in_action_sw=S&s_in_search_type_sw=C&s_in_max_nbr_return=10&"
@@ -112,13 +154,13 @@ def collapse_course_info(info, courses=[]):
 
     return {
         "dept": dept,
-        "c_num": c_num,
-        "c_name": c_name,
+        "num": c_num,
+        "name": c_name,
         "ecis": ecis
     }
 
 
-def fetch_ecis_scores(url, scores=[]):
+def fetch_ecis_scores(url, scores=[], name=False):
 
     html = fetch_html(url)
     if html is None:
@@ -146,14 +188,13 @@ def fetch_ecis_scores(url, scores=[]):
         return scores
 
     np_info = next_page.findAll("input", {"type": "hidden"})
-    np_link = "http://utdirect.utexas.edu/ctl/ecis/results/index.WBX?" + \
-        "&".join(i["name"].replace(" ", "+") + "=" +
-                 i["value"].replace(" ", "+") for i in np_info)
+    np_link = "http://utdirect.utexas.edu/ctl/ecis/results/index.WBX?" + "&".join(i["name"].replace(" ", "+") + "=" + i["value"].replace(" ", "+") for i in np_info)
     return fetch_ecis_scores(np_link, scores=scores)
 
 
 # temporary debugging function
 def print_all_courses():
+
     courses = fetch_course_info()
     for course in courses:
 
@@ -168,8 +209,8 @@ def print_all_courses():
         if num_students > 0:
             avg = str(score/num_students)
 
-        print(course.get("dept"), course.get("c_num"), course.get(
-            "c_name"), avg, str(num_students), sep="\t")
+        print(course.get("dept"), course.get("num"), course.get(
+            "name"), avg, str(num_students), sep="\t")
 
     print("-----------Failed URLS---------")
     for url in failed_requests:
@@ -193,8 +234,8 @@ def print_all_profs():
         if num_students > 0:
             avg = str(score/num_students)
 
-        print(course.get("dept"), course.get("c_num"), course.get(
-            "c_name"), avg, str(num_students), sep="\t")
+        print(course.get("dept"), course.get("num"), course.get(
+            "name"), avg, str(num_students), sep="\t")
 
     print("-----------Failed URLS---------")
     for url in failed_requests:
