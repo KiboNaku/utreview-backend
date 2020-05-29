@@ -1,13 +1,28 @@
 
-from urllib.request import urlopen
+from urllib.request import urlopen, http
 from bs4 import BeautifulSoup as BSoup
 
+failed_requests = []
 
-def fetch_html(url):
 
-    client = urlopen(url)
-    html = client.read()
-    client.close()
+def fetch_html(url, attempt=1):
+
+    print("fetching: ", url)
+
+    MAX_ATTEMPTS = 10
+
+    try:
+        client = urlopen(url)
+        html = client.read()
+        client.close()
+    except http.client.HTTPException as e:
+
+        print("URL Failed:", url, "Attempt:", attempt)
+        return fetch_html(url, attempt+1)
+
+        if attempt >= MAX_ATTEMPTS:
+            failed_requests.append(url)
+            return None
 
     return html
 
@@ -34,40 +49,51 @@ def get_course_url(sem="spring", year=2020, dept="", c_num="", c_title="", u_num
 def fetch_depts():
 
     c_html = fetch_html(get_course_url())
+
+    if c_html is None:
+        return []
+
     c_soup = BSoup(c_html, "html.parser")
 
-    depts = c_soup.find("select", {"id": "id_department"}).findAll("option")[1::]
+    depts = c_soup.find(
+        "select", {"id": "id_department"}).findAll("option")[1::]
     depts = [dept["value"].strip() for dept in depts]
-    
+
     return depts
 
 
-def fetch_course_info(sem="spring", year=2020):
+# mode: c = courses, p = professors
+def fetch_course_info(sem="spring", year=2020, mode="c"):
 
-    f_courses = []
-    depts = fetch_depts()
+    data = []
+    depts = fetch_depts()[0:1]
 
     # fetching courses for each department
     for dept in depts:
 
         c_html = fetch_html(get_course_url(sem=sem, year=year, dept=dept))
-        c_soup = BSoup(c_html, "html.parser")
-        
-        courses = c_soup.findAll("tr", {"class": ["tboff", "tbon"]})
 
-        # fetching information for each course in the department
-        for course in courses:
+        if c_html is not None:
 
-            prev = None
-            info = course.findAll("td")
-            c_info = collapse_course_info(info, courses=f_courses)
+            c_soup = BSoup(c_html, "html.parser")
 
-            if c_info is not None:
-                f_courses.append(c_info)
+            courses = c_soup.findAll("tr", {"class": ["tboff", "tbon"]})
 
-    return f_courses
+            # fetching information for each course in the department
+            for course in courses:
 
-            
+                info = course.findAll("td")
+
+                my_info = None
+                if mode=="p":
+                    my_info = collapse_prof_info(info, courses=data)
+                else:
+                    my_info = collapse_course_info(info, courses=data)
+
+                if my_info is not None:
+                    data.append(my_info)
+
+    return data
 
 
 def collapse_course_info(info, courses=[]):
@@ -79,11 +105,11 @@ def collapse_course_info(info, courses=[]):
     for course in courses:
         if course.get("dept") == dept and course.get("c_num") == c_num:
             return None
-    
+
     ecis_search = ("http://utdirect.utexas.edu/ctl/ecis/results/index.WBX?s_in_action_sw=S&s_in_search_type_sw=C&s_in_max_nbr_return=10&"
-                f"s_in_search_course_dept={dept.replace(' ', '+')}&s_in_search_course_num={c_num}")
-    ecis = fetch_ecis_scores(ecis_search)
-    
+                   f"s_in_search_course_dept={dept.replace(' ', '+')}&s_in_search_course_num={c_num}")
+    ecis = fetch_ecis_scores(ecis_search, scores=[])
+
     return {
         "dept": dept,
         "c_num": c_num,
@@ -93,9 +119,11 @@ def collapse_course_info(info, courses=[]):
 
 
 def fetch_ecis_scores(url, scores=[]):
-    
-    print(url)
+
     html = fetch_html(url)
+    if html is None:
+        return scores
+
     soup = BSoup(html, "html.parser")
 
     ecis_links = soup.findAll("tr")[1::]
@@ -103,22 +131,28 @@ def fetch_ecis_scores(url, scores=[]):
 
     for ecis_link in ecis_links:
 
-        ecis_html = fetch_html(f"http://utdirect.utexas.edu/ctl/ecis/results/{ecis_link}")
-        ecis_soup = BSoup(ecis_html, "html.parser")
-        ecis_info = ecis_soup.findAll("tr")[2].findAll("td")
+        ecis_html = fetch_html(
+            f"http://utdirect.utexas.edu/ctl/ecis/results/{ecis_link}")
 
-        scores.append(((int(ecis_info[1].text)), float(ecis_info[2].text)))
+        if ecis_html is not None:
+            ecis_soup = BSoup(ecis_html, "html.parser")
+            ecis_info = ecis_soup.findAll("tr")[2].findAll("td")
+
+            scores.append(((int(ecis_info[1].text)), float(ecis_info[2].text)))
 
     next_page = soup.find("div", {"class": "page-forward"})
-    
-    if next_page is None: 
+
+    if next_page is None:
         return scores
-    
-    np_info = next_page.findAll("input", {"type":"hidden"})
-    np_link = "http://utdirect.utexas.edu/ctl/ecis/results/index.WBX?" + "&".join(i["name"].replace(" ", "+") + "=" + i["value"].replace(" ", "+") for i in np_info)
-    return fetch_ecis_scores(np_link)
+
+    np_info = next_page.findAll("input", {"type": "hidden"})
+    np_link = "http://utdirect.utexas.edu/ctl/ecis/results/index.WBX?" + \
+        "&".join(i["name"].replace(" ", "+") + "=" +
+                 i["value"].replace(" ", "+") for i in np_info)
+    return fetch_ecis_scores(np_link, scores=scores)
 
 
+# temporary debugging function
 def print_all_courses():
     courses = fetch_course_info()
     for course in courses:
@@ -126,9 +160,46 @@ def print_all_courses():
         ecis = course.get("ecis")
         score = 0
         num_students = 0
+        for n, s in ecis:
+            num_students += n
+            score += n*s
 
+        avg = "N/A"
+        if num_students > 0:
+            avg = str(score/num_students)
+
+        print(course.get("dept"), course.get("c_num"), course.get(
+            "c_name"), avg, str(num_students), sep="\t")
+
+    print("-----------Failed URLS---------")
+    for url in failed_requests:
+        print(url)
+
+
+# temporary debugging function
+def print_all_profs():
+    profs = fetch_prof_info()
+    for course in courses:
+
+        ecis = course.get("ecis")
+        score = 0
+        num_students = 0
         for s, n in ecis:
+            print(s, n)
             score += s
             num_students += n
 
-        print(course.get("dept"), course.get("c_num"), course.get("c_name"), str(score/num_students), str(num_students), sep="\t")
+        avg = "N/A"
+        if num_students > 0:
+            avg = str(score/num_students)
+
+        print(course.get("dept"), course.get("c_num"), course.get(
+            "c_name"), avg, str(num_students), sep="\t")
+
+    print("-----------Failed URLS---------")
+    for url in failed_requests:
+        print(url)
+
+
+print_all_courses()
+# print_all_profs()
