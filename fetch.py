@@ -35,20 +35,58 @@ def fetch_depts():
 
     c_html = fetch_html(get_course_url())
     c_soup = BSoup(c_html, "html.parser")
-    # courses = c_soup.findAll("tr", {"class": ["tboff", "tbon"]})
-
-    # for i in range(3):
-
-    #     info = course.findAll("td")
-    #     sem = info[0].text
-    #     dept = info[1].text
-    #     c_num = info[2].text
-    #     c_name = info[3].text
-    #     ecis = info[7].a["href"]
-    #     print(sem, dept, c_num, c_name, ecis)
 
     depts = c_soup.find("select", {"id": "id_department"}).findAll("option")[1::]
     depts = [dept["value"].strip() for dept in depts]
-    print(depts)
+    
+    return depts
 
-fetch_depts()
+
+def fetch_course_info(sem="spring", year=2020):
+
+    f_courses = []
+    depts = fetch_depts()
+
+    # fetching courses for each department
+    for dept in depts:
+
+        c_html = fetch_html(get_course_url(sem=sem, year=year, dept=dept))
+        c_soup = BSoup(c_html, "html.parser")
+        
+        courses = c_soup.findAll("tr", {"class": ["tboff", "tbon"]})
+
+        # fetching information for each course in the department
+        for course in courses:
+
+            prev = None
+            info = course.findAll("td")
+            
+
+
+def collapse_course_info(info):
+
+    dept = info[1].text
+    c_num = info[2].text
+    c_name = info[3].text
+    ecis_url = info[7].a["href"]
+    
+    ecis = fetch_ecis_score(ecis_url)
+
+    return {
+        "dept": dept,
+        "c_num": c_num,
+        "c_name": c_name,
+        "ecis": ecis
+    }
+
+
+
+def fetch_ecis_score(url):
+    
+    html = fetch_html(url)
+    soup = BSoup(html, {"html.parser"})
+
+    
+
+
+fetch_course_info()
