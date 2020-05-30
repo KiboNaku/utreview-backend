@@ -52,3 +52,9 @@ def login():
         result = jsonify({"error": "Invalid username and password"})
 
     return result
+
+
+@app.route('/api/getCourseNum', methods=['GET'])
+def getCourseNum():
+    number = request.args.get('course_num')
+    return number
