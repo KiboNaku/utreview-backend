@@ -248,6 +248,3 @@ def print_all_profs():
     for url in failed_requests:
         print(url)
 
-
-# print_all_courses()
-print_all_profs()
