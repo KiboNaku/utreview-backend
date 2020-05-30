@@ -65,7 +65,7 @@ def fetch_depts():
 def fetch_course_info(sem="spring", year=2020):
 
     f_courses = []
-    depts = fetch_depts()
+    depts = fetch_depts()[0:1]
 
     # fetching courses for each department
     for dept in depts:
@@ -94,7 +94,7 @@ def fetch_course_info(sem="spring", year=2020):
 def fetch_prof_info(sem="spring", year=2020):
 
     f_profs = []
-    depts = fetch_depts()
+    depts = fetch_depts()[0:1]
 
     # fetching courses for each department
     for dept in depts:
@@ -122,7 +122,11 @@ def fetch_prof_info(sem="spring", year=2020):
 
 def collapse_prof_info(info, profs=[]):
 
-    p_name = info[5].find("a", {"target", "_blank"}).text
+    p_name = info[5].find("a")
+
+    for child in p_name.findAll("span"):
+        child.decompose()
+    p_name = p_name.text.strip()
 
     for prof in profs:
         if prof.get("name") == p_name:
@@ -130,7 +134,7 @@ def collapse_prof_info(info, profs=[]):
 
     ecis_search = ("http://utdirect.utexas.edu/ctl/ecis/results/index.WBX?&s_in_action_sw=S&s_in_search_type_sw=N&"
                    f"s_in_search_name={p_name.replace(' ', '+').replace(',', '%2C')}")
-    ecis = fetch_ecis_scores(ecis_search, scores=[], name=True)
+    ecis = fetch_ecis_scores(ecis_search, scores=[], c_mode=False)
 
     return {
         "name": p_name,
@@ -160,7 +164,7 @@ def collapse_course_info(info, courses=[]):
     }
 
 
-def fetch_ecis_scores(url, scores=[], name=False):
+def fetch_ecis_scores(url, scores=[], c_mode=True):
 
     html = fetch_html(url)
     if html is None:
@@ -169,9 +173,9 @@ def fetch_ecis_scores(url, scores=[], name=False):
     soup = BSoup(html, "html.parser")
 
     ecis_links = soup.findAll("tr")[1::]
-    ecis_links = [ecis_link.find("a")["href"] for ecis_link in ecis_links]
+    ecis_links = [(ecis_link.find("a")["href"], ecis_link.findAll("td")[1].text) for ecis_link in ecis_links]
 
-    for ecis_link in ecis_links:
+    for ecis_link, name in ecis_links:
 
         ecis_html = fetch_html(
             f"http://utdirect.utexas.edu/ctl/ecis/results/{ecis_link}")
@@ -180,7 +184,12 @@ def fetch_ecis_scores(url, scores=[], name=False):
             ecis_soup = BSoup(ecis_html, "html.parser")
             ecis_info = ecis_soup.findAll("tr")[2].findAll("td")
 
-            scores.append(((int(ecis_info[1].text)), float(ecis_info[2].text)))
+            score = None
+            if c_mode:
+                score = ((int(ecis_info[1].text)), float(ecis_info[2].text))
+            else: 
+                score = (name[0:3:], name[3::], int(ecis_info[1].text), float(ecis_info[2].text))
+            scores.append(score)
 
     next_page = soup.find("div", {"class": "page-forward"})
 
@@ -220,27 +229,25 @@ def print_all_courses():
 # temporary debugging function
 def print_all_profs():
     profs = fetch_prof_info()
-    for course in courses:
+    for prof in profs:
 
-        ecis = course.get("ecis")
+        ecis = prof.get("ecis")
         score = 0
         num_students = 0
-        for s, n in ecis:
-            print(s, n)
-            score += s
+        for dept, c_num, n, s in ecis:
+            score += s*n
             num_students += n
 
         avg = "N/A"
         if num_students > 0:
             avg = str(score/num_students)
 
-        print(course.get("dept"), course.get("num"), course.get(
-            "name"), avg, str(num_students), sep="\t")
+        print(prof.get("name"), avg, str(num_students), sep="\t")
 
     print("-----------Failed URLS---------")
     for url in failed_requests:
         print(url)
 
 
-print_all_courses()
-# print_all_profs()
+# print_all_courses()
+print_all_profs()
