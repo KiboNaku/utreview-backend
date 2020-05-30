@@ -46,8 +46,8 @@ class Review(db.Model):
 
     user_posted = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    p_subject = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=True)
-    c_subject = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=True)
+    prof_subject = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=True)
+    course_subject = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=True)
 
     course_rating = db.relationship('CourseRating', backref='user_review', lazy=True)
     professor_rating = db.relationship('ProfessorRating', backref='user_review', lazy=True)
@@ -68,8 +68,7 @@ class Prof(db.Model):
     courses = db.relationship('Prof_Course', backref="prof", lazy=True)
 
     def __repr__(self):
-        return f"Prof('{self.first_name}', '{self.last_name}', '{self.email}', '{self.major}')"
-
+        return f"Prof('{self.id}', '{self.name}')"
 
 class Course(db.Model):
 
@@ -86,7 +85,7 @@ class Course(db.Model):
     profs = db.relationship('Prof_Course', backref="course", lazy=True)
 
     def __repr__(self):
-        return f"Course('{self.num}', '{self.num}')"
+        return f"Course('{self.num}', '{self.name}')"
 
 
 class Prof_Course(db.Model):
