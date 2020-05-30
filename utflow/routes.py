@@ -58,27 +58,31 @@ def review():
     course_name = request.get_json()['course_name']
     prof_name = request.get_json()['prof_name']
     user_email = request.get_json()['user_email']
-    password = request.get_json()['password']
+    course_review = request.get_json()['course_review']
+    prof_review = request.get_json()['prof_review']
+    course_approval = request.get_json()['course_approval']
+    prof_approval = request.get_json()['prof_approval']
+    course_usefulness = request.get_json()['course_usefulness']
+    course_difficulty = request.get_json()['course_difficulty']
+    course_workload = request.get_json()['course_workload']
+    prof_clear = request.get_json()['prof_clear']
+    prof_engaging = request.get_json()['prof_engaging']
+    prof_grading = request.get_json()['prof_grading']
 
     course_parsed = course_name.split()
     course_abr = course_parsed[0]
     course_no = course_parsed[1]
 
     course_dept = Dept.query.filter_by(abr=course_abr).first()
-    dep_id = course_dept.id
-    course = Course.query.filter_by(num=course_no, dept_id=dep_id).first()
+    course = Course.query.filter_by(num=course_no, dept_id=course_dept.id).first()
     user = User.query.filter_by(email=user_email).first()
     prof = Prof.query.filter_by(name=prof_name).first()
 
-    if user and bcrypt.check_password_hash(user.password, password):
-        access_token = create_access_token(identity = {
-            'first_name': user.first_name, 
-            'last_name': user.last_name,
-            'email': user.email,
-            'major': user.major
-            })
-        result = access_token
-    else:
-        result = jsonify({"error": "Invalid username and password"})
+    review = Review(user_posted=user.id, course_id=course.id, professor_id=prof.id,
+    professor_review=prof_review, course_review=course_review)
+
+    
+
+    result = ""
 
     return result

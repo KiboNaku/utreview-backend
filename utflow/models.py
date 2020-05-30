@@ -45,8 +45,8 @@ class Review(db.Model):
 
     user_posted = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    course_rating = db.relationship('CourseRating', backref='user_review', lazy=True)
-    professor_rating = db.relationship('ProfessorRating', backref='user_review', lazy=True)
+    course_rating = db.relationship('CourseRating', backref='review', lazy=True)
+    professor_rating = db.relationship('ProfessorRating', backref='review', lazy=True)
     users_liked = db.relationship('ReviewLiked', backref='review_liked', lazy=True)
     users_disliked = db.relationship('ReviewDisliked', backref='review_disliked', lazy=True)
 
@@ -63,6 +63,9 @@ class Prof(db.Model):
     review = db.relationship('Review', backref='subject', lazy=True)
     courses = db.relationship('Prof_Course', backref="prof", lazy=True)
 
+    def __repr__(self):
+        return f"Prof('{self.id}', '{self.name}')"
+
 class Course(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
@@ -78,7 +81,7 @@ class Course(db.Model):
     profs = db.relationship('Prof_Course', backref="course", lazy=True)
 
     def __repr__(self):
-        return f"Course('{self.num}', '{self.num}')"
+        return f"Course('{self.num}', '{self.name}')"
 
 
 class Prof_Course(db.Model):
