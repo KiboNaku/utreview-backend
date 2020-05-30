@@ -65,7 +65,7 @@ def fetch_depts():
 def fetch_course_info(sem="spring", year=2020):
 
     f_courses = []
-    depts = fetch_depts()[0:1]
+    depts = fetch_depts()
 
     # fetching courses for each department
     for dept in depts:
@@ -182,7 +182,7 @@ def fetch_ecis_scores(url, scores=[], c_mode=True):
 
         if ecis_html is not None:
             ecis_soup = BSoup(ecis_html, "html.parser")
-            ecis_info = ecis_soup.findAll("tr")[2].findAll("td")
+            ecis_info = ecis_soup.findAll("tr")[2 if c_mode else 1].findAll("td")
 
             score = None
             if c_mode:
