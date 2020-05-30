@@ -12,7 +12,6 @@ class Dept(db.Model):
     courses = db.relationship("Course", backref="dept", lazy=True)
     scores = db.relationship("ECIS_Score", backref="dept", lazy=True)
 
-
 class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
@@ -89,10 +88,6 @@ class Prof(db.Model):
     scores = db.relationship("ECIS_Prof_Score", backref="subject", lazy=True)
     review = db.relationship('Review', backref='subject', lazy=True)
 
-    def __repr__(self):
-        return f"Prof('{self.first_name}', '{self.last_name}', '{self.email}', '{self.major}')"
-
-
 class Course(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
@@ -104,9 +99,6 @@ class Course(db.Model):
     dept_id = db.Column(db.Integer, db.ForeignKey('dept.id'), nullable=False)
     scores = db.relationship("ECIS_Course_Score", backref="subject", lazy=True)
     review = db.relationship('Review', backref='subject', lazy=True)
-
-    def __repr__(self):
-        return f"User('{self.first_name}', '{self.last_name}', '{self.email}', '{self.major}')"
 
 
 class ECIS_Prof_Score(db.Model):
