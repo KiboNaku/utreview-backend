@@ -122,7 +122,7 @@ def fetch_prof_info(sem="spring", year=2020):
 
 def collapse_prof_info(info, profs=[]):
 
-    p_name = info[5].find("a")
+    p_name = info[5]
 
     for child in p_name.findAll("span"):
         child.decompose()
