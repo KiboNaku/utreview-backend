@@ -94,7 +94,7 @@ def fetch_course_info(sem="spring", year=2020):
 def fetch_prof_info(sem="spring", year=2020):
 
     f_profs = []
-    depts = fetch_depts()[0:1]
+    depts = fetch_depts()
 
     # fetching courses for each department
     for dept in depts:
