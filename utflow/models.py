@@ -42,7 +42,6 @@ class Review(db.Model):
     professor_review = db.Column(db.Text, nullable=False)
 
     user_posted = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
     professor_id = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=True)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=True)
 
