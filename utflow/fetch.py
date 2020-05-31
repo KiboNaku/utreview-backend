@@ -76,8 +76,8 @@ def fetch_course_info(depts, sem="spring", year=2020):
             c_soup = BSoup(c_html, "html.parser")
 
             courses = c_soup.findAll("tr", {"class": ["tboff", "tbon"]})
-            if len(courses) > 5:
-                courses = courses[0:5:]
+            if len(courses) > 3:
+                courses = courses[0:3:]
 
             # fetching information for each course in the department
             for course in courses:
@@ -106,6 +106,8 @@ def fetch_prof_info(depts, sem="spring", year=2020):
             c_soup = BSoup(c_html, "html.parser")
 
             courses = c_soup.findAll("tr", {"class": ["tboff", "tbon"]})
+            if len(courses) > 3:
+                courses = courses[0:3:]
 
             # fetching information for each course in the department
             for course in courses:
@@ -183,11 +185,7 @@ def fetch_ecis_scores(url, scores=[], c_mode=True):
             ecis_soup = BSoup(ecis_html, "html.parser")
             ecis_info = ecis_soup.findAll("tr")[2 if c_mode else 1].findAll("td")
 
-            score = None
-            if c_mode:
-                score = ((int(ecis_info[1].text)), float(ecis_info[2].text))
-            else: 
-                score = (name[0:3:], name[3::], int(ecis_info[1].text), float(ecis_info[2].text))
+            score = (name[0:3:], name[3::], int(ecis_info[1].text), float(ecis_info[2].text))
             scores.append(score)
 
     next_page = soup.find("div", {"class": "page-forward"})
