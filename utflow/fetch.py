@@ -57,15 +57,14 @@ def fetch_depts():
 
     depts = c_soup.find(
         "select", {"id": "id_department"}).findAll("option")[1::]
-    depts = [dept["value"].strip() for dept in depts]
+    depts = [(dept["value"], dept.text[4::].strip()) for dept in depts]
 
     return depts
 
 
-def fetch_course_info(sem="spring", year=2020):
+def fetch_course_info(depts, sem="spring", year=2020):
 
     f_courses = []
-    depts = fetch_depts()
 
     # fetching courses for each department
     for dept in depts:
@@ -77,13 +76,15 @@ def fetch_course_info(sem="spring", year=2020):
             c_soup = BSoup(c_html, "html.parser")
 
             courses = c_soup.findAll("tr", {"class": ["tboff", "tbon"]})
+            if len(courses) > 5:
+                courses = courses[0:5:]
 
             # fetching information for each course in the department
             for course in courses:
 
                 info = course.findAll("td")
 
-                my_info = collapse_course_info(info, courses=f_courses)
+                my_info = collapse_course_info(dept, info, courses=f_courses)
 
                 if my_info is not None:
                     f_courses.append(my_info)
@@ -91,10 +92,9 @@ def fetch_course_info(sem="spring", year=2020):
     return f_courses
 
 
-def fetch_prof_info(sem="spring", year=2020):
+def fetch_prof_info(depts, sem="spring", year=2020):
 
     f_profs = []
-    depts = fetch_depts()
 
     # fetching courses for each department
     for dept in depts:
@@ -142,9 +142,8 @@ def collapse_prof_info(info, profs=[]):
     }
 
 
-def collapse_course_info(info, courses=[]):
+def collapse_course_info(dept, info, courses=[]):
 
-    dept = info[1].text
     c_num = info[2].text
     c_name = info[3].text
 
@@ -201,50 +200,50 @@ def fetch_ecis_scores(url, scores=[], c_mode=True):
     return fetch_ecis_scores(np_link, scores=scores)
 
 
-# temporary debugging function
-def print_all_courses():
+# # temporary debugging function
+# def print_all_courses():
 
-    courses = fetch_course_info()
-    for course in courses:
+#     courses = fetch_course_info()
+#     for course in courses:
 
-        ecis = course.get("ecis")
-        score = 0
-        num_students = 0
-        for n, s in ecis:
-            num_students += n
-            score += n*s
+#         ecis = course.get("ecis")
+#         score = 0
+#         num_students = 0
+#         for n, s in ecis:
+#             num_students += n
+#             score += n*s
 
-        avg = "N/A"
-        if num_students > 0:
-            avg = str(score/num_students)
+#         avg = "N/A"
+#         if num_students > 0:
+#             avg = str(score/num_students)
 
-        print(course.get("dept"), course.get("num"), course.get(
-            "name"), avg, str(num_students), sep="\t")
+#         print(course.get("dept"), course.get("num"), course.get(
+#             "name"), avg, str(num_students), sep="\t")
 
-    print("-----------Failed URLS---------")
-    for url in failed_requests:
-        print(url)
+#     print("-----------Failed URLS---------")
+#     for url in failed_requests:
+#         print(url)
 
 
-# temporary debugging function
-def print_all_profs():
-    profs = fetch_prof_info()
-    for prof in profs:
+# # temporary debugging function
+# def print_all_profs():
+#     profs = fetch_prof_info()
+#     for prof in profs:
 
-        ecis = prof.get("ecis")
-        score = 0
-        num_students = 0
-        for dept, c_num, n, s in ecis:
-            score += s*n
-            num_students += n
+#         ecis = prof.get("ecis")
+#         score = 0
+#         num_students = 0
+#         for dept, c_num, n, s in ecis:
+#             score += s*n
+#             num_students += n
 
-        avg = "N/A"
-        if num_students > 0:
-            avg = str(score/num_students)
+#         avg = "N/A"
+#         if num_students > 0:
+#             avg = str(score/num_students)
 
-        print(prof.get("name"), avg, str(num_students), sep="\t")
+#         print(prof.get("name"), avg, str(num_students), sep="\t")
 
-    print("-----------Failed URLS---------")
-    for url in failed_requests:
-        print(url)
+#     print("-----------Failed URLS---------")
+#     for url in failed_requests:
+#         print(url)
 
