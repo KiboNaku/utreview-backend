@@ -38,16 +38,13 @@ class User(db.Model):
 class Review(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
-    course_id = db.Column(db.Integer, nullable=False)
-    professor_id = db.Column(db.Integer, nullable=False)
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     course_review = db.Column(db.Text, nullable=False)
     professor_review = db.Column(db.Text, nullable=False)
 
     user_posted = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
-    prof_subject = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=True)
-    course_subject = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=True)
+    professor_id = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=True)
 
     course_rating = db.relationship('CourseRating', backref='user_review', lazy=True)
     professor_rating = db.relationship('ProfessorRating', backref='user_review', lazy=True)
