@@ -76,8 +76,8 @@ def fetch_course_info(depts, sem="spring", year=2020):
             c_soup = BSoup(c_html, "html.parser")
 
             courses = c_soup.findAll("tr", {"class": ["tboff", "tbon"]})
-            if len(courses) > 3:
-                courses = courses[0:3:]
+            if len(courses) > 5:
+                courses = courses[0:5:]
 
             # fetching information for each course in the department
             for course in courses:
@@ -246,5 +246,4 @@ def fetch_ecis_scores(url, scores=[], c_mode=True):
 #     print("-----------Failed URLS---------")
 #     for url in failed_requests:
 #         print(url)
-
 
