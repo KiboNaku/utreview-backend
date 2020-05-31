@@ -41,12 +41,12 @@ def login():
 
     user = User.query.filter_by(email=email).first()
     if user and bcrypt.check_password_hash(user.password, password):
-        access_token = create_access_token(identity = {
-            'first_name': user.first_name, 
+        access_token = create_access_token(identity={
+            'first_name': user.first_name,
             'last_name': user.last_name,
             'email': user.email,
             'major': user.major
-            })
+        })
         result = access_token
     else:
         result = jsonify({"error": "Invalid username and password"})
@@ -54,15 +54,21 @@ def login():
     return result
 
 
-@app.route('/api/get-course-num', methods=['GET'])
-def getCourseNum():
-    result = None
+@app.route('/api/get-depts', methods=[GET])
+def getDepts():
+    result = Dept.query.all()
     return result
 
 
-@app.route('/api/get-prof-name', methods=['GET'])
-def getCourseNum():
-    result = Prof.query()
+@app.route('/api/get-courses', methods=['GET'])
+def getCourses():
+    result = Course.query.all()
+    return result
+
+
+@app.route('/api/get-profs', methods=['GET'])
+def getProfs():
+    result = Prof.query.all()
     return result
 
 
@@ -87,14 +93,13 @@ def review():
     course_no = course_parsed[1]
 
     course_dept = Dept.query.filter_by(abr=course_abr).first()
-    course = Course.query.filter_by(num=course_no, dept_id=course_dept.id).first()
+    course = Course.query.filter_by(
+        num=course_no, dept_id=course_dept.id).first()
     user = User.query.filter_by(email=user_email).first()
     prof = Prof.query.filter_by(name=prof_name).first()
 
     review = Review(user_posted=user.id, course_id=course.id, professor_id=prof.id,
-    professor_review=prof_review, course_review=course_review)
-
-    
+                    professor_review=prof_review, course_review=course_review)
 
     result = ""
 
