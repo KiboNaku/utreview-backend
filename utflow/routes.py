@@ -12,13 +12,14 @@ def register():
     major = request.get_json()['major']
     password = bcrypt.generate_password_hash(
         request.get_json()['password']).decode('utf-8')
+    dept = Dept.query.filter_by(name=major).first()
 
     user = User.query.filter_by(email=email).first()
     if user:
         result = jsonify({"error": "An account already exists for this email"})
     else:
         user = User(first_name=first_name, last_name=last_name,
-                    email=email, major=major, password=password)
+                    email=email, major=major, password=password, major_id=dept.id)
         db.session.add(user)
         db.session.commit()
 
