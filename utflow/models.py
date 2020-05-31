@@ -9,6 +9,7 @@ class Dept(db.Model):
     name = db.Column(db.String(75), nullable=False)
 
     courses = db.relationship("Course", backref="dept", lazy=True)
+    students = db.relationship("User", backref="major", lazy=True)
     p_scores = db.relationship("ECIS_Prof_Score", backref="dept", lazy=True)
     c_scores = db.relationship("ECIS_Course_Score", backref="dept", lazy=True)
 
@@ -25,7 +26,7 @@ class User(db.Model):
     password = db.Column(db.String(60), nullable=False)
     image_file = db.Column(db.String(20), nullable=False, default='default.jpg')
 
-    # major_id = db.Column(db.Integer, db.ForeignKey('dept.id'), nullable=False)
+    major_id = db.Column(db.Integer, db.ForeignKey('dept.id'), nullable=False)
     review_posted = db.relationship('Review', backref='author', lazy=True)
     reviews_liked = db.relationship('ReviewLiked', backref='user_liked', lazy=True)
     reviews_disliked = db.relationship('ReviewDisliked', backref='user_disliked', lazy=True)
@@ -42,7 +43,6 @@ class Review(db.Model):
     professor_review = db.Column(db.Text, nullable=False)
 
     user_posted = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
     professor_id = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=True)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=True)
 
@@ -62,10 +62,10 @@ class Prof(db.Model):
 
     scores = db.relationship("ECIS_Prof_Score", backref="subject", lazy=True)
     reviews = db.relationship('Review', backref='prof', lazy=True)
-    courses = db.relationship('Prof_Course', backref="prof", lazy=True)
+    pc = db.relationship('Prof_Course', backref="prof", lazy=True)
 
     def __repr__(self):
-        return f"Prof('{self.id}', '{self.name}')"
+        return f"Prof('{self.name}')"
 
 class Course(db.Model):
 
@@ -79,7 +79,7 @@ class Course(db.Model):
     
     scores = db.relationship("ECIS_Course_Score", backref="subject", lazy=True)
     reviews = db.relationship('Review', backref='course', lazy=True)
-    profs = db.relationship('Prof_Course', backref="course", lazy=True)
+    pc = db.relationship('Prof_Course', backref="course", lazy=True)
 
     def __repr__(self):
         return f"Course('{self.num}', '{self.name}')"
@@ -98,7 +98,6 @@ class Prof_Course(db.Model):
 class ECIS_Prof_Score(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
-    
     c_num = db.Column(db.String(4), nullable=False)
     avg = db.Column(db.Float, nullable=False)
     students = db.Column(db.Integer, nullable=False)
