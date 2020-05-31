@@ -1,6 +1,6 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
 from flask_jwt_extended import (create_access_token)
-from utflow.models import User
+from utflow.models import User, Dept, Prof
 from utflow import app, db, bcrypt, jwt
 
 
@@ -54,7 +54,13 @@ def login():
     return result
 
 
-@app.route('/api/getCourseNum', methods=['GET'])
+@app.route('/api/get-course-num', methods=['GET'])
 def getCourseNum():
-    number = request.args.get('course_num')
-    return number
+    result = None
+    return result
+
+
+@app.route('/api/get-prof-name', methods=['GET'])
+def getCourseNum():
+    result = Prof.query()
+    return result
