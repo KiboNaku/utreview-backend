@@ -8,7 +8,6 @@ class Dept(db.Model):
     abr = db.Column(db.String(3), nullable=False)
     name = db.Column(db.String(75), nullable=False)
 
-    students = db.relationship("User", backref="major", lazy=True)
     courses = db.relationship("Course", backref="dept", lazy=True)
     p_scores = db.relationship("ECIS_Prof_Score", backref="dept", lazy=True)
     c_scores = db.relationship("ECIS_Course_Score", backref="dept", lazy=True)
@@ -26,7 +25,7 @@ class User(db.Model):
     password = db.Column(db.String(60), nullable=False)
     image_file = db.Column(db.String(20), nullable=False, default='default.jpg')
 
-    major_id = db.Column(db.Integer, db.ForeignKey('dept.id'), nullable=False)
+    # major_id = db.Column(db.Integer, db.ForeignKey('dept.id'), nullable=False)
     review_posted = db.relationship('Review', backref='author', lazy=True)
     reviews_liked = db.relationship('ReviewLiked', backref='user_liked', lazy=True)
     reviews_disliked = db.relationship('ReviewDisliked', backref='user_disliked', lazy=True)
@@ -38,16 +37,14 @@ class User(db.Model):
 class Review(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
-    course_id = db.Column(db.Integer, nullable=False)
-    professor_id = db.Column(db.Integer, nullable=False)
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     course_review = db.Column(db.Text, nullable=False)
     professor_review = db.Column(db.Text, nullable=False)
 
     user_posted = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    prof_subject = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=True)
-    course_subject = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=True)
+    professor_id = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=True)
 
     course_rating = db.relationship('CourseRating', backref='user_review', lazy=True)
     professor_rating = db.relationship('ProfessorRating', backref='user_review', lazy=True)
@@ -75,10 +72,10 @@ class Course(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     num = db.Column(db.String(4), nullable=False)
     name = db.Column(db.String(75), nullable=False)
-    # description = db.Column(db.String(10000), nullable=False)
+    description = db.Column(db.String(10000), nullable=False)
     # TODO: prereq, coreq, antireq, unlocks
     
-    dept_id = db.Column(db.Integer, db.ForeignKey('dept.id'), nullable=False)
+    dept_id = db.Column(db.Integer, db.ForeignKey('dept.id'), nullable=True)
     
     scores = db.relationship("ECIS_Course_Score", backref="subject", lazy=True)
     reviews = db.relationship('Review', backref='course', lazy=True)
@@ -121,7 +118,7 @@ class ECIS_Course_Score(db.Model):
     students = db.Column(db.Integer, nullable=False)
 
     dept_id = db.Column(db.Integer, db.ForeignKey('dept.id'), nullable=False)
-    prof_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
 
     def __repr__(self):
         return f"ECIS_Course_Score('{self.num}', '{self.avg}', '{self.students}')"
