@@ -18,8 +18,8 @@ def register():
     if user:
         result = jsonify({"error": "An account already exists for this email"})
     else:
-        user = User(first_name=first_name, last_name=last_name,
-                    email=email, major=major, password=password, major_id=dept.id)
+        user = User(first_name=first_name, last_name=last_name, 
+        email=email, password=password, major_id=dept.id)
         db.session.add(user)
         db.session.commit()
 
@@ -41,16 +41,40 @@ def login():
     password = request.get_json()['password']
 
     user = User.query.filter_by(email=email).first()
+    major = Dept.query.filter_by(id=user.major_id).first()
     if user and bcrypt.check_password_hash(user.password, password):
         access_token = create_access_token(identity={
             'first_name': user.first_name,
             'last_name': user.last_name,
             'email': user.email,
-            'major': user.major
+            'major': major.name
         })
         result = access_token
     else:
         result = jsonify({"error": "Invalid username and password"})
+
+    return result
+
+@app.route('/api/populate_courses', methods=['GET'])
+def populate_courses():
+
+    courses = Course.query.all()
+    courses_list = []
+    for course in courses:
+        dept = Dept.query.filter_by(id=course.dept_id).first()
+        prof_list = []
+        for pc in course.pc:
+            prof = Prof.query.filter_by(id=pc.prof_id).first()
+            prof_list.append(prof.name)
+
+        course_object = {
+            'courseNum': dept.abr + " " + course.num,
+            'courseName': course.name,
+            'professors': prof_list
+        }
+        courses_list.append(course_object)
+
+    result = jsonify({"courses": courses_list})
 
     return result
 
