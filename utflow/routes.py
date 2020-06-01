@@ -55,22 +55,49 @@ def login():
     return result
 
 
-@app.route('/api/get-depts', methods=[GET])
+@app.route('/api/get-depts', methods=['GET'])
 def getDepts():
-    result = Dept.query.all()
-    return result
+    depts = Dept.query.all()
+    results = dict.fromkeys((range(len(depts))))
+    i = 0
+    for dept in depts:
+        results[i] = {
+            'id' : dept.id,
+            'abr': dept.abr,
+            'name': dept.name
+        }
+        i = i+1
+    return results
 
 
 @app.route('/api/get-courses', methods=['GET'])
 def getCourses():
-    result = Course.query.all()
-    return result
+    courses = Course.query.all()
+    results = dict.fromkeys((range(len(courses))))
+    i = 0
+    for course in courses:
+        results[i] = {
+            'id' : course.id,
+            'num': course.num,
+            'name': course.name, 
+            'dept_id': course.dept_id
+        }
+        i = i+1
+    return results
 
 
 @app.route('/api/get-profs', methods=['GET'])
 def getProfs():
-    result = Prof.query.all()
-    return result
+    profs = Prof.query.all()
+    results = dict.fromkeys((range(len(profs))))
+    i = 0
+    for prof in profs:
+        results[i] = {
+            'id' : prof.id,
+            'name': prof.name
+        }
+        i = i+1
+    return results
 
 
 @app.route('/api/new_review', methods=['POST'])
