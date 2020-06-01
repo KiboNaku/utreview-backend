@@ -17,7 +17,7 @@ if __name__ == '__main__':
     # db.session.commit()
 
     # # TODO: after dept database created
-    # depts = [dept.abr for dept in Dept.query.all()][0:9]
+    # depts = [dept.abr for dept in Dept.query.all()]
     # print("Fetching courses--------------------------------------------")
     # c_info = fetch_course_info(depts)
 
@@ -66,6 +66,5 @@ if __name__ == '__main__':
     #                 pc = Prof_Course(prof_id=p.id, course_id=c.id)
     #                 db.session.add(pc)
     #                 db.session.commit()
-
 
     app.run(debug=True)
