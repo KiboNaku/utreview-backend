@@ -18,8 +18,8 @@ def register():
     if user:
         result = jsonify({"error": "An account already exists for this email"})
     else:
-        user = User(first_name=first_name, last_name=last_name, 
-        email=email, password=password, major_id=dept.id)
+        user = User(first_name=first_name, last_name=last_name,
+                    email=email, password=password, major_id=dept.id)
         db.session.add(user)
         db.session.commit()
 
@@ -55,6 +55,7 @@ def login():
 
     return result
 
+
 @app.route('/api/populate_courses', methods=['GET'])
 def populate_courses():
 
@@ -79,35 +80,22 @@ def populate_courses():
     return result
 
 
-@app.route('/api/get-depts', methods=['GET'])
-def getDepts():
-    depts = Dept.query.all()
-    results = dict.fromkeys((range(len(depts))))
-    i = 0
-    for dept in depts:
-        results[i] = {
-            'id' : dept.id,
-            'abr': dept.abr,
-            'name': dept.name
-        }
-        i = i+1
-    return results
-
-
-@app.route('/api/get-courses', methods=['GET'])
-def getCourses():
+@app.route('/api/get_course_num', methods=['GET'])
+def get_course_num():
     courses = Course.query.all()
     results = dict.fromkeys((range(len(courses))))
     i = 0
     for course in courses:
+        dept = Dept.query.filter_by(id=course.dept_id).first()
         results[i] = {
-            'id' : course.id,
-            'num': course.num,
-            'name': course.name, 
-            'dept_id': course.dept_id
+            'id': course.id,
+            'num': dept.abr + " " + course.num,
+            'name': course.name,
         }
         i = i+1
-    return results
+    
+    result = jsonify({"courses": results})
+    return result
 
 
 @app.route('/api/get-profs', methods=['GET'])
@@ -117,11 +105,13 @@ def getProfs():
     i = 0
     for prof in profs:
         results[i] = {
-            'id' : prof.id,
+            'id': prof.id,
             'name': prof.name
         }
         i = i+1
-    return results
+    
+    result = jsonify({"professors": results})
+    return result
 
 
 @app.route('/api/new_review', methods=['POST'])
@@ -159,7 +149,7 @@ def new_review():
     course_rating = CourseRating(review_id=review.id, approval=course_approval,
                                  usefulness=course_usefulness, difficulty=course_difficulty, workload=course_workload)
     prof_rating = ProfessorRating(review_id=review.id, approval=prof_approval,
-                               clear=prof_clear, engaging=prof_engaging, grading=prof_grading)
+                                  clear=prof_clear, engaging=prof_engaging, grading=prof_grading)
 
     db.session.add(course_rating)
     db.session.add(prof_rating)
@@ -173,6 +163,7 @@ def new_review():
     result = jsonify({'result': result_review})
 
     return result
+
 
 @app.route('/api/duplicate_review', methods=['POST'])
 def duplicate_review():
@@ -190,11 +181,12 @@ def duplicate_review():
     user = User.query.filter_by(email=user_email).first()
     prof = Prof.query.filter_by(name=prof_name).first()
 
-    review = Review.query.filter_by(user_posted=user.id, 
-    professor_id=prof.id, course_id=course.id).first()
+    review = Review.query.filter_by(user_posted=user.id,
+                                    professor_id=prof.id, course_id=course.id).first()
 
     if review:
-        result = jsonify({'error': "Review for this course/prof combination already exists for this user"})
+        result = jsonify(
+            {'error': "Review for this course/prof combination already exists for this user"})
     else:
         result_review = {
             'user_email': user_email,
@@ -204,6 +196,7 @@ def duplicate_review():
         result = jsonify({'result': result_review})
 
     return result
+
 
 @app.route('/api/edit_review', methods=['POST'])
 def edit_review():
@@ -231,9 +224,9 @@ def edit_review():
     user = User.query.filter_by(email=user_email).first()
     prof = Prof.query.filter_by(name=prof_name).first()
 
-    review = Review.query.filter_by(user_posted=user.id, 
-    professor_id=prof.id, course_id=course.id).first()
-    
+    review = Review.query.filter_by(user_posted=user.id,
+                                    professor_id=prof.id, course_id=course.id).first()
+
     prev_course_rating = CourseRating.query.filter_by(review_id=review.id)
     prev_prof_rating = ProfessorRating.query.filter_by(review_id=review.id)
 
@@ -244,7 +237,7 @@ def edit_review():
     course_rating = CourseRating(review_id=review.id, approval=course_approval,
                                  usefulness=course_usefulness, difficulty=course_difficulty, workload=course_workload)
     prof_rating = ProfessorRating(review_id=review.id, approval=prof_approval,
-                               clear=prof_clear, engaging=prof_engaging, grading=prof_grading)
+                                  clear=prof_clear, engaging=prof_engaging, grading=prof_grading)
 
     db.session.add(course_rating)
     db.session.add(prof_rating)
