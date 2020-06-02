@@ -120,7 +120,7 @@ class ECIS_Course_Score(db.Model):
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
 
     def __repr__(self):
-        return f"ECIS_Course_Score('{self.num}', '{self.avg}', '{self.students}')"
+        return f"ECIS_Course_Score('{self.id}', '{self.avg}', '{self.students}')"
     
 
 class CourseRating(db.Model):
