@@ -22,14 +22,13 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        result_user = {
-            'first_name': first_name,
-            'last_name': last_name,
-            'email': email,
-            'password': password,
-            'major': major
-        }
-        result = jsonify({'result': result_user})
+        access_token = create_access_token(identity={
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'email': user.email,
+            'major': dept.name
+        })
+        result = access_token
 
     return result
 

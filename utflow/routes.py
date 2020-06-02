@@ -3,7 +3,6 @@ from flask_jwt_extended import (create_access_token)
 from utflow.models import *
 from utflow import app, db, bcrypt, jwt
 
-
 @app.route('/api/populate_courses', methods=['GET'])
 def populate_courses():
 
