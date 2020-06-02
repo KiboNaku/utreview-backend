@@ -114,6 +114,22 @@ def getProfs():
     return result
 
 
+@app.route('/api/get_major', methods=['GET'])
+def getMajor():
+    major = Dept.query.all()
+    results = dict.fromkeys((range(len(major))))
+    i = 0
+    for m in major:
+        results[i] = {
+            'id': m.id,
+            'name': m.name
+        }
+        i=i+1
+        
+    result = jsonify({'majors': results})
+    return result
+
+
 @app.route('/api/new_review', methods=['POST'])
 def new_review():
     course_name = request.get_json()['course_name']
