@@ -28,6 +28,40 @@ def populate_courses():
     return result
 
 
+@app.route('/api/get_course_num', methods=['GET'])
+def get_course_num():
+    courses = Course.query.all()
+    results = dict.fromkeys((range(len(courses))))
+    i = 0
+    for course in courses:
+        dept = Dept.query.filter_by(id=course.dept_id).first()
+        results[i] = {
+            'id': course.id,
+            'num': dept.abr + " " + course.num,
+            'name': course.name,
+        }
+        i = i+1
+    
+    result = jsonify({"courses": results})
+    return result
+
+
+@app.route('/api/get-profs', methods=['GET'])
+def getProfs():
+    profs = Prof.query.all()
+    results = dict.fromkeys((range(len(profs))))
+    i = 0
+    for prof in profs:
+        results[i] = {
+            'id': prof.id,
+            'name': prof.name
+        }
+        i = i+1
+    
+    result = jsonify({"professors": results})
+    return result
+
+
 @app.route('/api/course_info', methods=['POST'])
 def course_info():
     course_name = request.get_json()['courseNum']
@@ -113,6 +147,3 @@ def course_info():
                       "course_profs": prof_list})
 
     return result
-
-
-
