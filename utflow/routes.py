@@ -63,29 +63,40 @@ def getProfs():
 @app.route('/api/review_feedback', methods=['POST'])
 def review_feedback():
     is_like = request.get_json()['like']
-    is_remove = request.get_json()['remove']
     user_email = request.get_json()['userEmail']
     review_id = request.get_json()['reviewId']
 
     user = User.query.filter_by(email=user_email).first()
 
-    if(is_remove):
-        if(is_like):
-            review_like = ReviewLiked.query.filter_by(user_id=user.id, review_id=review_id)
-            db.session.delete(review_like)
-            db.session.commit()
-        else:
-            review_dislike = ReviewDisliked.query.filter_by(user_id=user.id, review_id=review_id)
+    if(is_like):
+        review_dislike = ReviewDisliked.query.filter_by(user_id=user.id, review_id=review_id).first()
+        if(review_dislike):
             db.session.delete(review_dislike)
-            db.session.commit()
-    else:
-        if(is_like):
             review_like = ReviewLiked(user_id=user.id, review_id=review_id)
             db.session.add(review_like)
             db.session.commit()
         else:
+            review_like = ReviewLiked.query.filter_by(user_id=user.id, review_id=review_id).first()
+            if(review_like):
+                db.session.delete(review_like)
+            else:
+                review_like = ReviewLiked(user_id=user.id, review_id=review_id)
+                db.session.add(review_like)
+            db.session.commit()
+    else:
+        review_like = ReviewLiked.query.filter_by(user_id=user.id, review_id=review_id).first()
+        if(review_like):
+            db.session.delete(review_like)
             review_dislike = ReviewDisliked(user_id=user.id, review_id=review_id)
             db.session.add(review_dislike)
+            db.session.commit()
+        else:
+            review_dislike = ReviewDisliked.query.filter_by(user_id=user.id, review_id=review_id).first()
+            if(review_dislike):
+                db.session.delete(review_dislike)
+            else:
+                review_dislike = ReviewDisliked(user_id=user.id, review_id=review_id)
+                db.session.add(review_dislike)
             db.session.commit()
 
     result = jsonify({"result": 'success'})
@@ -144,7 +155,7 @@ def course_info():
             workload += rating.workload
             user = User.query.filter_by(id=reviews[i].user_posted).first()
             prof = Prof.query.filter_by(id=reviews[i].professor_id).first()
-            user_dept = Dept.query.filter_by(id=user.dept_id).first()
+            user_dept = Dept.query.filter_by(id=user.major_id).first()
             num_liked = 0
             num_disliked = 0
             like_pressed = False
