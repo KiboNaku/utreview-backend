@@ -33,7 +33,7 @@ class User(db.Model):
 
     def __repr__(self):
         return f"User('{self.first_name}', '{self.last_name}', '{self.email}', '{self.major}')"
-
+    
 
 class Review(db.Model):
 
@@ -84,6 +84,14 @@ class Course(db.Model):
     def __repr__(self):
         return f"Course('{self.num}', '{self.name}')"
 
+    def __str__(self):
+        dept = Dept.query.filter_by(id=self.dept_id).first()
+        string = ""
+        string += dept.abr + " "
+        string += dept.name + " "
+        string += self.num + " "
+        string += self.name
+        return string
 
 class Prof_Course(db.Model):
     

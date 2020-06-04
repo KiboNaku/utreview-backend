@@ -1,6 +1,6 @@
 from utflow import app, db
 from utflow.fetch import fetch_depts, fetch_course_info, fetch_prof_info
-from utflow.models import *
+# from utflow.models import *
 
 if __name__ == '__main__':
 
