@@ -16,5 +16,6 @@ jwt = JWTManager(app)
 CORS(app)
 
 from utflow import routes
+from utflow import b_routes
 from utflow import signup_routes
 from utflow import review_routes

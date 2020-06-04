@@ -1,8 +1,8 @@
-# from utflow import app, db
+from utflow import app, db
 # from utflow.fetch import fetch_depts, fetch_course_info, fetch_prof_info
 # from utflow.models import *
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
 
 #     db.drop_all()
 #     db.create_all()

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content%}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Abr</th>
+            <th scope="col">Name</th>
+        </tr>
+    </thead>
+    <tbody>
+
+        {% for dept in depts %}
+        <tr>
+            <td>{{ dept.abr }}</td>
+            <td>{{ dept.name }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock content %}
