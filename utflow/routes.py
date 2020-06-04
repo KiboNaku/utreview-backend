@@ -1,27 +1,39 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
 from flask_jwt_extended import (create_access_token)
 from utflow.models import *
-from utflow import app, db, bcrypt, jwt
+from utflow import app, db, bcrypt, jwt, ix
+from whoosh.index import create_in
+from whoosh import scoring
+from whoosh.fields import *
+from whoosh.qparser import QueryParser
 
-@app.route('/api/populate_courses', methods=['GET'])
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+@app.route('/api/populate_courses', methods=['POST'])
 def populate_courses():
 
-    courses = Course.query.all()
-    courses_list = []
-    for course in courses:
-        dept = Dept.query.filter_by(id=course.dept_id).first()
-        prof_list = []
-        for pc in course.pc:
-            prof = Prof.query.filter_by(id=pc.prof_id).first()
-            prof_list.append(prof.name)
+    search = request.get_json()['searchValue']
+    search_tokens = search.split()
 
-        course_object = {
-            'courseNum': dept.abr + " " + course.num,
-            'courseName': course.name,
-            'professors': prof_list
-        }
-        courses_list.append(course_object)
+    with ix.searcher() as searcher:
+        query = QueryParser("content", ix.schema).parse(search)
+        results = searcher.search(query, limit=50)
 
+        courses_list = []
+        for result in results:
+            course = Course.query.filter_by(id=int(result["index"])).first()
+            dept = Dept.query.filter_by(id=course.dept_id).first()
+            prof_list = []
+            for pc in course.pc:
+                prof = Prof.query.filter_by(id=pc.prof_id).first()
+                prof_list.append(prof.name)
+
+            course_object = {
+                'courseNum': dept.abr + " " + course.num,
+                'courseName': course.name,
+                'professors': prof_list
+            }
+            courses_list.append(course_object)
     result = jsonify({"courses": courses_list})
 
     return result
@@ -83,64 +95,6 @@ def getProfs():
     result = jsonify({"professors": results})
     return result
 
-@app.route('/api/review_feedback', methods=['POST'])
-def review_feedback():
-    is_like = request.get_json()['like']
-    user_email = request.get_json()['userEmail']
-    review_id = request.get_json()['reviewId']
-
-    user = User.query.filter_by(email=user_email).first()
-
-    if(is_like):
-        review_dislike = ReviewDisliked.query.filter_by(user_id=user.id, review_id=review_id).first()
-        if(review_dislike):
-            db.session.delete(review_dislike)
-            review_like = ReviewLiked(user_id=user.id, review_id=review_id)
-            db.session.add(review_like)
-            db.session.commit()
-        else:
-            review_like = ReviewLiked.query.filter_by(user_id=user.id, review_id=review_id).first()
-            if(review_like):
-                db.session.delete(review_like)
-            else:
-                review_like = ReviewLiked(user_id=user.id, review_id=review_id)
-                db.session.add(review_like)
-            db.session.commit()
-    else:
-        review_like = ReviewLiked.query.filter_by(user_id=user.id, review_id=review_id).first()
-        if(review_like):
-            db.session.delete(review_like)
-            review_dislike = ReviewDisliked(user_id=user.id, review_id=review_id)
-            db.session.add(review_dislike)
-            db.session.commit()
-        else:
-            review_dislike = ReviewDisliked.query.filter_by(user_id=user.id, review_id=review_id).first()
-            if(review_dislike):
-                db.session.delete(review_dislike)
-            else:
-                review_dislike = ReviewDisliked(user_id=user.id, review_id=review_id)
-                db.session.add(review_dislike)
-            db.session.commit()
-
-    result = jsonify({"result": 'success'})
-    return result
-
-@app.route('/api/get_major', methods=['GET'])
-def getMajor():
-    major = Dept.query.all()
-    results = dict.fromkeys((range(len(major))))
-    i = 0
-    for m in major:
-        results[i] = {
-            'id': m.id,
-            'name': m.name
-        }
-        i=i+1
-        
-    result = jsonify({'majors': results})
-    return result
-
-
 @app.route('/api/course_info', methods=['POST'])
 def course_info():
     course_name = request.get_json()['courseNum']
@@ -153,7 +107,12 @@ def course_info():
         course_abr = course_parsed[0] + " " + course_parsed[1]
         course_no = course_parsed[2]
     else:
-        course_abr = course_parsed[0]
+        if(len(course_parsed[0]) == 1):
+            course_abr = course_parsed[0] + "  "
+        elif(len(course_parsed[0]) == 2):
+            course_abr = course_parsed[0] + " "
+        else:
+            course_abr = course_parsed[0]
         course_no = course_parsed[1]
 
     course_dept = Dept.query.filter_by(abr=course_abr).first()
