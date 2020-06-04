@@ -32,7 +32,7 @@ class User(db.Model):
     reviews_disliked = db.relationship('ReviewDisliked', backref='user_disliked', lazy=True)
 
     def __repr__(self):
-        return f"User('{self.first_name}', '{self.last_name}', '{self.email}', '{self.major}')"
+        return f"User('{self.first_name}', '{self.last_name}', '{self.email}')"
 
 
 class Review(db.Model):
