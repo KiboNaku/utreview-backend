@@ -39,6 +39,29 @@ def populate_courses():
     return result
 
 
+@app.route('/api/populate_profs', methods=['GET'])
+def populate_profs():
+
+    profs = Prof.query.all()
+    prof_list = []
+    for prof in profs:
+        course_list = []
+        for pc in prof.pc:
+            course = Prof.query.filter_by(id=pc.course_id).first()
+            dept = Dept.query.filter_by(id=course.dept_id).first()
+            course_list.append(dept.abr + ' ' + course.num)
+
+        prof_object = {
+            'id': prof.id,
+            'profName': prof.name,
+            'taughtCourses': course_list
+        }
+        prof_list.append(prof_object)
+
+    result = jsonify({"professors": prof_list})
+    return result
+
+
 @app.route('/api/get_course_num', methods=['GET'])
 def get_course_num():
     courses = Course.query.all()
