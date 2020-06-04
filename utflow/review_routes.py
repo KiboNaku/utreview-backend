@@ -20,8 +20,12 @@ def new_review():
     prof_grading = request.get_json()['prof_grading']
 
     course_parsed = course_name.split()
-    course_abr = course_parsed[0]
-    course_no = course_parsed[1]
+    if(len(course_parsed) == 3):
+        course_abr = course_parsed[0] + " " + course_parsed[1]
+        course_no = course_parsed[2]
+    else:
+        course_abr = course_parsed[0]
+        course_no = course_parsed[1]
 
     course_dept = Dept.query.filter_by(abr=course_abr).first()
     course = Course.query.filter_by(
@@ -59,8 +63,12 @@ def duplicate_review():
     user_email = request.get_json()['user_email']
 
     course_parsed = course_name.split()
-    course_abr = course_parsed[0]
-    course_no = course_parsed[1]
+    if(len(course_parsed) == 3):
+        course_abr = course_parsed[0] + " " + course_parsed[1]
+        course_no = course_parsed[2]
+    else:
+        course_abr = course_parsed[0]
+        course_no = course_parsed[1]
 
     course_dept = Dept.query.filter_by(abr=course_abr).first()
     course = Course.query.filter_by(
@@ -100,8 +108,12 @@ def edit_review():
     prof_grading = request.get_json()['prof_grading']
 
     course_parsed = course_name.split()
-    course_abr = course_parsed[0]
-    course_no = course_parsed[1]
+    if(len(course_parsed) == 3):
+        course_abr = course_parsed[0] + " " + course_parsed[1]
+        course_no = course_parsed[2]
+    else:
+        course_abr = course_parsed[0]
+        course_no = course_parsed[1]
 
     course_dept = Dept.query.filter_by(abr=course_abr).first()
     course = Course.query.filter_by(
