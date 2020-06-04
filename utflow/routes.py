@@ -27,6 +27,29 @@ def populate_courses():
     return result
 
 
+@app.route('/api/populate_profs', methods=['GET'])
+def populate_profs():
+
+    profs = Prof.query.all()
+    prof_list = []
+    for prof in profs:
+        course_list = []
+        for pc in prof.pc:
+            course = Prof.query.filter_by(id=pc.course_id).first()
+            dept = Dept.query.filter_by(id=course.dept_id).first()
+            course_list.append(dept.abr + ' ' + course.num)
+
+        prof_object = {
+            'id': prof.id,
+            'profName': prof.name,
+            'taughtCourses': course_list
+        }
+        prof_list.append(prof_object)
+
+    result = jsonify({"professors": prof_list})
+    return result
+
+
 @app.route('/api/get_course_num', methods=['GET'])
 def get_course_num():
     courses = Course.query.all()
@@ -101,6 +124,22 @@ def review_feedback():
 
     result = jsonify({"result": 'success'})
     return result
+
+@app.route('/api/get_major', methods=['GET'])
+def getMajor():
+    major = Dept.query.all()
+    results = dict.fromkeys((range(len(major))))
+    i = 0
+    for m in major:
+        results[i] = {
+            'id': m.id,
+            'name': m.name
+        }
+        i=i+1
+        
+    result = jsonify({'majors': results})
+    return result
+
 
 @app.route('/api/course_info', methods=['POST'])
 def course_info():
