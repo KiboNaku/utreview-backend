@@ -1,7 +1,7 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
 from flask_jwt_extended import (create_access_token)
 from utflow.models import *
-from utflow import app, db, bcrypt, jwt, ix
+from utflow import app, db, bcrypt, jwt, course_ix, prof_ix
 from whoosh.index import create_in
 from whoosh import scoring
 from whoosh.fields import *
@@ -15,8 +15,8 @@ def populate_courses():
     search = request.get_json()['searchValue']
     search_tokens = search.split()
 
-    with ix.searcher() as searcher:
-        query = QueryParser("content", ix.schema).parse(search)
+    with course_ix.searcher() as searcher:
+        query = QueryParser("content", course_ix.schema).parse(search)
         results = searcher.search(query, limit=50)
 
         courses_list = []
@@ -43,26 +43,35 @@ def populate_courses():
     return result
 
 
-@app.route('/api/populate_profs', methods=['GET'])
+@app.route('/api/populate_profs', methods=['POST'])
 def populate_profs():
+    search = request.get_json()['searchValue']
 
-    profs = Prof.query.all()
-    prof_list = []
-    for prof in profs:
-        course_list = []
-        for pc in prof.pc:
-            course = Prof.query.filter_by(id=pc.course_id).first()
-            dept = Dept.query.filter_by(id=course.dept_id).first()
-            course_list.append(dept.abr + ' ' + course.num)
+    with prof_ix.searcher() as searcher:
+        query = QueryParser("content", prof_ix.schema).parse(search)
+        results = searcher.search(query, limit=50)
 
-        prof_object = {
+        profs_list = []
+        for result in results:
+            prof = Prof.query.filter_by(id=int(result["index"])).first()
+            course_list = []
+            for pc in prof.pc:
+                course = Prof.query.filter_by(id=pc.course_id).first()
+                dept = Dept.query.filter_by(id=course.dept_id).first()
+                course_list.append(dept.abr + ' ' + course.num)
+
+            prof_object = {
             'id': prof.id,
             'profName': prof.name,
             'taughtCourses': course_list
-        }
-        prof_list.append(prof_object)
+            }
+            profs_list.append(prof_object)
 
-    result = jsonify({"professors": prof_list})
+    if(len(profs_list) < 1):
+        result = jsonify({"empty": "No results found"})
+    else:
+        result = jsonify({"professors": profs_list})
+    
     return result
 
 
