@@ -34,7 +34,11 @@ def populate_courses():
                 'professors': prof_list
             }
             courses_list.append(course_object)
-    result = jsonify({"courses": courses_list})
+
+    if(len(courses_list) < 1):
+        result = jsonify({"empty": "No results found"})
+    else:
+        result = jsonify({"courses": courses_list})
 
     return result
 
