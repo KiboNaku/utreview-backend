@@ -63,6 +63,7 @@ class Prof(db.Model):
     scores = db.relationship("ECIS_Prof_Score", backref="subject", lazy=True)
     reviews = db.relationship('Review', backref='prof', lazy=True)
     pc = db.relationship('Prof_Course', backref="prof", lazy=True)
+    # scheduled = db.relationship('Scheduled_Course', backref='prof', lazy=True)
 
     def __repr__(self):
         return f"Prof('{self.name}')"
@@ -72,6 +73,7 @@ class Course(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     num = db.Column(db.String(4), nullable=False)
     name = db.Column(db.String(75), nullable=False)
+    # topic = db.Column(db.String(75), default="")
     description = db.Column(db.String(10000), nullable=False)
     # TODO: prereq, coreq, antireq, unlocks
     
@@ -80,6 +82,7 @@ class Course(db.Model):
     scores = db.relationship("ECIS_Course_Score", backref="subject", lazy=True)
     reviews = db.relationship('Review', backref='course', lazy=True)
     pc = db.relationship('Prof_Course', backref="course", lazy=True)
+    # scheduled = db.relationship('Scheduled_Course', backref='course', lazy=True)
 
     def __repr__(self):
         return f"Course('{self.num}', '{self.name}')"
@@ -92,6 +95,28 @@ class Course(db.Model):
         string += self.num + " "
         string += self.name
         return string
+
+# class Scheduled_Course(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     year = db.Column(db.Integer, nullable=False)
+#     semester = db.Column(db.Integer, nullable=False)
+#     unique_no = db.Column(db.Integer, nullable=False)
+#     days = db.Column(db.String(20))
+#     time_from = db.Column(db.Integer)
+#     time_to = db.Column(db.Integer)
+#     location = db.Column(db.String(20))
+#     max_enrollement = db.Column(db.Integer, nullable=False)
+#     seats_taken = db.Column(db.Integer, nullable=False)
+#     cross_listed = db.Clumn(db.Integer, db.ForeignKey('cross_listed.id'))
+#     prof_id = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=False)
+#     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+
+#     def __repr__(self):
+#         return f"Scheduled_Course('{self.unique_no}', '{self.location}')"
+
+# class Cross_Listed(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     courses = db.relationship('Class_Schedule', backref='cross_list', lazy=True)
 
 class Prof_Course(db.Model):
     

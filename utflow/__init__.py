@@ -23,9 +23,9 @@ CORS(app)
 
 from utflow.models import *
 
-schema = Schema(index=ID(stored=True), content=TEXT)
-ix = create_in("utflow/index", schema)
-writer = ix.writer()
+course_schema = Schema(index=ID(stored=True), content=TEXT)
+course_ix = create_in("utflow/course_index", course_schema)
+course_writer = course_ix.writer()
 
 courses = Course.query.all()
 courses_tokens = [str(course).split() for course in courses]
@@ -38,9 +38,22 @@ for course in courses:
     course_content += dept.name + " "
     course_content += course.num + " "
     course_content += course.name + " "
-    writer.add_document(index=str(course.id), content=str(course_content))
+    course_writer.add_document(index=str(course.id), content=str(course_content))
 
-writer.commit()
+course_writer.commit()
+
+prof_schema = Schema(index=ID(stored=True), content=TEXT)
+prof_ix = create_in("utflow/prof_index", prof_schema)
+prof_writer = prof_ix.writer()
+
+profs = Prof.query.all()
+for prof in profs:
+    prof_name = prof.name.split('[, ]')
+    prof_content = ""
+    for string in prof_name:
+        prof_content += string + " "
+    prof_writer.add_document(index=str(prof.id), content=str(prof_content))
+prof_writer.commit()
 
 
 from utflow import review_routes
