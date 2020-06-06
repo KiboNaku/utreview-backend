@@ -90,8 +90,26 @@ def get_course_num():
     result = jsonify({"courses": results})
     return result
 
-@app.route('/api/get-profs', methods=['GET'])
-def getProfs():
+
+@app.route('/api/get_major', methods=['GET'])
+def get_major():
+    majors = Dept.query.all()
+    results = dict.fromkeys((range(len(majors))))
+    i = 0
+    for m in majors:
+        results[i] = {
+            'id': m.id,
+            'abr': m.abr,
+            'name': m.name
+        }
+        i = i+1
+    
+    result = jsonify({"majors": results})
+    return result
+
+
+@app.route('/api/get_profs', methods=['GET'])
+def get_profs():
     profs = Prof.query.all()
     results = dict.fromkeys((range(len(profs))))
     i = 0
