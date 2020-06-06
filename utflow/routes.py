@@ -7,8 +7,6 @@ from whoosh import scoring
 from whoosh.fields import *
 from whoosh.qparser import QueryParser
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-
 @app.route('/api/populate_courses', methods=['POST'])
 def populate_courses():
 
@@ -91,7 +89,6 @@ def get_course_num():
     
     result = jsonify({"courses": results})
     return result
-
 
 @app.route('/api/get-profs', methods=['GET'])
 def getProfs():
