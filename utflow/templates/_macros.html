@@ -1,0 +1,52 @@
+{% macro edit_dept(form, dept) -%}
+<tr>
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+            <td className="form-group">
+                <!-- {{ form.abr.label(className="form-control-label") }} -->
+                {% if form.abr.errors %}
+
+                {{ form.abr(className="form-control form-control-lg is-invalid", value=dept.abr) }}
+                <div className="invalid-feedback">
+                    {% for error in form.abr.errors %}
+
+                    <span>{{ error }}</span>
+                    {% endfor %}
+
+                </div>
+                {% else %}
+                {{ form.abr(className="form-control form-control-lg") }}
+                {% endif %}
+                
+            </td>
+
+            <td className="form-group">
+                <!-- {{ form.name.label(className="form-control-label") }} -->
+                {% if form.name.errors %}
+                {{ form.name.default = "hello" }}
+
+                {{ form.name(value=dept.name, className="form-control form-control-lg is-invalid") }}
+                <div className="invalid-feedback">
+                    {% for error in form.name.errors %}
+
+                    <span>{{ error }}</span>
+                    {% endfor %}
+
+                </div>
+                {% else %}
+                {{ form.name(className="form-control form-control-lg") }}
+                {% endif %}
+            </td>
+
+            <td>
+                {{ dept.name }}
+            </td>
+
+            <td>
+
+                {{ form.submit(className="btn btn-outline-info") }}
+            </td>
+        </div>
+    </form>
+</tr>
+{%- endmacro %}
