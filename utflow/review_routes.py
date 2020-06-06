@@ -20,8 +20,17 @@ def new_review():
     prof_grading = request.get_json()['prof_grading']
 
     course_parsed = course_name.split()
-    course_abr = course_parsed[0]
-    course_no = course_parsed[1]
+    if(len(course_parsed) == 3):
+        course_abr = course_parsed[0] + " " + course_parsed[1]
+        course_no = course_parsed[2]
+    else:
+        if(len(course_parsed[0]) == 1):
+            course_abr = course_parsed[0] + "  "
+        elif(len(course_parsed[0]) == 2):
+            course_abr = course_parsed[0] + " "
+        else:
+            course_abr = course_parsed[0]
+        course_no = course_parsed[1]
 
     course_dept = Dept.query.filter_by(abr=course_abr).first()
     course = Course.query.filter_by(
@@ -59,8 +68,17 @@ def duplicate_review():
     user_email = request.get_json()['user_email']
 
     course_parsed = course_name.split()
-    course_abr = course_parsed[0]
-    course_no = course_parsed[1]
+    if(len(course_parsed) == 3):
+        course_abr = course_parsed[0] + " " + course_parsed[1]
+        course_no = course_parsed[2]
+    else:
+        if(len(course_parsed[0]) == 1):
+            course_abr = course_parsed[0] + "  "
+        elif(len(course_parsed[0]) == 2):
+            course_abr = course_parsed[0] + " "
+        else:
+            course_abr = course_parsed[0]
+        course_no = course_parsed[1]
 
     course_dept = Dept.query.filter_by(abr=course_abr).first()
     course = Course.query.filter_by(
@@ -100,8 +118,17 @@ def edit_review():
     prof_grading = request.get_json()['prof_grading']
 
     course_parsed = course_name.split()
-    course_abr = course_parsed[0]
-    course_no = course_parsed[1]
+    if(len(course_parsed) == 3):
+        course_abr = course_parsed[0] + " " + course_parsed[1]
+        course_no = course_parsed[2]
+    else:
+        if(len(course_parsed[0]) == 1):
+            course_abr = course_parsed[0] + "  "
+        elif(len(course_parsed[0]) == 2):
+            course_abr = course_parsed[0] + " "
+        else:
+            course_abr = course_parsed[0]
+        course_no = course_parsed[1]
 
     course_dept = Dept.query.filter_by(abr=course_abr).first()
     course = Course.query.filter_by(
@@ -135,4 +162,46 @@ def edit_review():
     }
     result = jsonify({'result': result_review})
 
+    return result
+
+@app.route('/api/review_feedback', methods=['POST'])
+def review_feedback():
+    is_like = request.get_json()['like']
+    user_email = request.get_json()['userEmail']
+    review_id = request.get_json()['reviewId']
+
+    user = User.query.filter_by(email=user_email).first()
+
+    if(is_like):
+        review_dislike = ReviewDisliked.query.filter_by(user_id=user.id, review_id=review_id).first()
+        if(review_dislike):
+            db.session.delete(review_dislike)
+            review_like = ReviewLiked(user_id=user.id, review_id=review_id)
+            db.session.add(review_like)
+            db.session.commit()
+        else:
+            review_like = ReviewLiked.query.filter_by(user_id=user.id, review_id=review_id).first()
+            if(review_like):
+                db.session.delete(review_like)
+            else:
+                review_like = ReviewLiked(user_id=user.id, review_id=review_id)
+                db.session.add(review_like)
+            db.session.commit()
+    else:
+        review_like = ReviewLiked.query.filter_by(user_id=user.id, review_id=review_id).first()
+        if(review_like):
+            db.session.delete(review_like)
+            review_dislike = ReviewDisliked(user_id=user.id, review_id=review_id)
+            db.session.add(review_dislike)
+            db.session.commit()
+        else:
+            review_dislike = ReviewDisliked.query.filter_by(user_id=user.id, review_id=review_id).first()
+            if(review_dislike):
+                db.session.delete(review_dislike)
+            else:
+                review_dislike = ReviewDisliked(user_id=user.id, review_id=review_id)
+                db.session.add(review_dislike)
+            db.session.commit()
+
+    result = jsonify({"result": 'success'})
     return result
