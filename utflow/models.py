@@ -68,6 +68,13 @@ class Prof(db.Model):
     def __repr__(self):
         return f"Prof('{self.name}')"
 
+    def __str__(self):
+        prof_name = self.name.split('[, ]')
+        prof_content = ""
+        for string in prof_name:
+            prof_content += string
+        return string
+
 class Course(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
@@ -90,10 +97,8 @@ class Course(db.Model):
     def __str__(self):
         dept = Dept.query.filter_by(id=self.dept_id).first()
         string = ""
-        string += dept.abr + " "
-        string += dept.name + " "
-        string += self.num + " "
-        string += self.name
+        string += dept.abr.lower().replace(" ", "")
+        string += self.num.lower()
         return string
 
 # class Scheduled_Course(db.Model):

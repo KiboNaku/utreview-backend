@@ -7,71 +7,116 @@ from whoosh import scoring
 from whoosh.fields import *
 from whoosh.qparser import QueryParser
 
-@app.route('/api/populate_courses', methods=['POST'])
-def populate_courses():
+@app.route('/api/populate_results', methods=['POST'])
+def populate_results():
 
     search = request.get_json()['searchValue']
+    search = search.lower()
     search_tokens = search.split()
+
+    courses_list = []
+    course_ids = []
+    profs_list = []
+    prof_ids = []
 
     with course_ix.searcher() as searcher:
         query = QueryParser("content", course_ix.schema).parse(search)
         results = searcher.search(query, limit=50)
-
-        courses_list = []
         for result in results:
-            course = Course.query.filter_by(id=int(result["index"])).first()
-            dept = Dept.query.filter_by(id=course.dept_id).first()
-            prof_list = []
-            for pc in course.pc:
-                prof = Prof.query.filter_by(id=pc.prof_id).first()
-                prof_list.append(prof.name)
-
-            course_object = {
-                'courseNum': dept.abr + " " + course.num,
-                'courseName': course.name,
-                'professors': prof_list
-            }
-            courses_list.append(course_object)
-
-    if(len(courses_list) < 1):
-        result = jsonify({"empty": "No results found"})
-    else:
-        result = jsonify({"courses": courses_list})
-
-    return result
-
-
-@app.route('/api/populate_profs', methods=['POST'])
-def populate_profs():
-    search = request.get_json()['searchValue']
+            course_id = int(result["index"])
+            if(course_id in course_ids):
+                continue
+            else:
+                course_ids.append(course_id)
+                append_course(course_id, courses_list, profs_list, prof_ids)
+    
+    courses = Course.query.all()
+    for course in courses:
+        if(search.replace(" ", "") in str(course)):
+            if(course.id in course_ids):
+                continue
+            else:
+                course_ids.append(course.id)
+                append_course(course.id, courses_list, profs_list, prof_ids)
 
     with prof_ix.searcher() as searcher:
         query = QueryParser("content", prof_ix.schema).parse(search)
         results = searcher.search(query, limit=50)
 
-        profs_list = []
         for result in results:
-            prof = Prof.query.filter_by(id=int(result["index"])).first()
-            course_list = []
-            for pc in prof.pc:
-                course = Prof.query.filter_by(id=pc.course_id).first()
-                dept = Dept.query.filter_by(id=course.dept_id).first()
-                course_list.append(dept.abr + ' ' + course.num)
+            prof_id = int(result["index"])
+            if(prof_id in prof_ids):
+                continue
+            else:
+                prof_ids.append(prof_id)
+                append_prof(prof_id, profs_list, courses_list, course_ids)
 
-            prof_object = {
+    courses = courses_list
+    profs = profs_list
+    if(len(courses_list) < 1):
+        courses = "empty"
+    if(len(profs_list) < 1):
+        profs = "empty"
+
+    result = jsonify({"courses": courses, "profs": profs})
+    return result
+
+def append_course(course_id, courses_list, profs_list, prof_ids):
+    course = Course.query.filter_by(id=course_id).first()
+    dept = Dept.query.filter_by(id=course.dept_id).first()
+    prof_list = []
+    for course_pc in course.pc:
+        prof = Prof.query.filter_by(id=course_pc.prof_id).first()
+        prof_list.append(prof.name)
+        if(prof.id in prof_ids):
+            continue
+        prof_ids.append(prof.id)
+        course_list = []
+        for prof_pc in prof.pc:
+            prof_course = Prof.query.filter_by(id=prof_pc.course_id).first()
+            prof_dept = Dept.query.filter_by(id=prof_course.dept_id).first()
+            course_list.append(prof_dept.abr + ' ' + prof_course.num)
+
+        prof_object = {
             'id': prof.id,
             'profName': prof.name,
             'taughtCourses': course_list
-            }
-            profs_list.append(prof_object)
+        }
+        profs_list.append(prof_object)
+    course_object = {
+        'courseNum': dept.abr + " " + course.num,
+        'courseName': course.name,
+        'professors': prof_list
+    }
+    courses_list.append(course_object)
 
-    if(len(profs_list) < 1):
-        result = jsonify({"empty": "No results found"})
-    else:
-        result = jsonify({"professors": profs_list})
-    
-    return result
+def append_prof(prof_id, profs_list, courses_list, course_ids):
+    prof = Prof.query.filter_by(id=prof_id).first()    
+    course_list = []
+    for prof_pc in prof.pc:
+        course = Prof.query.filter_by(id=prof_pc.course_id).first()
+        dept = Dept.query.filter_by(id=course.dept_id).first()
+        course_list.append(dept.abr + ' ' + course.num)
+        if(course.id in course_ids):
+            continue
+        course_ids.append(course_ids) 
+        prof_list = []
+        for course_pc in course.pc:
+            course_prof = Prof.query.filter_by(id=course_pc.prof_id).first()
+            prof_list.append(course_prof.name) 
+        course_object = {
+            'courseNum': dept.abr + " " + course.num,
+            'courseName': course.name,
+            'professors': prof_list
+        }
+        courses_list.append(course_object)              
 
+    prof_object = {
+        'id': prof.id,
+        'profName': prof.name,
+        'taughtCourses': course_list
+    }
+    profs_list.append(prof_object)
 
 @app.route('/api/get_course_num', methods=['GET'])
 def get_course_num():
