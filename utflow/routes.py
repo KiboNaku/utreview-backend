@@ -86,6 +86,7 @@ def append_course(course_id, courses_list, profs_list, prof_ids):
     course_object = {
         'courseNum': dept.abr + " " + course.num,
         'courseName': course.name,
+        'deptName': dept.name,
         'professors': prof_list
     }
     courses_list.append(course_object)
