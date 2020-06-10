@@ -7,6 +7,7 @@ from whoosh import scoring
 from whoosh.fields import *
 from whoosh.qparser import QueryParser
 
+
 @app.route('/api/populate_results', methods=['POST'])
 def populate_results():
 
@@ -29,7 +30,7 @@ def populate_results():
             else:
                 course_ids.append(course_id)
                 append_course(course_id, courses_list, profs_list, prof_ids)
-    
+
     courses = Course.query.all()
     for course in courses:
         if(search.replace(" ", "") in str(course)):
@@ -61,6 +62,7 @@ def populate_results():
     result = jsonify({"courses": courses, "profs": profs})
     return result
 
+
 def append_course(course_id, courses_list, profs_list, prof_ids):
     course = Course.query.filter_by(id=course_id).first()
     dept = Dept.query.filter_by(id=course.dept_id).first()
@@ -90,8 +92,9 @@ def append_course(course_id, courses_list, profs_list, prof_ids):
     }
     courses_list.append(course_object)
 
+
 def append_prof(prof_id, profs_list, courses_list, course_ids):
-    prof = Prof.query.filter_by(id=prof_id).first()    
+    prof = Prof.query.filter_by(id=prof_id).first()
     course_list = []
     for prof_pc in prof.pc:
         course = Prof.query.filter_by(id=prof_pc.course_id).first()
@@ -99,17 +102,17 @@ def append_prof(prof_id, profs_list, courses_list, course_ids):
         course_list.append(dept.abr + ' ' + course.num)
         if(course.id in course_ids):
             continue
-        course_ids.append(course_ids) 
+        course_ids.append(course_ids)
         prof_list = []
         for course_pc in course.pc:
             course_prof = Prof.query.filter_by(id=course_pc.prof_id).first()
-            prof_list.append(course_prof.name) 
+            prof_list.append(course_prof.name)
         course_object = {
             'courseNum': dept.abr + " " + course.num,
             'courseName': course.name,
             'professors': prof_list
         }
-        courses_list.append(course_object)              
+        courses_list.append(course_object)
 
     prof_object = {
         'id': prof.id,
@@ -117,6 +120,7 @@ def append_prof(prof_id, profs_list, courses_list, course_ids):
         'taughtCourses': course_list
     }
     profs_list.append(prof_object)
+
 
 @app.route('/api/get_course_num', methods=['GET'])
 def get_course_num():
@@ -131,7 +135,7 @@ def get_course_num():
             'name': course.name,
         }
         i = i+1
-    
+
     result = jsonify({"courses": results})
     return result
 
@@ -148,7 +152,7 @@ def get_major():
             'name': m.name
         }
         i = i+1
-    
+
     result = jsonify({"majors": results})
     return result
 
@@ -164,9 +168,10 @@ def get_profs():
             'name': prof.name
         }
         i = i+1
-    
+
     result = jsonify({"professors": results})
     return result
+
 
 @app.route('/api/course_info', methods=['POST'])
 def course_info():
@@ -279,7 +284,8 @@ def course_info():
             eCIS = None
         else:
             eCIS = scores[0].avg
-        reviews = Review.query.filter_by(professor_id=prof.id, course_id=course.id).all()
+        reviews = Review.query.filter_by(
+            professor_id=prof.id, course_id=course.id).all()
         if(len(reviews) == 0):
             percentLiked = None
         else:
@@ -299,7 +305,13 @@ def course_info():
 
     result = jsonify({"course_info": course_info,
                       "course_rating": course_rating,
-                      "course_profs": prof_list, 
+                      "course_profs": prof_list,
                       "course_reviews": review_list})
 
+    return result
+
+
+@app.route('/api/review_list', methods=['POST'])
+def review_list():
+    result = None
     return result
