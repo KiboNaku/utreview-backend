@@ -13,6 +13,12 @@ utflow/index/_MAIN_1.toc
 *.toc
 utflow/course_index/MAIN_WRITELOCK
 utflow/prof_index/MAIN_WRITELOCK
+utflow/credentials.yaml
+utflow/.env
+mysql_practice/cloud.py
+mysql_practice/cloud_sql_proxy.exe
+mysql_practice/mysql_practice.py
 *.ctmp
 *.pst
 *.trm
+
