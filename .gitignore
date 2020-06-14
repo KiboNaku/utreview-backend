@@ -18,3 +18,7 @@ utflow/.env
 mysql_practice/cloud.py
 mysql_practice/cloud_sql_proxy.exe
 mysql_practice/mysql_practice.py
+*.ctmp
+*.pst
+*.trm
+
