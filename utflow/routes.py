@@ -6,11 +6,13 @@ from whoosh.index import create_in
 from whoosh import scoring
 from whoosh.fields import *
 from whoosh.qparser import QueryParser
+import time
 
 @app.route('/api/populate_results', methods=['POST'])
 def populate_results():
-
+    start_time = time.time()
     search = request.get_json()['searchValue']
+    print(search)
     search = search.lower()
     search_tokens = search.split()
 
@@ -18,6 +20,16 @@ def populate_results():
     course_ids = []
     profs_list = []
     prof_ids = []
+
+    if(search == " "):
+        print("empty string")
+        populate_all(courses_list, profs_list)
+        courses = courses_list
+        profs = profs_list
+        result = jsonify({"courses": courses, "profs": profs})
+        elapsed_time = time.time() - start_time
+        print(elapsed_time)
+        return result
 
     with course_ix.searcher() as searcher:
         query = QueryParser("content", course_ix.schema).parse(search)
@@ -28,7 +40,8 @@ def populate_results():
                 continue
             else:
                 course_ids.append(course_id)
-                append_course(course_id, courses_list, profs_list, prof_ids)
+                course = Course.query.filter_by(id=course_id).first()
+                append_course(course, courses_list, profs_list, prof_ids)
     
     courses = Course.query.all()
     for course in courses:
@@ -37,7 +50,7 @@ def populate_results():
                 continue
             else:
                 course_ids.append(course.id)
-                append_course(course.id, courses_list, profs_list, prof_ids)
+                append_course(course, courses_list, profs_list, prof_ids)
 
     with prof_ix.searcher() as searcher:
         query = QueryParser("content", prof_ix.schema).parse(search)
@@ -49,7 +62,8 @@ def populate_results():
                 continue
             else:
                 prof_ids.append(prof_id)
-                append_prof(prof_id, profs_list, courses_list, course_ids)
+                prof = Prof.query.filter_by(id=prof_id).first()
+                append_prof(prof, profs_list, courses_list, course_ids)
 
     courses = courses_list
     profs = profs_list
@@ -59,65 +73,65 @@ def populate_results():
         profs = "empty"
 
     result = jsonify({"courses": courses, "profs": profs})
+    elapsed_time = time.time() - start_time
+    print(elapsed_time)
     return result
 
-def append_course(course_id, courses_list, profs_list, prof_ids):
-    course = Course.query.filter_by(id=course_id).first()
-    dept = Dept.query.filter_by(id=course.dept_id).first()
-    prof_list = []
+def append_course(course, courses_list, profs_list, prof_ids):
+    dept = course.dept
     for course_pc in course.pc:
-        prof = Prof.query.filter_by(id=course_pc.prof_id).first()
-        prof_list.append(prof.name)
+        prof = course_pc.prof
         if(prof.id in prof_ids):
             continue
         prof_ids.append(prof.id)
-        course_list = []
-        for prof_pc in prof.pc:
-            prof_course = Prof.query.filter_by(id=prof_pc.course_id).first()
-            prof_dept = Dept.query.filter_by(id=prof_course.dept_id).first()
-            course_list.append(prof_dept.abr + ' ' + prof_course.num)
-
         prof_object = {
             'id': prof.id,
             'profName': prof.name,
-            'taughtCourses': course_list
         }
         profs_list.append(prof_object)
     course_object = {
         'courseNum': dept.abr + " " + course.num,
         'courseName': course.name,
         'deptName': dept.name,
-        'professors': prof_list
     }
     courses_list.append(course_object)
 
-def append_prof(prof_id, profs_list, courses_list, course_ids):
-    prof = Prof.query.filter_by(id=prof_id).first()    
-    course_list = []
+def append_prof(prof, profs_list, courses_list, course_ids):   
     for prof_pc in prof.pc:
-        course = Prof.query.filter_by(id=prof_pc.course_id).first()
-        dept = Dept.query.filter_by(id=course.dept_id).first()
-        course_list.append(dept.abr + ' ' + course.num)
+        course = prof_pc.course
+        dept = course.dept
         if(course.id in course_ids):
             continue
-        course_ids.append(course_ids) 
-        prof_list = []
-        for course_pc in course.pc:
-            course_prof = Prof.query.filter_by(id=course_pc.prof_id).first()
-            prof_list.append(course_prof.name) 
+        course_ids.append(course_ids)  
         course_object = {
             'courseNum': dept.abr + " " + course.num,
             'courseName': course.name,
-            'professors': prof_list
         }
         courses_list.append(course_object)              
 
     prof_object = {
         'id': prof.id,
         'profName': prof.name,
-        'taughtCourses': course_list
     }
     profs_list.append(prof_object)
+
+def populate_all(courses_list, profs_list):
+    courses = Course.query.all()
+    for course in courses:
+        dept = course.dept
+        course_object = {
+            'courseNum': dept.abr + " " + course.num,
+            'courseName': course.name,
+            'deptName': dept.name,
+        }
+        courses_list.append(course_object)
+    profs = Prof.query.all()
+    for prof in profs:           
+        prof_object = {
+            'id': prof.id,
+            'profName': prof.name,
+        }
+        profs_list.append(prof_object)
 
 @app.route('/api/get_course_num', methods=['GET'])
 def get_course_num():
