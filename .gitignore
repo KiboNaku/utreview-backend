@@ -16,3 +16,5 @@ utflow/prof_index/MAIN_WRITELOCK
 *.ctmp
 *.pst
 *.trm
+.env
+cloud_sql_proxy.exe
