@@ -12,6 +12,7 @@ def register():
     password = bcrypt.generate_password_hash(
         request.get_json()['password']).decode('utf-8')
     dept = Dept.query.filter_by(name=major).first()
+    
 
     user = User.query.filter_by(email=email).first()
     if user:
@@ -26,7 +27,8 @@ def register():
             'first_name': user.first_name,
             'last_name': user.last_name,
             'email': user.email,
-            'major': dept.name
+            'major': dept.name,
+            'image_file': 'corgi1.jpg'
         })
         result = access_token
 
@@ -48,7 +50,8 @@ def login():
             'first_name': user.first_name,
             'last_name': user.last_name,
             'email': user.email,
-            'major': major.name
+            'major': major.name,
+            'profile_pic': 'corgi1.jpg'
         })
         result = access_token
     else:

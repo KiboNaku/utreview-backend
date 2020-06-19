@@ -16,3 +16,4 @@ utflow/prof_index/MAIN_WRITELOCK
 *.ctmp
 *.pst
 *.trm
+.env

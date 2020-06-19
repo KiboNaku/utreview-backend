@@ -314,5 +314,14 @@ def course_info():
 
 @app.route('/api/review_list', methods=['POST'])
 def review_list():
-    result = None
+    reviews = Review.query.all()
+    results = dict.fromkeys((range(len(reviews))))
+    i = 0
+    for review in reviews:
+        results[i] = {
+            'id': review.id,
+        }
+        i = i+1
+
+    result = jsonify({"reviews": results})
     return result
