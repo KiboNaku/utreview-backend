@@ -1,4 +1,4 @@
-from utflow import app, db
+from utflow import app
 # from utflow.fetch import fetch_depts, fetch_course_info, fetch_prof_info
 # from utflow.models import *
 
