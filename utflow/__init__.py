@@ -14,8 +14,10 @@ from whoosh.qparser import QueryParser
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = config("SECRET_KEY")
 
+app.config.from_pyfile('mail.cfg')
+
+app.config['SECRET_KEY'] = config("SECRET_KEY")
 app.config['SQLALCHEMY_DATABASE_URI'] = config("LOCAL_DATABASE_URI")
 
 # app.config['MYSQL_HOST'] = os.environ.get("MYSQL_HOST")
@@ -43,10 +45,10 @@ from utflow.models import *
 course_schema = Schema(index=ID(stored=True), content=TEXT)
 course_ix = create_in("utflow/course_index", course_schema)
 course_writer = course_ix.writer()
-print("here")
+
 courses = Course.query.all()
 courses_tokens = [str(course).split() for course in courses]
-print("here")
+
 for course in courses:
     dept = course.dept
 
@@ -72,7 +74,6 @@ for prof in profs:
     prof_writer.add_document(index=str(prof.id), content=str(prof_content))
 prof_writer.commit()
 
-print("made it here")
 
 from utflow import review_routes
 from utflow import signup_routes
