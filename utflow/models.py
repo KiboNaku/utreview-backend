@@ -24,15 +24,17 @@ class User(db.Model):
     last_name = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
-    image_file = db.Column(db.String(20), nullable=False, default='default.jpg')
 
+    verified = db.Column(db.Boolean, nullable=False)
     major_id = db.Column(db.Integer, db.ForeignKey('dept.id'), nullable=False)
+    image_id = db.Column(db.Integer, db.ForeignKey('image.id'), nullable=False)
+
     review_posted = db.relationship('Review', backref='author', lazy=True)
     reviews_liked = db.relationship('ReviewLiked', backref='user_liked', lazy=True)
     reviews_disliked = db.relationship('ReviewDisliked', backref='user_disliked', lazy=True)
 
     def __repr__(self):
-        return f"User('{self.first_name}', '{self.last_name}', '{self.email}', '{self.major}')"
+        return f"User('{self.first_name}', '{self.last_name}', '{self.email}')"
     
 
 class Review(db.Model):
@@ -205,3 +207,12 @@ class ReviewDisliked(db.Model):
     def __repr__(self):
         return f"ReviewDisliked('Review: {self.review_id}', 'User: {self.user_id}'"
 
+class Image(db.Model): 
+
+    id = db.Column(db.Integer, primary_key=True)
+    file_name = db.Column(db.String(20), nullable=False)
+
+    image_file = db.relationship('User', backref='user.id', lazy=True)
+
+    def __repr__(self):
+        return f"Image('File Name: {self.file_name}'"
