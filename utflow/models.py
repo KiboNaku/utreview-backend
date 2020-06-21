@@ -25,6 +25,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
 
+    verified = db.Column(db.Boolean, nullable=False)
     major_id = db.Column(db.Integer, db.ForeignKey('dept.id'), nullable=False)
     image_id = db.Column(db.Integer, db.ForeignKey('image.id'), nullable=False)
 
@@ -33,7 +34,7 @@ class User(db.Model):
     reviews_disliked = db.relationship('ReviewDisliked', backref='user_disliked', lazy=True)
 
     def __repr__(self):
-        return f"User('{self.first_name}', '{self.last_name}', '{self.email}', '{self.major}')"
+        return f"User('{self.first_name}', '{self.last_name}', '{self.email}')"
     
 
 class Review(db.Model):
