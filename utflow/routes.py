@@ -271,19 +271,21 @@ def course_info():
                 'numDisliked': num_disliked,
                 'likePressed': like_pressed,
                 'dislikePressed': dislike_pressed,
-                'date': reviews[i].date_posted.strftime("%m/%d/%Y")
+                'date': reviews[i].date_posted.strftime("%Y-%m-%d")
             }
             review_list.append(review_object)
         percentLiked = round(percentLiked/len(reviews), 2) * 100
         difficulty = round(difficulty/len(reviews), 1)
         usefulness = round(usefulness/len(reviews), 1)
         workload = round(workload/len(reviews), 1)
+    numRatings = len(reviews)
     course_rating = {
         'eCIS': eCIS,
         'percentLiked': percentLiked,
         'difficulty': difficulty,
         'usefulness': usefulness,
-        'workload': workload
+        'workload': workload,
+        'numRatings': numRatings
     }
 
     prof_list = []
