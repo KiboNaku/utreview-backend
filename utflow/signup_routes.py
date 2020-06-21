@@ -2,7 +2,7 @@ from flask import Flask, render_template, url_for, flash, redirect, request, jso
 from flask_jwt_extended import (create_access_token)
 from utflow.models import *
 from utflow import app, db, bcrypt, jwt
-from itsdangerous import URLSafeTimedSerializer, SignatureExpired
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
 from flask_mail import Mail, Message
 
 mail = Mail(app)
@@ -58,18 +58,20 @@ def confirm_email():
         email = s.loads(token, salt='confirm_email', max_age=3600)
         user = User.query.filter_by(email=email).first()
 
-        if(user.verified){
+        if user.verified:
             r_val['success'] = -1
             r_val['error'] = "The account has already been verified."
-        } else {
+        else:
             user.verified = True
             db.session.commit()
             r_val['success'] = 1
-        }
 
     except SignatureExpired:
         r_val["success"] = -2
         r_val['error'] = "The confirmation code has expired."
+    except BadTimeSignature:
+        r_val["success"] = -3
+        r_val['error'] = "The confirmation code is invalid."
 
     return r_val
 
