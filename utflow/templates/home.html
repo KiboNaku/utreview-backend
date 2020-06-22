@@ -1,0 +1,26 @@
+{% from '_macros.html' import edit_dept%}
+{% extends 'base.html' %}
+{% block content%}
+
+<table className="table">
+    <thead>
+        <tr>
+            <th scope="col">Abr</th>
+            <th scope="col">Name</th>
+            <th scope="col">Edit</th>
+        </tr>
+    </thead>
+    <tbody>
+
+        {% for dept in depts %}
+        <!-- <tr>
+            <td>{{ dept.abr }}</td>
+            <td>{{ dept.name }}</td>
+            <td><button><img src="https://img.icons8.com/cotton/64/000000/edit--v2.png"/></button></td>
+        </tr> -->
+        {{ edit_dept(form, dept) }}
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock content %}

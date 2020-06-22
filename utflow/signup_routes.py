@@ -24,18 +24,25 @@ def register():
     if user:
         result = jsonify({"error": "An account already exists for this email"})
     else:
+
         user = User(first_name=first_name, last_name=last_name,
                     email=email, password=password, image_id=1, verified=False, major_id=dept.id)
         db.session.add(user)
         db.session.commit()
 
         e_token = s.dumps(user.email, salt="confirm_email")
-        msg = Message('Confirm Email',
-                      sender="utexas.review@gmail.com", recipients=[email])
+
+        # sending confirmation email
+
+        msg = Message(
+            'UT Review Confirmation Email',
+            sender=("UT Review", "utexas.review@gmail.com"), 
+            recipients=[email])
 
         # TODO: update link as needed
         link = "http://localhost:3000/confirm_email?token=" + e_token
-        msg.body = "Click here to confirm your email: {}".format(link)
+
+        msg.html = render_template('confirm_email.html', name='Andy', link=link, email=email)
         mail.send(msg)
 
         access_token = create_access_token(identity={
@@ -65,7 +72,6 @@ def confirm_email():
             user.verified = True
             db.session.commit()
             r_val['success'] = 1
-
     except SignatureExpired:
         r_val["success"] = -2
         r_val['error'] = "The confirmation code has expired."
