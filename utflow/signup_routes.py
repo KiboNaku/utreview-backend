@@ -18,15 +18,14 @@ def register():
     password = bcrypt.generate_password_hash(
         request.get_json()['password']).decode('utf-8')
     dept = Dept.query.filter_by(name=major).first()
-    image_file = Image.query.filter_by(file_name=request.get_json()['image_file']).first()
-    
+    image_name = request.get_json()['image_file']
+    image_file = Image.query.filter_by(file_name=image_name).first()
 
     user = User.query.filter_by(email=email).first()
     if user:
         result = jsonify({"error": "An account already exists for this email"})
     else:
-        user = User(first_name=first_name, last_name=last_name, 
-        email=email, password=password, image_id=1, verified=False, major_id=dept.id)
+        user = User(first_name=first_name, last_name=last_name, email=email, password=password, image_id=image_file.id, verified=False, major_id=dept.id)
         db.session.add(user)
         db.session.commit()
 
