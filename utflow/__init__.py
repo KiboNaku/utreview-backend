@@ -78,3 +78,4 @@ prof_writer.commit()
 from utflow import review_routes
 from utflow import signup_routes
 from utflow import routes
+from utflow import b_routes

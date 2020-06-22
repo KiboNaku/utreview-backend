@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='confirm_email.css') }}">
+{% endblock %}
+
+{% block content%}
+
+<div style="width: 100%; display: flex; justify-content: center;">
+    <div style="width: 75%; margin: 3% auto">
+
+        <div style="background-color: #333f48; color: white; padding: 5%; text-align: center;">
+            <h1>Welcome Aboard, {{name}}!</h1>
+        </div>
+
+        <div style="padding: 5%; background-color: #9cadb7; text-align: center; color: black;">
+            <p style="color: black;">
+                Thank you for looking to join the UT Review community!
+            </p>
+            <p style="color: black;">
+                The next step is to verify that <span style="color: #bf5700">{{email}}</span> is your email.
+                Click the button below to make the confirmation.
+            </p>
+            <div style="padding: 3% 0">
+
+                <form action={{link}}>
+                    <button
+                        style="background-color: #bf5700; color: white; border-radius: 12px; border: 0px; padding: 10px 50px;"
+                        href=>Confirm your email</button>
+                </form>
+            </div>
+            <small style="color: black; display: block">
+                Is the button above not working? 
+                Use this link: <a style="color: #bf5700" href={{link}}>{{link}}</a>
+            </small>
+            <small style="color: black; display: block">
+                Is this a mistake?
+                If you did not register an account with us, this may have been a mistake.
+                It is safe for you to ignore or delete this email.
+            </small>
+            
+        </div>
+    </div>
+
+</div>
+
+{% endblock content %}
