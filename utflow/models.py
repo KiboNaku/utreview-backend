@@ -212,7 +212,7 @@ class Image(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     file_name = db.Column(db.String(20), nullable=False)
 
-    image_file = db.relationship('User', backref='user.id', lazy=True)
+    user = db.relationship('User', backref='user', lazy=True)
 
     def __repr__(self):
         return f"Image('File Name: {self.file_name}'"
