@@ -388,3 +388,51 @@ def review_list():
 
     result = jsonify({"reviews": results})
     return result
+
+
+@app.route('/api/get_image', methods=['GET'])
+def get_image():
+    images = Image.query.all()
+    results = dict.fromkeys((range(len(images))))
+    i = 0
+    for image in images:
+        results[i] = {
+            'image': image.file_name
+        }
+        i = i+1
+
+    result = jsonify({"images": results})
+    return result
+
+
+@app.route('/api/update_info', methods=['POST'])
+def update_info():
+    first_name = request.get_json()['first_name']
+    last_name = request.get_json()['last_name']
+    email = request.get_json()['email']
+    major = request.get_json()['major']
+    password = bcrypt.generate_password_hash(
+        request.get_json()['password']).decode('utf-8')
+    dept = Dept.query.filter_by(name=major).first()
+    image_name = request.get_json()['image_file']
+    image_file = Image.query.filter_by(file_name=image_name).first()
+
+    user = User.query.filter_by(email=email).first()
+    user.first_name = first_name
+    user.last_name = last_name
+    user.password = password
+    user.image_id = image_file.id
+    user.major_id = dept.id
+
+    db.session.commit()
+
+    access_token = create_access_token(identity={
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'email': user.email,
+        'major': dept.name,
+        'image_file': image_file.file_name
+    })
+    result = access_token
+
+    return result
