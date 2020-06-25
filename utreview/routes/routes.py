@@ -1,7 +1,7 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
 from flask_jwt_extended import (create_access_token)
-from utflow.models import *
-from utflow import app, db, bcrypt, jwt, course_ix, prof_ix
+from utreview.models import *
+from utreview import app, db, bcrypt, jwt, course_ix, prof_ix
 from whoosh.index import create_in
 from whoosh import scoring
 from whoosh.fields import *

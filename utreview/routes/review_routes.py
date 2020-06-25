@@ -1,7 +1,7 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
 from flask_jwt_extended import (create_access_token)
-from utflow.models import *
-from utflow import app, db, bcrypt, jwt
+from utreview.models import *
+from utreview import app, db, bcrypt, jwt
 
 @app.route('/api/new_review', methods=['POST'])
 def new_review():

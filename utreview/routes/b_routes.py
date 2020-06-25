@@ -1,7 +1,7 @@
 from flask import render_template, url_for, flash, redirect
-from utflow import app
-from utflow.models import *
-from utflow.forms import RegistrationForm, LoginForm, DeptForm
+from utreview import app
+from utreview.models import *
+from utreview.forms import RegistrationForm, LoginForm, DeptForm
 
 
 @app.route("/")
