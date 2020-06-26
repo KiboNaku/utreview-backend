@@ -18,7 +18,7 @@ def register():
     password = bcrypt.generate_password_hash(
         request.get_json()['password']).decode('utf-8')
     dept = Dept.query.filter_by(name=major).first()
-    image_name = request.get_json()['image_file']
+    image_name = request.get_json()['image']
     image_file = Image.query.filter_by(file_name=image_name).first()
 
     user = User.query.filter_by(email=email).first()
