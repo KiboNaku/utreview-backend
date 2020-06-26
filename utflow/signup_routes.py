@@ -9,6 +9,7 @@ mail = Mail(app)
 
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
+
 @app.route('/api/signup', methods=['POST'])
 def register():
     first_name = request.get_json()['first_name']
@@ -30,7 +31,8 @@ def register():
         db.session.commit()
 
         e_token = s.dumps(user.email, salt="confirm_email")
-        msg = Message('Confirm Email', sender="utexas.review@gmail.com", recipients=[email])
+        msg = Message('Confirm Email',
+                      sender="utexas.review@gmail.com", recipients=[email])
 
         # TODO: update link as needed
         link = "http://localhost:3000/confirm_email?token=" + e_token
@@ -48,23 +50,30 @@ def register():
 
     return result
 
+
 @app.route('/api/confirm_email', methods=['POST'])
 def confirm_email():
     token = request.get_json()['token']
     r_val = {'success': 0, 'error': None}
     try:
         email = s.loads(token, salt='confirm_email', max_age=3600)
-        print(User.query.filter_by(email=email).first().verified)
-        User.query.filter_by(email=email).first().verified = True
-        print(User.query.filter_by(email=email).first().verified)
-        db.session.commit()
-        r_val['success'] = 1
+        user = User.query.filter_by(email=email).first()
+
+        if(user.verified){
+            r_val['success'] = -1
+            r_val['error'] = "The account has already been verified."
+        } else {
+            user.verified = True
+            db.session.commit()
+            r_val['success'] = 1
+        }
 
     except SignatureExpired:
-        r_val["success"] = -1
+        r_val["success"] = -2
         r_val['error'] = "The confirmation code has expired."
 
     return r_val
+
 
 @app.route('/api/login', methods=['POST'])
 def login():

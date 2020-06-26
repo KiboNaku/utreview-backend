@@ -328,14 +328,63 @@ def course_info():
 
 @app.route('/api/review_list', methods=['POST'])
 def review_list():
-    reviews = Review.query.all()
-    results = dict.fromkeys((range(len(reviews))))
-    i = 0
-    for review in reviews:
-        results[i] = {
-            'id': review.id,
+    # TODO: add user liked and disliked
+
+    rtype = request.get_json()['type']
+    name = request.get_json()['name']
+    reviews = []
+
+    if rtype == 'user':
+        reviews = User.query.filter_by(email=name[0]).first().reviews
+    elif rtype == 'prof':
+        reviews = Prof.query.filter_by(name=name[0]).first().reviews
+    elif rtype == 'course':
+        dept_id = Dept.query.filter_by(abr=name[0]).first().id
+        reviews = Course.query.filter_by(dept_id=dept_id, num=name[1])
+
+    results = [
+        {
+            'id': result.id,
+            'date_posted': result.date_posted,
+            'course_review': result.course_review,
+            'professor_review': result.professor_review,
+
+            'user_posted': {
+                'major': {
+                    'abr': result.user_posted.major.abr,
+                    'name': result.user_posted.major.name
+                }
+            },
+
+            'professor': {
+                'name': result.prof.name
+            },
+
+            'course': {
+                'dept': {
+                    'abr': result.course.dept.abr,
+                    'name': result.course.dept.name
+                },
+                'name': result.course.name,
+            },
+
+            'course_rating': {
+                'approval': result.course_rating.approval,
+                'usefulness': result.course_rating.usefulness,
+                'difficulty': result.course_rating.difficulty,
+                'workload': result.course_rating.workload,
+            },
+
+            'professor_rating': {
+                'approval': result.course_rating.approval,
+                'clear': result.course_rating.clear,
+                'engaging': result.course_rating.engaging,
+                'grading': result.course_rating.grading,
+            },
         }
-        i = i+1
+        
+        for result in results
+    ]
 
     result = jsonify({"reviews": results})
     return result
