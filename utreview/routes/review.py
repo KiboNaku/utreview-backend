@@ -61,6 +61,7 @@ def new_review():
 
     return result
 
+
 @app.route('/api/duplicate_review', methods=['POST'])
 def duplicate_review():
     course_name = request.get_json()['course_name']
@@ -100,6 +101,7 @@ def duplicate_review():
         result = jsonify({'result': result_review})
 
     return result
+
 
 @app.route('/api/edit_review', methods=['POST'])
 def edit_review():

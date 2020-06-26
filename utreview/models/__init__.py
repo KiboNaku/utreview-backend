@@ -1,5 +1,4 @@
 
-from utreview import db
 from .course import *
 from .ecis import *
 from .like import *
