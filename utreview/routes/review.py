@@ -1,7 +1,7 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
 from flask_jwt_extended import (create_access_token)
-from utflow.models import *
-from utflow import app, db, bcrypt, jwt
+from utreview.models import *
+from utreview import app, db, bcrypt, jwt
 
 @app.route('/api/new_review', methods=['POST'])
 def new_review():
@@ -61,6 +61,7 @@ def new_review():
 
     return result
 
+
 @app.route('/api/duplicate_review', methods=['POST'])
 def duplicate_review():
     course_name = request.get_json()['course_name']
@@ -100,6 +101,7 @@ def duplicate_review():
         result = jsonify({'result': result_review})
 
     return result
+
 
 @app.route('/api/edit_review', methods=['POST'])
 def edit_review():
