@@ -19,7 +19,7 @@ def register():
     password = bcrypt.generate_password_hash(
         request.get_json()['password']).decode('utf-8')
     dept = Dept.query.filter_by(name=major).first()
-    image_name = request.get_json()['image_file']
+    image_name = request.get_json()['image']
     image_file = Image.query.filter_by(file_name=image_name).first()
 
     user = User.query.filter_by(email=email).first()
@@ -59,14 +59,13 @@ def confirm_email():
         email = s.loads(token, salt='confirm_email', max_age=3600)
         user = User.query.filter_by(email=email).first()
 
-        if(user.verified){
+        if user.verified:
             r_val['success'] = -1
             r_val['error'] = "The account has already been verified."
-        } else {
+        else:
             user.verified = True
             db.session.commit()
             r_val['success'] = 1
-        }
 
     except SignatureExpired:
         r_val["success"] = -2
