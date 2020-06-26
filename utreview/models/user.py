@@ -30,7 +30,7 @@ class ProfilePic(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     file_name = db.Column(db.String(20), unique=True, nullable=False)
 
-    user = db.relationship('User', backref='user', lazy=True)
+    users = db.relationship('User', backref='pic', lazy=True)
 
     def __repr__(self):
         return f"ProfilePic('File Name: {self.file_name}')"
