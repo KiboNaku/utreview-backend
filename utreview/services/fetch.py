@@ -3,50 +3,50 @@ from urllib.request import urlopen, http
 from bs4 import BeautifulSoup as BSoup
 
 failed_requests = []
-from ftplib import FTP
+# from ftplib import FTP
 
-# os.chdir("./ftp_files")
+# # os.chdir("./ftp_files")
 
-# ftp = FTP('reg-it.austin.utexas.edu')
-# ftp.login(user='anonymous')
+# # ftp = FTP('reg-it.austin.utexas.edu')
+# # ftp.login(user='anonymous')
 
-filename = 'Current_Semester_Report'
+# filename = 'Current_Semester_Report'
 
-# localfile = open(filename, 'wb')
-# ftp.retrbinary('RETR ' + filename, localfile.write, 1024)
+# # localfile = open(filename, 'wb')
+# # ftp.retrbinary('RETR ' + filename, localfile.write, 1024)
 
-# ftp.quit()
-# localfile.close()
+# # ftp.quit()
+# # localfile.close()
 
-with open(filename) as f:
-    lines = f.readlines()
+# with open(filename) as f:
+#     lines = f.readlines()
 
-# print(repr(lines[32]))
+# # print(repr(lines[32]))
 
-parse_data = False
+# parse_data = False
 
-categories = []
-courses = []
+# categories = []
+# courses = []
 
-for line in lines:
+# for line in lines:
 
 
-    if (not parse_data) and ("year" in line.lower()):
+#     if (not parse_data) and ("year" in line.lower()):
        
-        parse_data = True
+#         parse_data = True
 
-        categories = line.lower().split("\t")
-        categories = [category.strip() for category in categories if len(category.strip()) > 0]
+#         categories = line.lower().split("\t")
+#         categories = [category.strip() for category in categories if len(category.strip()) > 0]
         
-        continue
+#         continue
 
-    if parse_data and len(line.strip()) > 0:
+#     if parse_data and len(line.strip()) > 0:
 
-        data = line.lower().split("\t")
-        data = [d.strip() for d in data]
+#         data = line.lower().split("\t")
+#         data = [d.strip() for d in data]
 
-        course = {categories[i]: data[i] for i in range(len(categories))}
-        courses.append(course)
+#         course = {categories[i]: data[i] for i in range(len(categories))}
+#         courses.append(course)
 
 
 
