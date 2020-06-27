@@ -14,13 +14,12 @@ class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    year = db.Column(db.Integer, nullable=False)
-    semester = db.Column(db.Integer, nullable=False)
 
     course_review = db.relationship('CourseReview', backref='review', lazy=True)
     prof_review = db.relationship('ProfReview', backref='review', lazy=True)
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    sem_id = db.Column(db.Integer, db.ForeignKey("semester.id"))
 
     def __repr__(self):
         return f"""Review(

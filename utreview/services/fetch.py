@@ -3,6 +3,7 @@ from urllib.request import urlopen, http
 from bs4 import BeautifulSoup as BSoup
 
 failed_requests = []
+
 # from ftplib import FTP
 
 # # os.chdir("./ftp_files")
@@ -47,6 +48,7 @@ failed_requests = []
 
 #         course = {categories[i]: data[i] for i in range(len(categories))}
 #         courses.append(course)
+
 
 
 def fetch_html(url, attempt=1):
