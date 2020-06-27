@@ -2,6 +2,22 @@
 from utreview import db
 
 
+class Semester(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    year = db.Column(db.Integer, nullable=False)
+    semester = db.Column(db.Integer, nullable=False)
+
+    ecis_scores = db.relationship("EcisScore", backref="semester", lazy=True)
+    reviews = db.relationship("Reviews", backref="semester", lazy=True)
+    scheduled_courses = db.relationship("ScheduledCourse", backref="semester", lazy=True)
+    prof_course_sem = db.relationship('ProfCourseSemester', backref="semester", lazy=True)
+
+    def __repr__(self):
+        return f"Semester({self.year}{self.semester})"
+
+
 class Dept(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
@@ -21,9 +37,6 @@ class Dept(db.Model):
 class ScheduledCourse(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
-    
-    year = db.Column(db.Integer, nullable=False)
-    semester = db.Column(db.Integer, nullable=False)
 
     unique_no = db.Column(db.Integer, nullable=False)
     session = db.Column(db.String(1), nullable=True)
@@ -34,8 +47,9 @@ class ScheduledCourse(db.Model):
     location = db.Column(db.String(20))
     max_enrollement = db.Column(db.Integer)
     seats_taken = db.Column(db.Integer)
-    cross_listed = db.Column(db.Integer, db.ForeignKey('cross_listed.id'))
 
+    sem_id = db.Column(db.Integer, db.ForeignKey("semester.id"))
+    cross_listed = db.Column(db.Integer, db.ForeignKey('cross_listed.id'))
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
     prof_id = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=True)
 
@@ -44,17 +58,16 @@ class ScheduledCourse(db.Model):
                                     '{self.unique_no}', 
                                     '{self.prof.first_name} {self.prof.last_name}',
                                     '{self.course.dept.abr} {self.course.num}', 
-                                    '{self.year}{self.semester}', 
+                                    '{self.semester.year}{self.semester.semester}', 
                                     '{self.location}'
                                     )"""
         
 
 class ProfCourse(db.Model):
     
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True) 
 
-    year = db.Column(db.Integer, nullable=False)
-    semester = db.Column(db.Integer, nullable=False)
+    prof_course_sem = db.relationship('ProfCourseSemester', backref="prof_course", lazy=True)
 
     prof_id = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=False)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
@@ -65,3 +78,10 @@ class ProfCourse(db.Model):
                             '{self.prof.first_name} {self.prof.last_name}', 
                             '{self.course.dept.abr} {self.course.num}'
                             )"""
+
+
+class ProfCourseSemester(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+    prof_course_id = db.Column(db.Integer, db.ForeignKey('prof_course.id'), nullable=False)
+    sem_id  =db.Column(db.Integer, db.ForeignKey('semester.id'), nullable=False)
