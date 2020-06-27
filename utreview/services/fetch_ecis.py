@@ -2,11 +2,9 @@
 import pandas as pd
 
 
-KEY_COURSE = "course_ecis"
-KEY_PROF = "prof_ecis"
-
 KEY_UNIQUE_NUM = "unique_num"
-KEY_AVG = "avg"
+KEY_COURSE_AVG = "course_avg"
+KEY_PROF_AVG = "prof_avg"
 KEY_NUM_STUDENTS = "num_students"
 KEY_YR = "year"
 KEY_SEM = "semester"
@@ -20,23 +18,17 @@ def parse_ecis_excel(file_path, sheet_lst):
 		sheet_lst (list[str]): list of sheet names to parse
 
 	Returns:
-		dict[str, list[dict[str, int]]]: dictionary containing course and prof ecis information
-			Structure: {
-				KEY_COURSE: [{
+		list[dict[str, int]]: dictionary containing course and prof ecis information
+			Structure: [
+				{
 					KEY_UNIQUE_NUM: int,
-					KEY_AVG: int,
+					KEY_COURSE_AVG: int,
+					KEY_PROF_AVG: int,
 					KEY_NUM_STUDENTS: int,
 					KEY_YR: int,
 					KEY_SEM: int,
-				}, ...],
-				KEY_PROF: [{
-					KEY_UNIQUE_NUM: int,
-					KEY_AVG: int,
-					KEY_NUM_STUDENTS: int,
-					KEY_YR: int,
-					KEY_SEM: int,
-				}, ...]
-			} 
+				}, ...
+			]
 	"""
 
 	__sem_key = 'SEMESTER_CCYYS'
@@ -45,8 +37,7 @@ def parse_ecis_excel(file_path, sheet_lst):
 	__course_avg_key = 'AVG_COURSE_RATING'
 	__prof_avg_key = 'AVG_INSTRUCTOR_RATING'
 
-	prof_lst = []
-	course_lst = []
+	ecis_lst = []
 
 	for sheet in sheet_lst:
 
@@ -81,28 +72,17 @@ def parse_ecis_excel(file_path, sheet_lst):
 				continue
 
 			# TODO: add course and prof relationship once available
-			course_ecis = {
+			ecis = {
 				KEY_UNIQUE_NUM: unique_num,
-				KEY_AVG: course_avg, 
+				KEY_COURSE_AVG: course_avg, 
+				KEY_PROF_AVG: course_avg, 
 				KEY_NUM_STUDENTS: num_students, 
 				KEY_YR: yr, 
 				KEY_SEM: sem
 			}
 
-			prof_ecis = {
-				KEY_UNIQUE_NUM: unique_num,
-				KEY_AVG: prof_avg, 
-				KEY_NUM_STUDENTS: num_students, 
-				KEY_YR: yr, 
-				KEY_SEM: sem,
-			}
-
-			course_lst.append(course_ecis)
-			prof_lst.append(course_ecis)
+			ecis_lst.append(ecis)
 
 		print(f'Finished parsing {sheet} sheet: num_rows_skipped={rows_skipped}')	
 
-	return {
-		KEY_COURSE: course_lst,
-		KEY_PROF: prof_lst
-	}			
+	return ecis_lst
