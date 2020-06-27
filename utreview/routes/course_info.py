@@ -10,16 +10,26 @@ import time
 
 @app.route('/api/course_details', methods=['POST'])
 def course_details():
-    course_name = request.get_json()['courseNum']
-    topic_num = request.get_json()['topicNum']
+    """
+    Extracts all information needed for a particular course and sends it to the front end
+
+    Arguments (Sent from the front end): 
+        courseId (int): id of course
+        loggedIn (boolean): specifies whether the user is logged in
+        userEmail (string): email of user, if logged in
+
+    Returns:
+        result(json): jsonified representation of course information
+    """
+
+    course_id = request.get_json()['courseId']
     logged_in = request.get_json()['loggedIn']
     user_email = request.get_json()['userEmail']
 
     if(logged_in):
         curr_user = User.query.filter_by(email=user_email).first()
 
-    course_abr, course_no = get_course_name(course_name)
-    course_info, course, is_parent = get_course_info(course_abr, course_no, topic_num)
+    course_info, course, is_parent = get_course_info(course_id)
     course_requisites = get_course_requisites(course)
     course_rating, review_list = get_course_reviews(course, logged_in, curr_user, is_parent)
     course_schedule = get_course_schedule(course, is_parent)
@@ -35,25 +45,21 @@ def course_details():
 
     return result
 
-def get_course_name(course_name):
-    course_parsed = course_name.split()
-    if(len(course_parsed) == 3):
-        course_abr = course_parsed[0] + " " + course_parsed[1]
-        course_no = course_parsed[2]
-    else:
-        if(len(course_parsed[0]) == 1):
-            course_abr = course_parsed[0] + "  "
-        elif(len(course_parsed[0]) == 2):
-            course_abr = course_parsed[0] + " "
-        else:
-            course_abr = course_parsed[0]
-        course_no = course_parsed[1]
-    return course_abr, course_no
+def get_course_info(course_id):
+    """
+    Uses course id to extract basic course information from database
 
-def get_course_info(course_abr, course_no, topic_num):
-    course_dept = Dept.query.filter_by(abr=course_abr).first()
-    course = Course.query.filter_by(
-        num=course_no, dept_id=course_dept.id, topic_num=topic_num).first()
+    Args:
+        course_id (int): course id
+
+    Returns:
+        course_info (object): contains basic course information
+        course (model instance): course specified by course id
+        is_parent (boolean): signifies whether the course is a parent topic
+    """
+    course = Course.query.filter_by(id=course_id).first()
+    course_dept = course.dept
+    topic_num = course.topic_num
 
     is_parent = False
     if(topic_num == -1):
@@ -78,6 +84,7 @@ def get_course_info(course_abr, course_no, topic_num):
                 parent_title = course_topic.title
 
     course_info = {
+        'id': course.id,
         'courseDep': course_dept.abr,
         'courseNum': course.num,
         'courseTitle': course.title,
@@ -90,6 +97,15 @@ def get_course_info(course_abr, course_no, topic_num):
     return course_info, course, is_parent
 
 def get_course_requisites(course):
+    """
+    Gets course requisite information
+
+    Args:
+        course (model instance): course
+
+    Returns:
+        course_requisites (object): contains course requisite information
+    """
     course_requisites = {
         'preReqs': course.pre_reqs,
         'restrictions': course.restrictions
@@ -97,26 +113,50 @@ def get_course_requisites(course):
     return course_requisites
 
 def get_ecis(obj):
+    """
+    Given a course or prof model instance, obtain the average ecis scores over all semesters
+
+    Args:
+        obj (model instance): course or prof instance
+
+    Returns:
+        course_ecis (float): Average course ecis score
+        prof_ecis (float): Average prof ecis score
+    """
     ecis_scores = obj.ecis
     if len(ecis_scores) == 0:
-        eCIS = None
+        course_ecis = None
+        prof_ecis = None
     else:
         total_students = 0
+        course_ecis = 0
+        prof_ecis = 0
         for ecis in ecis_scores:
-            eCIS += ecis.avg * ecis.num_students
+            course_ecis += ecis.course_avg * ecis.num_students
+            prof_ecis += ecis.prof_avg * ecis.num_students
             total_students += ecis.num_students
-        eCIS = round(eCIS / total_students, 1)
-    return eCIS
+        course_ecis = round(course_ecis / total_students, 1)
+        prof_ecis = round(prof_ecis / total_students, 1)
+    return course_ecis, prof_ecis
 
 def get_scheduled_course(scheduled_course):
+    """
+    Obtain information for the scheduled course
+
+    Args:
+        scheduled_course (model instance): scheduled course
+
+    Returns:
+        scheduled_obj (obj): Contains detailed information about the scheduled course
+    """
     prof = scheduled_course.prof
-    prof_name = prof.first_name + " " + prof.last_name
 
     x_listed = []
     for x_course in scheduled_course.cross_listed.courses:
         x_listed.append(x_course.dept.abr + " " + x_course.num)
 
     scheduled_obj = {
+        "id": scheduled_course.id,
         'uniqueNum': scheduled_course.unique_no,
         'days': scheduled_course.days,
         'timeFrom': scheduled_course.time_from,
@@ -124,12 +164,24 @@ def get_scheduled_course(scheduled_course):
         'location': scheduled_course.location,
         'maxEnrollment': scheduled_course.max_enrollment,
         'seatsTaken': scheduled_course.seats_taken,
-        'profName': prof_name,
+        'profId': prof.id,
+        'profFirst': prof.first_name,
+        'profLast': prof.last_name,
         'crossListed': x_listed
     }
     return scheduled_obj
 
 def get_course_schedule(course, is_parent):
+    """
+    Get course schedule information for the current and next semesters
+
+    Args:
+        course (model instance): course
+        is_parent (boolean): signifies whether the course is a parent topic
+
+    Returns:
+        course_schedule (obj): course schedule information for most recent two semesters
+    """
     current_sem = {
         'year': 2020,
         'sem': 6
@@ -155,6 +207,7 @@ def get_course_schedule(course, is_parent):
         elif(scheduled_course.year == future_sem.year and
         scheduled_course.semester == future_sem.sem):
             future_list.append(scheduled_obj)
+
     course_schedule = {
         "currentSem": current_list,
         "futureSem": future_list
@@ -163,6 +216,22 @@ def get_course_schedule(course, is_parent):
     return course_schedule
 
 def get_review_info(review, percentLiked, usefulness, difficulty, workload, logged_in, curr_user):
+    """
+    Get review information for a particular review instance
+
+    Args:
+        review (model instance): review
+        percentLiked (int): percent liked over all reviews
+        usefulness (int): average usefulness over all reviews
+        difficulty (int): average difficulty over all reviews
+        workload (int): average workload over all reviews
+        logged_in (boolean): tells whether user is logged in
+        curr_user (model instance): [description]
+
+    Returns:
+        review_object (object): Object containing detailed information about the review
+    """
+    
     semester = review.semester
     if(semester == 6):
         semester = "Summer"
@@ -182,7 +251,6 @@ def get_review_info(review, percentLiked, usefulness, difficulty, workload, logg
 
     user = review.author
     prof = review.prof_review[0].prof
-    prof_name = prof.first_name + " " + prof.last_name
     user_major = user.major
     profile_pic = user.pic
 
@@ -203,15 +271,17 @@ def get_review_info(review, percentLiked, usefulness, difficulty, workload, logg
                 dislike_pressed = True
 
     review_object = {
-        'key': course_review.id,
+        'id': course_review.id,
         'comments': course_review.comments,
         'approval': course_review.approval,
         'usefulness': course_review.usefulness,
         'difficulty': course_review.difficulty,
         'workload': course_review.workload,
         'userMajor': user_major.name,
-        'profPic': profile_pic.file_name,
-        'profName': prof_name,
+        'profilePic': profile_pic.file_name,
+        'profId': prof.id,
+        'profFirst': prof.first_name,
+        'profLast': prof.last_name,
         'numLiked': num_liked,
         'numDisliked': num_disliked,
         'likePressed': like_pressed,

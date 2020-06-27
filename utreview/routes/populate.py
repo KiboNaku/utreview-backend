@@ -90,7 +90,8 @@ def populate_all(courses_list, profs_list):
             percentLiked = round(percentLiked/len(course_reviews), 2) * 100
         course_object = {
             'id': course.id,
-            'courseNum': dept.abr + " " + course.num,
+            'courseDept': dept.abr,
+            'courseNum': course.num,
             'courseTitle': course.title,
             'approval': percentLiked,
             'numRatings': num_ratings
@@ -110,7 +111,8 @@ def populate_all(courses_list, profs_list):
             percentLiked = round(percentLiked/len(prof_reviews), 2) * 100
         prof_object = {
             'id': prof.id,
-            'profName': prof.first_name + " " + prof.last_name,
+            'firstName': prof.first_name,
+            'lastName': prof.last_name,
             'approval': percentLiked,
             'numRatings': num_ratings
         }
@@ -135,7 +137,8 @@ def append_course(course, courses_list, profs_list, prof_ids):
             percentLiked = round(percentLiked/len(prof_reviews), 2) * 100
         prof_object = {
             'id': prof.id,
-            'profName': prof.first_name + " " + prof.last_name,
+            'firstName': prof.first_name,
+            'lastName': prof.last_name,
             'approval': percentLiked,
             'numRatings': num_ratings
         }
@@ -152,7 +155,8 @@ def append_course(course, courses_list, profs_list, prof_ids):
         percentLiked = round(percentLiked/len(course_reviews), 2) * 100
     course_object = {
         'id': course.id,
-        'courseNum': dept.abr + " " + course.num,
+        'courseDept': dept.abr,
+        'courseNum': course.num,
         'courseTitle': course.title,
         'approval': percentLiked,
         'numRatings': num_ratings
@@ -179,7 +183,8 @@ def append_prof(prof, profs_list, courses_list, course_ids):
             percentLiked = round(percentLiked/len(course_reviews), 2) * 100
         course_object = {
             'id': course.id,
-            'courseNum': dept.abr + " " + course.num,
+            'courseDept': dept.abr,
+            'courseNum': course.num,
             'courseTitle': course.title,
             'approval': percentLiked,
             'numRatings': num_ratings
@@ -198,7 +203,8 @@ def append_prof(prof, profs_list, courses_list, course_ids):
         percentLiked = round(percentLiked/len(prof_reviews), 2) * 100
     prof_object = {
         'id': prof.id,
-        'profName': prof.first_name + " " + prof.last_name,
+        'firstName': prof.first_name,
+        'lastName': prof.last_name,
         'approval': percentLiked,
         'numRatings': num_ratings
     }

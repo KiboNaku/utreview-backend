@@ -18,7 +18,8 @@ def get_course_num():
         dept = course.dept
         results[i] = {
             'id': course.id,
-            'num': dept.abr + " " + course.num,
+            'dept': dept.abr,
+            'num': course.num,
             'title': course.title,
         }
         i = i+1
@@ -52,7 +53,8 @@ def get_profs():
     for prof in profs:
         results[i] = {
             'id': prof.id,
-            'name': prof.first_name + " " + prof.last_name
+            'firstName': prof.first_name,
+            'lastName': prof.last_name
         }
         i = i+1
 
@@ -105,7 +107,8 @@ def review_list():
             },
 
             'professor': {
-                'name': result.prof_review.prof.first_name + " " + result.prof_review.prof.last_name
+                'firstName': result.prof_review.prof.first_name,
+                'lastName': result.prof_review.prof.last_name
             },
 
             'course': {
@@ -113,6 +116,7 @@ def review_list():
                     'abr': result.course_review.course.dept.abr,
                     'name': result.course_review.course.dept.name
                 },
+                'num': result.course_review.course.num,
                 'title': result.course_review.course.title,
             },
 
