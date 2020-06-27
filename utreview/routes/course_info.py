@@ -20,6 +20,13 @@ def course_details():
 
     Returns:
         result(json): jsonified representation of course information
+            "course_info" (object): basic course info
+            "course_rating" (object): course average ratings
+            "course_requisites" (object): course requisites,
+            "course_profs" (list): list of profs that teach the course
+            "course_schedule" (object): course schedule
+            "course_reviews" (list): list of reviews for the course
+            "is_parent" (boolean): shows whether course is a parent topic
     """
 
     course_id = request.get_json()['courseId']
@@ -54,6 +61,20 @@ def get_course_info(course_id):
 
     Returns:
         course_info (object): contains basic course information
+            course_info = {
+                'id' (int): course id
+                'courseDep' (string): course dept abbreviation
+                'courseNum' (string): course number
+                'courseTitle' (string): course title,
+                'courseDes'(string): course description,
+                'topicTitle' (string): topic title
+                'parentTitle' (string): parent topic title,
+                'topicsList' (list): list of topics belonging to parent topic
+                    topic_obj = {
+                        'id' (int): course topic id
+                        'title' (string): course topic title
+                    }
+            }
         course (model instance): course specified by course id
         is_parent (boolean): signifies whether the course is a parent topic
     """
@@ -73,8 +94,11 @@ def get_course_info(course_id):
         topic = course.topic
         topics_list = []
         for course_topic in topic.courses:
-            topic_name = course_topic.dept.abr + " " + course_topic.num
-            topics_list.append(topic_name)
+            topic_obj = {
+                'id': course_topic.id,
+                'title': course_topic.title
+            }
+            topics_list.append(topic_obj)
     else:
         topic_title = course.title
         topic = course.topic
@@ -105,6 +129,10 @@ def get_course_requisites(course):
 
     Returns:
         course_requisites (object): contains course requisite information
+            course_requisites = {
+                'preReqs' (string): course prerequisites
+                'restrictions' (string): course restrictions
+            }
     """
     course_requisites = {
         'preReqs': course.pre_reqs,
