@@ -15,11 +15,12 @@ def get_course_num():
     results = dict.fromkeys((range(len(courses))))
     i = 0
     for course in courses:
-        dept = Dept.query.filter_by(id=course.dept_id).first()
+        dept = course.dept
         results[i] = {
             'id': course.id,
-            'num': dept.abr + " " + course.num,
-            'name': course.name,
+            'dept': dept.abr,
+            'num': course.num,
+            'title': course.title,
         }
         i = i+1
 
@@ -52,7 +53,8 @@ def get_profs():
     for prof in profs:
         results[i] = {
             'id': prof.id,
-            'name': prof.name
+            'firstName': prof.first_name,
+            'lastName': prof.last_name
         }
         i = i+1
 
@@ -60,157 +62,19 @@ def get_profs():
     return result
 
 
-@app.route('/api/get_image', methods=['GET'])
-def get_image():
-    images = Image.query.all()
-    results = dict.fromkeys((range(len(images))))
+@app.route('/api/get_profile_pic', methods=['GET'])
+def get_profile_pic():
+    profile_pics = ProfilePic.query.all()
+    results = dict.fromkeys((range(len(profile_pics))))
     i = 0
-    for image in images:
+    for profile_pic in profile_pics:
         results[i] = {
-            'image': image.file_name
+            'profile_pic': profile_pic.file_name
         }
         i = i+1
 
-    result = jsonify({"images": results})
+    result = jsonify({"profile_pics": results})
     return result
-
-@app.route('/api/course_info', methods=['POST'])
-def course_info():
-    course_name = request.get_json()['courseNum']
-    logged_in = request.get_json()['loggedIn']
-    user_email = request.get_json()['userEmail']
-    if(logged_in):
-        curr_user = User.query.filter_by(email=user_email).first()
-    course_parsed = course_name.split()
-    if(len(course_parsed) == 3):
-        course_abr = course_parsed[0] + " " + course_parsed[1]
-        course_no = course_parsed[2]
-    else:
-        if(len(course_parsed[0]) == 1):
-            course_abr = course_parsed[0] + "  "
-        elif(len(course_parsed[0]) == 2):
-            course_abr = course_parsed[0] + " "
-        else:
-            course_abr = course_parsed[0]
-        course_no = course_parsed[1]
-
-    course_dept = Dept.query.filter_by(abr=course_abr).first()
-    course = Course.query.filter_by(
-        num=course_no, dept_id=course_dept.id).first()
-
-    course_info = {
-        'courseDep': course_dept.abr,
-        'courseNo': course.num,
-        'courseName': course.name,
-        'courseDes': course.description
-    }
-    scores = course.scores
-    if len(scores) == 0:
-        eCIS = None
-    else:
-        eCIS = scores[0].avg
-
-    reviews = course.reviews
-    review_list = []
-    if(len(reviews) == 0):
-        percentLiked = None
-        difficulty = None
-        usefulness = None
-        workload = None
-    else:
-        percentLiked = 0
-        difficulty = 0
-        usefulness = 0
-        workload = 0
-        for i in range(len(reviews)):
-            rating = CourseRating.query.filter_by(
-                review_id=reviews[i].id).first()
-            if(rating.approval):
-                percentLiked += 1
-            difficulty += rating.difficulty
-            usefulness += rating.usefulness
-            workload += rating.workload
-            user = User.query.filter_by(id=reviews[i].user_posted).first()
-            prof = Prof.query.filter_by(id=reviews[i].professor_id).first()
-            user_dept = Dept.query.filter_by(id=user.major_id).first()
-            num_liked = 0
-            num_disliked = 0
-            like_pressed = False
-            dislike_pressed = False
-            for like in reviews[i].users_liked:
-                num_liked += 1
-                if(logged_in):
-                    if(curr_user.id == like.user_id):
-                        like_pressed = True
-
-            for dislike in reviews[i].users_disliked:
-                num_disliked += 1
-                if(logged_in):
-                    if(curr_user.id == dislike.user_id):
-                        dislike_pressed = True
-            review_object = {
-                'key': reviews[i].id,
-                'review': reviews[i].course_review,
-                'liked': rating.approval,
-                'usefulness': rating.usefulness,
-                'difficulty': rating.difficulty,
-                'workload': rating.workload,
-                'userMajor': user_dept.name,
-                'profPic': "https://images.dog.ceo/breeds/pembroke/n02113023_12785.jpg",
-                'profName': prof.name,
-                'numLiked': num_liked,
-                'numDisliked': num_disliked,
-                'likePressed': like_pressed,
-                'dislikePressed': dislike_pressed,
-                'date': reviews[i].date_posted.strftime("%m/%d/%Y")
-            }
-            review_list.append(review_object)
-        percentLiked = round(percentLiked/len(reviews), 2) * 100
-        difficulty = round(difficulty/len(reviews), 1)
-        usefulness = round(usefulness/len(reviews), 1)
-        workload = round(workload/len(reviews), 1)
-    course_rating = {
-        'eCIS': eCIS,
-        'percentLiked': percentLiked,
-        'difficulty': difficulty,
-        'usefulness': usefulness,
-        'workload': workload
-    }
-
-    prof_list = []
-    for pc in course.pc:
-        prof = Prof.query.filter_by(id=pc.prof_id).first()
-        scores = prof.scores
-        if len(scores) == 0:
-            eCIS = None
-        else:
-            eCIS = scores[0].avg
-        reviews = Review.query.filter_by(
-            professor_id=prof.id, course_id=course.id).all()
-        if(len(reviews) == 0):
-            percentLiked = None
-        else:
-            percentLiked = 0
-            for i in range(len(reviews)):
-                rating = ProfessorRating.query.filter_by(
-                    review_id=reviews[i].id).first()
-                if(rating.approval):
-                    percentLiked += 1
-            percentLiked = round(percentLiked/len(reviews), 2) * 100
-        prof_obj = {
-            'name': prof.name,
-            'percentLiked': percentLiked,
-            'eCIS': eCIS
-        }
-        prof_list.append(prof_obj)
-
-    result = jsonify({"course_info": course_info,
-                      "course_rating": course_rating,
-                      "course_profs": prof_list,
-                      "course_reviews": review_list})
-
-    return result
-
 
 @app.route('/api/review_list', methods=['POST'])
 def review_list():
@@ -223,7 +87,7 @@ def review_list():
     if rtype == 'user':
         reviews = User.query.filter_by(email=name[0]).first().reviews
     elif rtype == 'prof':
-        reviews = Prof.query.filter_by(name=name[0]).first().reviews
+        reviews = Prof.query.filter_by(first_name=name[0], last_name=name[1]).first().reviews
     elif rtype == 'course':
         dept_id = Dept.query.filter_by(abr=name[0]).first().id
         reviews = Course.query.filter_by(dept_id=dept_id, num=name[1])
@@ -232,49 +96,50 @@ def review_list():
         {
             'id': result.id,
             'date_posted': result.date_posted,
-            'course_review': result.course_review,
-            'professor_review': result.professor_review,
+            'course_comments': result.course_review.comments,
+            'professor_comments': result.prof_review.comments,
 
             'user_posted': {
                 'major': {
-                    'abr': result.user_posted.major.abr,
-                    'name': result.user_posted.major.name
+                    'abr': result.author.major.abr,
+                    'name': result.author.major.name
                 }
             },
 
             'professor': {
-                'name': result.prof.name
+                'firstName': result.prof_review.prof.first_name,
+                'lastName': result.prof_review.prof.last_name
             },
 
             'course': {
                 'dept': {
-                    'abr': result.course.dept.abr,
-                    'name': result.course.dept.name
+                    'abr': result.course_review.course.dept.abr,
+                    'name': result.course_review.course.dept.name
                 },
-                'name': result.course.name,
+                'num': result.course_review.course.num,
+                'title': result.course_review.course.title,
             },
 
             'course_rating': {
-                'approval': result.course_rating.approval,
-                'usefulness': result.course_rating.usefulness,
-                'difficulty': result.course_rating.difficulty,
-                'workload': result.course_rating.workload,
+                'approval': result.course_review.approval,
+                'usefulness': result.course_review.usefulness,
+                'difficulty': result.course_review.difficulty,
+                'workload': result.course_review.workload,
             },
 
             'professor_rating': {
-                'approval': result.course_rating.approval,
-                'clear': result.course_rating.clear,
-                'engaging': result.course_rating.engaging,
-                'grading': result.course_rating.grading,
+                'approval': result.prof_review.approval,
+                'clear': result.prof_review.clear,
+                'engaging': result.prof_review.engaging,
+                'grading': result.prof_review.grading,
             },
         }
         
-        for result in results
+        for result in reviews
     ]
 
     result = jsonify({"reviews": results})
     return result
-
 
 
 @app.route('/api/update_info', methods=['POST'])
@@ -283,17 +148,17 @@ def update_info():
     last_name = request.get_json()['last_name']
     email = request.get_json()['email']
     major = request.get_json()['major']
-    password = bcrypt.generate_password_hash(
+    password_hash = bcrypt.generate_password_hash(
         request.get_json()['password']).decode('utf-8')
     dept = Dept.query.filter_by(name=major).first()
-    image_name = request.get_json()['image_file']
-    image_file = Image.query.filter_by(file_name=image_name).first()
+    profile_name = request.get_json()['profile_pic']
+    profile_pic = ProfilePic.query.filter_by(file_name=profile_name).first()
 
     user = User.query.filter_by(email=email).first()
     user.first_name = first_name
     user.last_name = last_name
-    user.password = password
-    user.image_id = image_file.id
+    user.password_hash = password_hash
+    user.profile_pic_id = profile_pic.id
     user.major_id = dept.id
 
     db.session.commit()
@@ -303,7 +168,7 @@ def update_info():
         'last_name': user.last_name,
         'email': user.email,
         'major': dept.name,
-        'image_file': image_file.file_name
+        'profile_pic': profile_pic.file_name
     })
     result = access_token
 
