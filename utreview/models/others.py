@@ -6,8 +6,8 @@ class Dept(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
 
-    college = db.Column(db.String(5), nullable=False)
-    dept = db.Column(db.String(4), nullable=False)
+    college = db.Column(db.String(5), default='')
+    dept = db.Column(db.String(4), default='')
     abr = db.Column(db.String(3), nullable=False)
     name = db.Column(db.String(75), nullable=False)
 

@@ -3,52 +3,50 @@ from urllib.request import urlopen, http
 from bs4 import BeautifulSoup as BSoup
 
 failed_requests = []
-from ftplib import FTP
+# from ftplib import FTP
 
-# os.chdir("./ftp_files")
+# # os.chdir("./ftp_files")
 
-# ftp = FTP('reg-it.austin.utexas.edu')
-# ftp.login(user='anonymous')
+# # ftp = FTP('reg-it.austin.utexas.edu')
+# # ftp.login(user='anonymous')
 
-filename = 'Current_Semester_Report'
+# filename = 'Current_Semester_Report'
 
-# localfile = open(filename, 'wb')
-# ftp.retrbinary('RETR ' + filename, localfile.write, 1024)
+# # localfile = open(filename, 'wb')
+# # ftp.retrbinary('RETR ' + filename, localfile.write, 1024)
 
-# ftp.quit()
-# localfile.close()
+# # ftp.quit()
+# # localfile.close()
 
-with open(filename) as f:
-    lines = f.readlines()
+# with open(filename) as f:
+#     lines = f.readlines()
 
-# print(repr(lines[32]))
+# # print(repr(lines[32]))
 
-parse_data = False
+# parse_data = False
 
-categories = []
-courses = []
+# categories = []
+# courses = []
 
-for line in lines:
-
-
-    if (not parse_data) and ("year" in line.lower()):
-       
-        parse_data = True
-
-        categories = line.lower().split("\t")
-        categories = [category.strip() for category in categories if len(category.strip()) > 0]
-        
-        continue
-
-    if parse_data and len(line.strip()) > 0:
-
-        data = line.lower().split("\t")
-        data = [d.strip() for d in data]
-
-        course = {categories[i]: data[i] for i in range(len(categories))}
-        courses.append(course)
+# for line in lines:
 
 
+#     if (not parse_data) and ("year" in line.lower()):
+
+#         parse_data = True
+
+#         categories = line.lower().split("\t")
+#         categories = [category.strip() for category in categories if len(category.strip()) > 0]
+
+#         continue
+
+#     if parse_data and len(line.strip()) > 0:
+
+#         data = line.lower().split("\t")
+#         data = [d.strip() for d in data]
+
+#         course = {categories[i]: data[i] for i in range(len(categories))}
+#         courses.append(course)
 
 
 def fetch_html(url, attempt=1):
@@ -216,7 +214,8 @@ def fetch_ecis_scores(url, scores=[], c_mode=True):
     soup = BSoup(html, "html.parser")
 
     ecis_links = soup.findAll("tr")[1::]
-    ecis_links = [(ecis_link.find("a")["href"], ecis_link.findAll("td")[1].text) for ecis_link in ecis_links]
+    ecis_links = [(ecis_link.find("a")["href"], ecis_link.findAll(
+        "td")[1].text) for ecis_link in ecis_links]
 
     for ecis_link, name in ecis_links:
 
@@ -225,9 +224,11 @@ def fetch_ecis_scores(url, scores=[], c_mode=True):
 
         if ecis_html is not None:
             ecis_soup = BSoup(ecis_html, "html.parser")
-            ecis_info = ecis_soup.findAll("tr")[2 if c_mode else 1].findAll("td")
+            ecis_info = ecis_soup.findAll(
+                "tr")[2 if c_mode else 1].findAll("td")
 
-            score = (name[0:3:], name[3::], int(ecis_info[1].text), float(ecis_info[2].text))
+            score = (name[0:3:], name[3::], int(
+                ecis_info[1].text), float(ecis_info[2].text))
             scores.append(score)
 
     next_page = soup.find("div", {"class": "page-forward"})
@@ -236,7 +237,9 @@ def fetch_ecis_scores(url, scores=[], c_mode=True):
         return scores
 
     np_info = next_page.findAll("input", {"type": "hidden"})
-    np_link = "http://utdirect.utexas.edu/ctl/ecis/results/index.WBX?" + "&".join(i["name"].replace(" ", "+") + "=" + i["value"].replace(" ", "+") for i in np_info)
+    np_link = "http://utdirect.utexas.edu/ctl/ecis/results/index.WBX?" + \
+        "&".join(i["name"].replace(" ", "+") + "=" +
+                 i["value"].replace(" ", "+") for i in np_info)
     return fetch_ecis_scores(np_link, scores=scores)
 
 
@@ -286,4 +289,3 @@ def fetch_ecis_scores(url, scores=[], c_mode=True):
 #     print("-----------Failed URLS---------")
 #     for url in failed_requests:
 #         print(url)
-
