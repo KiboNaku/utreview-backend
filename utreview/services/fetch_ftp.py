@@ -10,7 +10,11 @@ __filename_future = 'Future_Semester_Report'
 
 
 def fetch_ftp_files(out_dir):
+	"""Downloads ftp files from UT Austin FTP server
 
+	Args:
+		out_dir (str): directory to download files to
+	"""
 	__url = 'reg-it.austin.utexas.edu'
 	__username = 'anonymous'
 
@@ -29,13 +33,18 @@ def fetch_ftp_files(out_dir):
 
 
 def parse_ftp(in_dir):
+	"""Parse FTP files from the UT Austin FTP server
+
+	Args:
+		in_dir (str): directory containinig the ftp files
+	"""
 
 	for filename in (__filename_current, __filename_next, __filename_future):
 
-		filename = join(in_dir, filename)
+		filepath = join(in_dir, filename)
 
-		if not isfile(filename):
-			print(f'FTP: {filename} does not exist')
+		if not isfile(filepath):
+			print(f'FTP: {filename} does not exist in {in_dir}')
 			continue
 
 		print(f'FTP: parsing {filename}')
