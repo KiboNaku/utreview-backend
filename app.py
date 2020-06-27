@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     app.run(debug=True)
 
-    from utreview.services.fetch_ftp import fetch_ftp_files
-    fetch_ftp_files('input_data')
+    # from utreview.services.fetch_ftp import fetch_ftp_files
+    # fetch_ftp_files('input_data')
 
     # app.run(debug=True)
