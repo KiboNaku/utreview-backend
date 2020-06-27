@@ -78,16 +78,134 @@ def populate_all(courses_list, profs_list):
     courses = Course.query.all()
     for course in courses:
         dept = course.dept
+        course_reviews = course.reviews
+        num_ratings = len(course_reviews)
+        if(len(course_reviews) == 0):
+            percentLiked = None
+        else:
+            percentLiked = 0
+            for course_review in course_reviews:
+                if(course_review.approval):
+                    percentLiked += 1
+            percentLiked = round(percentLiked/len(course_reviews), 2) * 100
         course_object = {
-            'courseNum': dept.abr + " " + course.num,
-            'courseName': course.name,
-            'deptName': dept.name,
+            'id': course.id,
+            'courseDept': dept.abr,
+            'courseNum': course.num,
+            'courseTitle': course.title,
+            'approval': percentLiked,
+            'numRatings': num_ratings
         }
         courses_list.append(course_object)
     profs = Prof.query.all()
     for prof in profs:
+        prof_reviews = prof.reviews
+        num_ratings = len(prof_reviews)
+        if(len(prof_reviews) == 0):
+            percentLiked = None
+        else:
+            percentLiked = 0
+            for prof_review in prof_reviews:
+                if(prof_review.approval):
+                    percentLiked += 1
+            percentLiked = round(percentLiked/len(prof_reviews), 2) * 100
         prof_object = {
             'id': prof.id,
-            'profName': prof.name,
+            'firstName': prof.first_name,
+            'lastName': prof.last_name,
+            'approval': percentLiked,
+            'numRatings': num_ratings
         }
         profs_list.append(prof_object)
+
+def append_course(course, courses_list, profs_list, prof_ids):
+    dept = course.dept
+    for course_pc in course.prof_course:
+        prof = course_pc.prof
+        if(prof.id in prof_ids):
+            continue
+        prof_ids.append(prof.id)
+        prof_reviews = prof.reviews
+        num_ratings = len(prof_reviews)
+        if(len(prof_reviews) == 0):
+            percentLiked = None
+        else:
+            percentLiked = 0
+            for prof_review in prof_reviews:
+                if(prof_review.approval):
+                    percentLiked += 1
+            percentLiked = round(percentLiked/len(prof_reviews), 2) * 100
+        prof_object = {
+            'id': prof.id,
+            'firstName': prof.first_name,
+            'lastName': prof.last_name,
+            'approval': percentLiked,
+            'numRatings': num_ratings
+        }
+        profs_list.append(prof_object)
+    course_reviews = course.reviews
+    num_ratings = len(course_reviews)
+    if(len(course_reviews) == 0):
+        percentLiked = None
+    else:
+        percentLiked = 0
+        for course_review in course_reviews:
+            if(course_review.approval):
+                percentLiked += 1
+        percentLiked = round(percentLiked/len(course_reviews), 2) * 100
+    course_object = {
+        'id': course.id,
+        'courseDept': dept.abr,
+        'courseNum': course.num,
+        'courseTitle': course.title,
+        'approval': percentLiked,
+        'numRatings': num_ratings
+    }
+    courses_list.append(course_object)
+
+
+def append_prof(prof, profs_list, courses_list, course_ids):
+    for prof_pc in prof.prof_course:
+        course = prof_pc.course
+        dept = course.dept
+        if(course.id in course_ids):
+            continue
+        course_ids.append(course_ids)
+        course_reviews = course.reviews
+        num_ratings = len(course_reviews)
+        if(len(course_reviews) == 0):
+            percentLiked = None
+        else:
+            percentLiked = 0
+            for course_review in course_reviews:
+                if(course_review.approval):
+                    percentLiked += 1
+            percentLiked = round(percentLiked/len(course_reviews), 2) * 100
+        course_object = {
+            'id': course.id,
+            'courseDept': dept.abr,
+            'courseNum': course.num,
+            'courseTitle': course.title,
+            'approval': percentLiked,
+            'numRatings': num_ratings
+        }
+        courses_list.append(course_object)
+
+    prof_reviews = prof.reviews
+    num_ratings = len(prof_reviews)
+    if(len(prof_reviews) == 0):
+        percentLiked = None
+    else:
+        percentLiked = 0
+        for prof_review in prof_reviews:
+            if(prof_review.approval):
+                percentLiked += 1
+        percentLiked = round(percentLiked/len(prof_reviews), 2) * 100
+    prof_object = {
+        'id': prof.id,
+        'firstName': prof.first_name,
+        'lastName': prof.last_name,
+        'approval': percentLiked,
+        'numRatings': num_ratings
+    }
+    profs_list.append(prof_object)

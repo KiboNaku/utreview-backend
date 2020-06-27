@@ -16,17 +16,19 @@ def register():
     last_name = request.get_json()['last_name']
     email = request.get_json()['email']
     major = request.get_json()['major']
-    password = bcrypt.generate_password_hash(
+    password_hash = bcrypt.generate_password_hash(
         request.get_json()['password']).decode('utf-8')
     dept = Dept.query.filter_by(name=major).first()
-    image_name = request.get_json()['image_file']
-    image_file = Image.query.filter_by(file_name=image_name).first()
+    profile_name = request.get_json()['profile_pic']
+    profile_pic = ProfilePic.query.filter_by(file_name=profile_name).first()
 
     user = User.query.filter_by(email=email).first()
     if user:
         result = jsonify({"error": "An account already exists for this email"})
     else:
-        user = User(first_name=first_name, last_name=last_name, email=email, password=password, image_id=image_file.id, verified=False, major_id=dept.id)
+        user = User(first_name=first_name, last_name=last_name, 
+            email=email, password_hash=password_hash, profile_pic_id=profile_pic.id, 
+            verified=False, major_id=dept.id)
         db.session.add(user)
         db.session.commit()
 
@@ -50,7 +52,8 @@ def register():
             'last_name': user.last_name,
             'email': user.email,
             'major': dept.name,
-            'image_file': image_file.file_name
+            'profile_pic': profile_pic.file_name,
+            'verified': user.verified
         })
         result = access_token
 
@@ -91,13 +94,13 @@ def login():
 
     if user and bcrypt.check_password_hash(user.password, password):
         major = Dept.query.filter_by(id=user.major_id).first()
-        image = Image.query.filter_by(id=user.image_id).first()
+        profile_pic = ProfilePic.query.filter_by(id=user.profile_pic_id).first()
         access_token = create_access_token(identity={
             'first_name': user.first_name,
             'last_name': user.last_name,
             'email': user.email,
             'major': major.name,
-            'profile_pic': image.file_name
+            'profile_pic': profile_pic.file_name
         })
         result = access_token
     else:

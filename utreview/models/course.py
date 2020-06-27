@@ -33,7 +33,7 @@ class Course(db.Model):
     topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'), nullable=True)
     dept_id = db.Column(db.Integer, db.ForeignKey('dept.id'), nullable=False)
     
-    ecis = db.relationship("EcisCourseScore", backref="course", lazy=True)
+    ecis = db.relationship("EcisScore", backref="course", lazy=True)
     reviews = db.relationship('CourseReview', backref='course', lazy=True)
     scheduled = db.relationship('ScheduledCourse', backref='course', lazy=True)
     prof_course = db.relationship('ProfCourse', backref="course", lazy=True)
