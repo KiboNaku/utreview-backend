@@ -4,9 +4,9 @@ from os.path import join, isfile
 from ftplib import FTP
 
 
-__filename_current = 'Current_Semester_Report'
-__filename_next = 'Next_Semester_Report'
-__filename_future = 'Future_Semester_Report'
+filename_current = 'Current_Semester_Report'
+filename_next = 'Next_Semester_Report'
+filename_future = 'Future_Semester_Report'
 
 
 def fetch_ftp_files(out_dir):
@@ -22,7 +22,7 @@ def fetch_ftp_files(out_dir):
 	ftp.login(user=__username)
 
 	chdir(out_dir)
-	for filename in (__filename_current, __filename_next, __filename_future):
+	for filename in (filename_current, filename_next, filename_future):
 
 		print(f'FTP: downloading {filename}')
 		localfile = open(filename, 'wb')
@@ -39,39 +39,56 @@ def parse_ftp(in_dir):
 		in_dir (str): directory containinig the ftp files
 	"""
 
-	for filename in (__filename_current, __filename_next, __filename_future):
+	file_dict = {}
+
+	for filename in (filename_current, filename_next, filename_future):
 
 		filepath = join(in_dir, filename)
-
-		if not isfile(filepath):
-			print(f'FTP: {filename} does not exist in {in_dir}')
-			continue
-
-		print(f'FTP: parsing {filename}')
-		with open(filename) as f:
-			lines = f.readlines()
-
-		parse_data = False
-
-		categories = []
 		courses = []
 
-		for line in lines:
+		if isfile(filepath):
 
+			print(f'FTP: parsing {filename}')
+			with open(filepath) as f:
 
-			if (not parse_data) and ("year" in line.lower()):
-			
-				parse_data = True
-
-				categories = line.lower().split("\t")
-				categories = [category.strip() for category in categories if len(category.strip()) > 0]
+				lines = f.readlines()
+				categories, lines = __parse_categories(lines)
 				
-				continue
+				if categories is not None:
 
-			if parse_data and len(line.strip()) > 0:
+					for line in lines:
 
-				data = line.lower().split("\t")
-				data = [d.strip() for d in data]
+						line = line.lower()
+						data = line.split("\t")
+						data = [d.strip() for d in data]
 
-				course = {categories[i]: data[i] for i in range(len(categories))}
-				courses.append(course)
+						if len(line) > 0 and len(data) >= len(categories):
+
+							course = {categories[i]: data[i] for i in range(len(categories))}
+							courses.append(course)
+		else:
+			print(f'FTP: {filename} does not exist in {in_dir}')
+
+		file_dict[filename] = courses
+	
+	return file_dict
+
+
+def __parse_categories(ftp_lines):
+
+	line_num = 0
+
+	for line in ftp_lines:
+
+		line_num += 1
+
+		line = line.lower()
+
+		if "year" in line.lower():
+
+			categories = line.lower().split("\t")
+			categories = [category.strip() for category in categories if len(category.strip()) > 0]
+			
+			return categories, ftp_lines[line_num:]
+	
+	return None, ftp_lines

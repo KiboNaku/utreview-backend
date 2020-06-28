@@ -24,4 +24,5 @@ mysql_practice/mysql_practice.py
 .env
 cloud_sql_proxy.exe
 *.cfg
+*.xlsx
 input_data
