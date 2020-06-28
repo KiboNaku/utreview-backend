@@ -12,13 +12,17 @@ from utreview.services import *
 
 if __name__ == '__main__':
 
+
     # populate_depts()
 
     fetch_courses('Data Requests.xlsx', 0)
 
     app.run(debug=True)
 
-    # from utreview.services.fetch_ftp import fetch_ftp_files
+
+    from utreview.services.fetch_ftp import fetch_ftp_files, parse_ftp
     # fetch_ftp_files('input_data')
+    print(parse_ftp('input_data'))
+
 
     # app.run(debug=True)
