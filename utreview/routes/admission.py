@@ -12,6 +12,28 @@ s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 @app.route('/api/signup', methods=['POST'])
 def register():
+    """
+    Processes a user's signup and adds them to the database
+
+    Args:
+        first_name (string): user first name
+        last_name (string): user last name
+        email (string): user utexas email
+        major (string): user's major
+        password (string): user's plaintext password
+        profile_pic (string): file name of profile pic
+
+    Returns:
+        result (access token): contains securely stored information about the user 
+        that can be accessed in the front end
+            'first_name' (string): user first name
+            'last_name' (string): user last name
+            'email' (string): user utexas email
+            'major' (string): user's major
+            'profile_pic' (string): file name of profile pic
+            'verified' (boolean): whether the user has verified their account
+        returns error if account already exists for the specified email
+    """
     first_name = request.get_json()['first_name']
     last_name = request.get_json()['last_name']
     email = request.get_json()['email']
@@ -56,7 +78,6 @@ def register():
             'verified': user.verified
         })
         result = access_token
-
     return result
 
 
@@ -87,6 +108,23 @@ def confirm_email():
 
 @app.route('/api/login', methods=['POST'])
 def login():
+    """
+    Processes a user's login
+
+    Args:
+        email (string): user utexas email
+        password (string): user plaintext password
+
+    Returns:
+        result (access token): contains securely stored information about the user 
+        that can be accessed in the front end
+            'first_name' (string): user first name
+            'last_name' (string): user last name
+            'email' (string): user utexas email
+            'major' (string): user's major
+            'profile_pic' (string): file name of profile pic
+        returns error if invalid username and password combination
+    """
     email = request.get_json()['email']
     password = request.get_json()['password']
 
