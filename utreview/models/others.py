@@ -42,8 +42,8 @@ class ScheduledCourse(db.Model):
     session = db.Column(db.String(1), nullable=True)
 
     days = db.Column(db.String(10))
-    time_from = db.Column(db.Integer)
-    time_to = db.Column(db.Integer)
+    time_from = db.Column(db.String(8))
+    time_to = db.Column(db.String(8))
     location = db.Column(db.String(20))
     max_enrollement = db.Column(db.Integer)
     seats_taken = db.Column(db.Integer)

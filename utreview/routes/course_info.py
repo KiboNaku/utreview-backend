@@ -146,7 +146,7 @@ def get_ecis(obj):
 
     Args:
         obj (model instance): course or prof instance
-
+        
     Returns:
         course_ecis (float): Average course ecis score
         prof_ecis (float): Average prof ecis score
@@ -176,12 +176,40 @@ def get_scheduled_course(scheduled_course):
 
     Returns:
         scheduled_obj (obj): Contains detailed information about the scheduled course
+            scheduled_obj = {
+                "id" (int): scheduled id,
+                'uniqueNum' (int): scheduled course unique number
+                'days' (string): days of the week course is taught
+                'timeFrom' (string): starting time
+                'timeTo' (string): ending time
+                'location' (string): building and room number
+                'maxEnrollment' (int): max enrollment
+                'seatsTaken' (int): seats taken
+                'profId' (int): professor id
+                'profFirst' (string): professor first name
+                'profLast' (string): professor last name
+                'semester' (int): integer representation of semester
+                'year' (int): year
+                'crossListed' (list): list of cross listed courses
+                    x_listed_obj = {
+                        'id' (int): course id
+                        'dept' (string): course deptartment abbreviation
+                        'num' (string): course num
+                        'title' (string): course title
+                    }
+            }
     """
     prof = scheduled_course.prof
 
     x_listed = []
     for x_course in scheduled_course.cross_listed.courses:
-        x_listed.append(x_course.dept.abr + " " + x_course.num)
+        x_listed_obj = {
+            'id': x_course.id,
+            'dept': x_course.dept.abr,
+            'num': x_course.num,
+            'title': x_course.title
+        }
+        x_listed.append(x_listed_obj)
 
     scheduled_obj = {
         "id": scheduled_course.id,
@@ -195,7 +223,9 @@ def get_scheduled_course(scheduled_course):
         'profId': prof.id,
         'profFirst': prof.first_name,
         'profLast': prof.last_name,
-        'crossListed': x_listed
+        'crossListed': x_listed,
+        'semester': scheduled_course.semester.semester,
+        'year': scheduled_course.semester.year
     }
     return scheduled_obj
 
@@ -209,6 +239,10 @@ def get_course_schedule(course, is_parent):
 
     Returns:
         course_schedule (obj): course schedule information for most recent two semesters
+        course_schedule = {
+            "currentSem" (list): list of scheduled courses for the current semester
+            "futureSem" (list): list of scheduled courses for the future semester
+        }
     """
     current_sem = {
         'year': 2020,
@@ -229,11 +263,11 @@ def get_course_schedule(course, is_parent):
                 courses_scheduled.append(scheduled)
     for scheduled_course in courses_scheduled:
         scheduled_obj = get_scheduled_course(scheduled_course)
-        if(scheduled_course.year == current_sem.year and
-        scheduled_course.semester == current_sem.sem):
+        if(scheduled_course.semester.year == current_sem.year and
+        scheduled_course.semester.semester == current_sem.sem):
             current_list.append(scheduled_obj)
-        elif(scheduled_course.year == future_sem.year and
-        scheduled_course.semester == future_sem.sem):
+        elif(scheduled_course.semester.year == future_sem.year and
+        scheduled_course.semester.semester == future_sem.sem):
             future_list.append(scheduled_obj)
 
     course_schedule = {
@@ -254,13 +288,33 @@ def get_review_info(review, percentLiked, usefulness, difficulty, workload, logg
         difficulty (int): average difficulty over all reviews
         workload (int): average workload over all reviews
         logged_in (boolean): tells whether user is logged in
-        curr_user (model instance): [description]
+        curr_user (model instance): currently logged in user
 
     Returns:
         review_object (object): Object containing detailed information about the review
+            review_object = {
+            'id' (int): review id
+            'comments (string)': comments on the course
+            'approval' (boolean): whether the user liked or disliked the course
+            'usefulness' (int): usefulness rating
+            'difficulty' (int): difficulty rating
+            'workload' (int): workload rating
+            'userMajor' (string): author's major
+            'profilePic' (string): author's profile picture
+            'profId' (int): prof id
+            'profFirst' (string): prof first name
+            'profLast' (string): prof last name
+            'numLiked' (int): number of likes the review has
+            'numDisliked' (int): number of dislikes the review has
+            'likePressed' (boolean): whether the current user liked the review
+            'dislikePressed' (boolean): whether the current user disliked the review
+            'date' (string): date the review was posted converted to string format: ("%Y-%m-%d"),
+            'year' (int): year user took the course
+            'semester' (string): string representation of semester
+        }
     """
     
-    semester = review.semester
+    semester = review.semester.semester
     if(semester == 6):
         semester = "Summer"
     elif(semester == 9):
@@ -321,7 +375,28 @@ def get_review_info(review, percentLiked, usefulness, difficulty, workload, logg
     return review_object
 
 def get_course_reviews(course, logged_in, curr_user, is_parent):
-    ecis_score = get_ecis(course)
+    """
+    Get information for all reviews of the course
+
+    Args:
+        course (model instance): course
+        logged_in (boolean): tells whether user is logged in
+        curr_user (model instance): currently logged in user
+        is_parent (boolean): whether course is a parent topic
+
+    Returns:
+        course_rating (object): average rating for the course in all categories
+            course_rating = {
+                'eCIS' (float): average course ecis score over all semesters
+                'percentLiked' (float): percentage that liked the course
+                'difficulty' (float): average difficulty
+                'usefulness' (float): average usefulness
+                'workload' (float): average workload
+                'numRatings' (int): number of ratings
+            }
+        review_list (list): list of all reviews for the course
+    """
+    ecis_course_score, ecis_prof_score = get_ecis(course)
     course_reviews = course.reviews
     if(is_parent):
         topic = course.topic
@@ -350,7 +425,7 @@ def get_course_reviews(course, logged_in, curr_user, is_parent):
         workload = round(workload/len(course_reviews), 1)
     numRatings = len(course_reviews)
     course_rating = {
-        'eCIS': ecis_score,
+        'eCIS': ecis_course_score,
         'percentLiked': percentLiked,
         'difficulty': difficulty,
         'usefulness': usefulness,
@@ -360,6 +435,26 @@ def get_course_reviews(course, logged_in, curr_user, is_parent):
     return course_rating, review_list
 
 def get_course_profs(course, is_parent):
+    """
+    Gets information for all profs that teach the course
+
+    Args:
+        course (model instance): course
+        is_parent (boolean): whether course is a parent topic
+
+    Returns:
+        prof_list (list): list of all professors that teach the course
+            prof_obj = {
+                'id' (int): prof id
+                'firstName' (string): prof first name
+                'lastName' (string): prof last name,
+                'percentLiked' (int): percentage that liked the prof for the course
+                'clear' (float): average clear rating
+                'engaging' (float): average engaging rating
+                'grading' (float): average grading rating
+                'eCIS' (float): ecis prof score
+            }
+    """
     prof_list = []
     course_prof = course.prof_course
     if(is_parent):
@@ -369,8 +464,7 @@ def get_course_profs(course, is_parent):
                 course_prof.append(prof_course)
     for prof_course in course_prof:
         prof = prof_course.prof
-        prof_name = prof.first_name + " " + prof.last_name
-        ecis_score = get_ecis(prof)
+        ecis_course_score, ecis_prof_score = get_ecis(prof)
         prof_reviews = prof.reviews
         course_reviews = course.reviews
         review_ids = [course_review.review_id for course_review in course_reviews]
@@ -400,12 +494,14 @@ def get_course_profs(course, is_parent):
             engaging = round(engaging/len(reviews), 1)
             grading = round(grading/len(reviews), 1)
         prof_obj = {
-            'name': prof_name,
+            'id': prof.id,
+            'firstName': prof.first_name,
+            'lastName': prof.last_name,
             'percentLiked': percentLiked,
             'clear': clear,
             'engaging': engaging,
             'grading': grading,
-            'eCIS': ecis_score
+            'eCIS': ecis_prof_score
         }
         prof_list.append(prof_obj)
     
