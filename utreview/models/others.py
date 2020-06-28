@@ -10,7 +10,7 @@ class Semester(db.Model):
     semester = db.Column(db.Integer, nullable=False)
 
     ecis_scores = db.relationship("EcisScore", backref="semester", lazy=True)
-    reviews = db.relationship("Reviews", backref="semester", lazy=True)
+    reviews = db.relationship("Review", backref="semester", lazy=True)
     scheduled_courses = db.relationship("ScheduledCourse", backref="semester", lazy=True)
     prof_course_sem = db.relationship('ProfCourseSemester', backref="semester", lazy=True)
 

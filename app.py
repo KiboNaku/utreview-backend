@@ -14,11 +14,7 @@ if __name__ == '__main__':
 
     # populate_depts()
 
-    courses_summer = import_file('Data Requests.xlsx', 0)
-    courses_fall = import_file('Data Requests.xlsx', 1)
-    courses_spring = import_file('Data Requests.xlsx', 2)
-
-    fetch_courses(courses_summer, Topic.query.all())
+    fetch_courses('Data Requests.xlsx', 0)
 
     app.run(debug=True)
 
