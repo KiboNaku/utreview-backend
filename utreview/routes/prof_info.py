@@ -9,6 +9,43 @@ from whoosh.fields import *
 from whoosh.qparser import QueryParser
 import time
 
+@app.route('api/prof_id', methods=['POST'])
+def prof_id():
+    """
+    Takes a prof pathname and parses it to check if it is a valid prof 
+
+    Args:
+        profString (string): prof pathname
+
+    Returns:
+        result (json): returns the prof id if successful, returns an error if failed
+    """
+    prof_string = request.get_json()['profString']
+    prof_parsed = prof_string.split("_")
+    invalid_input = False
+    if(len(prof_parsed) == 2):
+        first_name = prof_parsed[0]
+        last_name = prof_parsed[1]
+        topic_num = -1
+    else:
+        invalid_input = True
+
+    prof_found = False
+    prof_id = None
+    if(not invalid_input):
+        profs = Prof.query.all()
+        for prof in profs:
+            prof_first = prof.first_name.lower().replace(" ", "")
+            prof_last = prof.last_name.lower().replace(" ", "")
+            if(first_name == prof_first and last_name == prof_last):
+                prof_found = True
+                prof_id = prof.id
+    if(prof_found):
+        result = jsonify({"profId": prof_id})
+    else:
+        result = jsonify({"error": "No prof was found"})
+    return result
+
 @app.route('/api/prof_details', methods=['POST'])
 def prof_details():
     """
@@ -28,7 +65,7 @@ def prof_details():
                     "lastName" (string): prof last name
                 }
             "prof_rating" (object): prof average ratings
-            "prof_profs" (list): list of courses taught by the prof
+            "prof_courses" (list): list of courses taught by the prof
             "prof_schedule" (object): prof schedule
             "prof_reviews" (list): list of reviews for the prof
     """
@@ -186,6 +223,7 @@ def get_review_info(review, percentLiked, clear, engaging, grading, logged_in, c
             'courseId' (int): course id
             'courseDept' (string): course dept abr
             'courseNum' (string): course num
+            'courseTopic' (int): course topic num
             'numLiked' (int): number of likes the review has
             'numDisliked' (int): number of dislikes the review has
             'likePressed' (boolean): whether the current user liked the review
@@ -245,6 +283,7 @@ def get_review_info(review, percentLiked, clear, engaging, grading, logged_in, c
         'courseId': course.id,
         'courseDept': course.dept.abr,
         'courseNum': course.num,
+        'courseTopic': course.topic_num,
         'numLiked': num_liked,
         'numDisliked': num_disliked,
         'likePressed': like_pressed,
@@ -322,6 +361,7 @@ def get_prof_courses(prof):
                 'id' (int): course id
                 'courseDept' (string): course dept abr
                 'courseNum' (string): course num
+                'topicNum' (int): topic number
                 'percentLiked' (int): percentage that liked the course for the prof
                 'difficulty' (float): average difficulty rating
                 'usefulness' (float): average usefulness rating
@@ -366,6 +406,7 @@ def get_prof_courses(prof):
             'id': course.id,
             'courseDept': course.dept.abr,
             'courseNum': course.num,
+            'topicNum': course.topic_num,
             'percentLiked': percentLiked,
             'difficulty': difficulty,
             'usefulness': usefulness,

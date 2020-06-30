@@ -26,7 +26,8 @@ def populate_results():
                         'id' (int): course id
                         'courseDept' (string): dept abr
                         'courseNum' (string): course num
-                        'courseTitle' (string): course title,
+                        'courseTitle' (string): course title
+                        'courseTopic' (int): course topic number
                         'approval' (int): percentage who liked the course
                         'eCIS' (float): average ecis score of course
                         'numRatings' (int): number of ratings
@@ -132,6 +133,7 @@ def populate_all(courses_list, profs_list):
             'courseDept': dept.abr,
             'courseNum': course.num,
             'courseTitle': course.title,
+            'courseTopic': course.topic_num,
             'approval': percentLiked,
             'eCIS': course_ecis,
             'numRatings': num_ratings
@@ -213,6 +215,7 @@ def append_course(course, courses_list, profs_list, prof_ids):
         'courseDept': dept.abr,
         'courseNum': course.num,
         'courseTitle': course.title,
+        'courseTopic': course.topic_num,
         'approval': percentLiked,
         'eCIS': course_ecis,
         'numRatings': num_ratings
@@ -253,6 +256,7 @@ def append_prof(prof, profs_list, courses_list, course_ids):
             'courseDept': dept.abr,
             'courseNum': course.num,
             'courseTitle': course.title,
+            'courseTopic': course.topic_num,
             'approval': percentLiked,
             'eCIS': course_ecis,
             'numRatings': num_ratings

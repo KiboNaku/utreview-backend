@@ -8,6 +8,49 @@ from whoosh.fields import *
 from whoosh.qparser import QueryParser
 import time
 
+@app.route('api/course_id', methods=['POST'])
+def course_id():
+    """
+    Takes a course pathname and parses it to check if it is a valid course 
+
+    Args:
+        courseString (string): course pathname
+
+    Returns:
+        result (json): returns the course id if successful, returns an error if failed
+    """
+    course_string = request.get_json()['courseString']
+    course_parsed = course_string.split("_")
+    invalid_input = False
+    if(len(course_parsed) == 2):
+        course_dept = course_parsed[0]
+        course_num = course_parsed[1]
+        topic_num = -1
+    elif(len(course_parsed) == 3):
+        course_dept = course_parsed[0]
+        course_num = course_parsed[1]
+        if(not course_parsed[2].isnumeric()):
+            invalid_input = True
+        else:
+            topic_num = int(course_parsed[2])
+    else:
+        invalid_input = True
+
+    course_found = False
+    course_id = None
+    if(not invalid_input):
+        courses = Course.query.filter_by(num=course_num.upper(), topic_num=topic_num).first()
+        for course in courses:
+            dept = course.dept
+            if(dept.abr.lower().replace(" ", "") == course_dept):
+                course_found = True
+                course_id = course.id
+    if(course_found):
+        result = jsonify({"courseId": course_id})
+    else:
+        result = jsonify({"error": "No course was found"})
+    return result
+
 @app.route('/api/course_details', methods=['POST'])
 def course_details():
     """
@@ -63,15 +106,16 @@ def get_course_info(course_id):
         course_info (object): contains basic course information
             course_info = {
                 'id' (int): course id
-                'courseDep' (string): course dept abbreviation
+                'courseDept' (string): course dept abbreviation
                 'courseNum' (string): course number
                 'courseTitle' (string): course title,
                 'courseDes'(string): course description,
-                'topicTitle' (string): topic title
+                'topicNum' (int): topic number (if applicable)
                 'parentTitle' (string): parent topic title,
                 'topicsList' (list): list of topics belonging to parent topic
                     topic_obj = {
                         'id' (int): course topic id
+                        'topicNum' (int): topic number
                         'title' (string): course topic title
                     }
             }
@@ -84,23 +128,22 @@ def get_course_info(course_id):
 
     is_parent = False
     if(topic_num == -1):
-        topic_title = None
         parent_title = None
         topics_list = None
     elif(topic_num == 0):
         is_parent = True
-        topic_title = course.title
-        parent_title = course.title
         topic = course.topic
         topics_list = []
         for course_topic in topic.courses:
             topic_obj = {
                 'id': course_topic.id,
+                'topicNum': course_topic.topic_num,
                 'title': course_topic.title
             }
             topics_list.append(topic_obj)
+        if(len(topics_list) == 0):
+            is_parent = False
     else:
-        topic_title = course.title
         topic = course.topic
         parent_title = ""
         for course_topic in topic.courses:
@@ -109,11 +152,11 @@ def get_course_info(course_id):
 
     course_info = {
         'id': course.id,
-        'courseDep': course_dept.abr,
+        'courseDept': course_dept.abr,
         'courseNum': course.num,
         'courseTitle': course.title,
         'courseDes': course.description,
-        'topicTitle': topic_title,
+        'topicNum': topic_num,
         'parentTitle': parent_title,
         'topicsList': topics_list
     }
@@ -196,10 +239,18 @@ def get_scheduled_course(scheduled_course):
                         'dept' (string): course deptartment abbreviation
                         'num' (string): course num
                         'title' (string): course title
+                        'topicNum' (int): topic number
                     }
             }
     """
     prof = scheduled_course.prof
+    semester_name = ""
+    if(scheduled_course.semester.semester == 2):
+        semester_name = "Spring"
+    elif(scheduled_course.semester.semester == 6):
+        semester_name = "Summer"
+    elif(scheduled_course.semester.semester == 9):
+        semester_name = "Fall"
 
     x_listed = []
     for x_course in scheduled_course.cross_listed.courses:
@@ -207,7 +258,8 @@ def get_scheduled_course(scheduled_course):
             'id': x_course.id,
             'dept': x_course.dept.abr,
             'num': x_course.num,
-            'title': x_course.title
+            'title': x_course.title,
+            'topicNum': x_course.topic_num
         }
         x_listed.append(x_listed_obj)
 
@@ -224,7 +276,7 @@ def get_scheduled_course(scheduled_course):
         'profFirst': prof.first_name,
         'profLast': prof.last_name,
         'crossListed': x_listed,
-        'semester': scheduled_course.semester.semester,
+        'semester': semester_name,
         'year': scheduled_course.semester.year
     }
     return scheduled_obj
