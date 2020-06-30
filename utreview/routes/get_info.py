@@ -96,6 +96,7 @@ def review_list():
         {
             'id': result.id,
             'date_posted': result.date_posted,
+            'semester': result.semester,
             'course_comments': result.course_review.comments,
             'professor_comments': result.prof_review.comments,
 

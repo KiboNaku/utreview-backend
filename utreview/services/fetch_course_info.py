@@ -10,10 +10,11 @@ KEY_PRE_REQ = "pre_req"
 
 
 def fetch_courses(file_name, sheet_name):
-	"""Parse the course info excel sheet 
+	"""Parse the course info from the excel sheet 
 
 	Args:
-		df ([type]): [description]
+		file_name (str): name of the excel file
+		sheet_name (int): 
 
 	Returns:
 		[type]: [description]
