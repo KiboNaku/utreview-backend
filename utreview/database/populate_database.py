@@ -31,6 +31,23 @@ def populate_dept(dept_info, override=False):
 		db.session.commit()
 
 
+def populate_dept_info(dept_info):
+	
+	print('Populating departments with additional info')
+	
+	for abr, dept, college in dept_info:
+
+		cur_dept = Dept.query.filter_by(abr=abr).first()
+		if cur_dept is None:
+			print(f"Cannot find dept {dept}")
+
+		else:
+			print(f"Updating dept: {abr}")
+			cur_dept.dept = dept
+			cur_dept.college = college
+		
+		db.session.commit()
+
 def populate_course(course_info):
 
 	null_depts = set()
