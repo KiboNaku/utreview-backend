@@ -22,10 +22,11 @@ class Dept(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
 
+    abr = db.Column(db.String(3), nullable=False, unique=True)
+    name = db.Column(db.String(75), nullable=False, unique=True)
+
     college = db.Column(db.String(5), default='')
     dept = db.Column(db.String(4), default='')
-    abr = db.Column(db.String(3), nullable=False)
-    name = db.Column(db.String(75), nullable=False)
 
     courses = db.relationship("Course", backref="dept", lazy=True)
     students = db.relationship("User", backref="major", lazy=True)

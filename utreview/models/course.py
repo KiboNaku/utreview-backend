@@ -39,7 +39,7 @@ class Course(db.Model):
     prof_course = db.relationship('ProfCourse', backref="course", lazy=True)
 
     def __repr__(self):
-        return f"Course('{self.dept.abr} {self.num}', '{self.name}')"
+        return f"Course('{self.dept.abr} {self.num}', '{self.title}')"
 
 
 class CrossListed(db.Model):

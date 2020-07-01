@@ -2,6 +2,7 @@
 from utreview import db, app
 from utreview.models import *
 from utreview.services import *
+from utreview.database.populate_database import *
 
 # def populate_depts():
 #     depts = fetch_depts()
@@ -13,16 +14,17 @@ from utreview.services import *
 if __name__ == '__main__':
 
 
-    # populate_depts()
 
-    fetch_courses('Data Requests.xlsx', 0)
-
-    app.run(debug=True)
-
-
-    from utreview.services.fetch_ftp import fetch_ftp_files, parse_ftp
+    # app.run(debug=True)
+    # from utreview.services.fetch_ftp import fetch_ftp_files, parse_ftp
     # fetch_ftp_files('input_data')
-    print(parse_ftp('input_data'))
+    # print(parse_ftp('input_data'))
+
+    # depts = fetch_depts()
+    # populate_dept(depts, override=True)
+
+    courses = fetch_courses('input_data/Data Requests.xlsx', 0)
+    populate_course(courses)
 
 
     # app.run(debug=True)

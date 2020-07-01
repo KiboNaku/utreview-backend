@@ -24,9 +24,8 @@ def fetch_courses(file_name, sheet_name):
 
 	courses = []
 	count = 0
-	topic_counter = [0]
 
-	for index, row in df.iloc[70:100].iterrows():
+	for index, row in df.iterrows():
 
 		__field_of_study = "Field of Study"
 		__course_num = "Course Number"
@@ -37,30 +36,25 @@ def fetch_courses(file_name, sheet_name):
 		__pre_req = "Prerequisites"
 
 		course = {
-			KEY_DEPT: row[__field_of_study],
-			KEY_NUM: row[__course_num],
-			KEY_TITLE: row[__catalog_title],
-			KEY_DESCRIPTION: row[__description],
-			KEY_RESTRICTION: row[__restriction],
-			KEY_TOPIC_NUM: parse_topic(row[__topic_num], topic_counter),
-			KEY_PRE_REQ: row[__pre_req]
+			KEY_DEPT: row[__field_of_study].strip(),
+			KEY_NUM: row[__course_num].strip(),
+			KEY_TITLE: row[__catalog_title].strip()[:-1],
+			KEY_DESCRIPTION: row[__description].strip(),
+			KEY_RESTRICTION: row[__restriction].strip(),
+			KEY_TOPIC_NUM: parse_topic(row[__topic_num]),
+			KEY_PRE_REQ: row[__pre_req].strip()
 		}
 		courses.append(course)
 	return courses
 
 
-def parse_topic(topic_num, topic_counter):
+# def fetch_dept_additional():
+	
 
-	__none = ' N/A '
-	__parent = ' 000 '
 
-	if topic_num == __none:
-		topic_num = -1
-	elif topic_num == __parent:
-		topic_num = 0
-		topic_counter[0] = 0
-	else:
-		topic_counter[0] += 1
-		topic_num = topic_counter[0]
+def parse_topic(topic_num):
 
-	return topic_num
+	try:
+		return int(topic_num.strip())
+	except ValueError:
+		return -1
