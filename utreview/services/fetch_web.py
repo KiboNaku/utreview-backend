@@ -4,53 +4,6 @@ from bs4 import BeautifulSoup as BSoup
 
 failed_requests = []
 
-# from ftplib import FTP
-
-# # os.chdir("./ftp_files")
-
-# # ftp = FTP('reg-it.austin.utexas.edu')
-# # ftp.login(user='anonymous')
-
-# filename = 'Current_Semester_Report'
-
-# # localfile = open(filename, 'wb')
-# # ftp.retrbinary('RETR ' + filename, localfile.write, 1024)
-
-# # ftp.quit()
-# # localfile.close()
-
-# with open(filename) as f:
-#     lines = f.readlines()
-
-# # print(repr(lines[32]))
-
-# parse_data = False
-
-# categories = []
-# courses = []
-
-# for line in lines:
-
-
-#     if (not parse_data) and ("year" in line.lower()):
-
-#         parse_data = True
-
-#         categories = line.lower().split("\t")
-#         categories = [category.strip() for category in categories if len(category.strip()) > 0]
-
-#         continue
-
-#     if parse_data and len(line.strip()) > 0:
-
-#         data = line.lower().split("\t")
-#         data = [d.strip() for d in data]
-
-#         course = {categories[i]: data[i] for i in range(len(categories))}
-#         courses.append(course)
-
-
-
 def fetch_html(url, attempt=1):
 
     print("fetching: ", url)
@@ -94,16 +47,34 @@ def get_course_url(sem="spring", year=2020, dept="", c_num="", c_title="", u_num
 
 def fetch_depts():
 
-    c_html = fetch_html(get_course_url())
+    c_html = fetch_html('https://registrar.utexas.edu/staff/fos')
 
     if c_html is None:
         return []
 
     c_soup = BSoup(c_html, "html.parser")
 
-    depts = c_soup.find(
-        "select", {"id": "id_department"}).findAll("option")[1::]
-    depts = [(dept["value"], dept.text[4::].strip()) for dept in depts]
+    dept_dl_group = c_soup.find("div", {"class": "field body"}).findAll("dl")
+    dept_abrs = [dt.text.strip() for dl in dept_dl_group for dt in dl.findAll("dt")]
+    dept_names = [
+        dd.text.strip().replace('-', ' ') 
+        for dl in dept_dl_group 
+        for dd in dl.findAll("dd")
+        ]
+    dept_names = [
+        " ".join(
+            w.capitalize() if not w[0].isupper() and w not in ['and', 'or', 'of'] 
+            else w
+            for w in name.split() 
+            )
+        for name in dept_names
+    ]
+
+    if len(dept_abrs) != len(dept_names):
+        print("Unexpected Error for Dept: number of abr does not equal number of names. Failed fetch")
+        return None
+    
+    depts = [(dept_abrs[i], dept_names[i]) for i in range(len(dept_abrs))]
 
     return depts
 
