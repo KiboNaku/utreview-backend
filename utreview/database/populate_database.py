@@ -2,6 +2,7 @@
 from utreview import db
 from utreview.services.fetch_course_info import *
 from utreview.models import *
+from utreview.services.fetch_prof import fetch_prof
 
 
 def populate_dept(dept_info, override=False):
@@ -49,9 +50,72 @@ def populate_dept_info(dept_info):
 		db.session.commit()
 
 
-# def populate_scheduled_course(course_info):
+def populate_scheduled_course(course_info):
 	
-	# for course in course_info:
+	for s_course in course_info:
+		
+		# extract variable info 
+		# sem info                                                                                                                                                                                                                                                                              
+		yr = s_course["Year"].strip()
+		sem = s_course["Semester"].strip()
+
+		# course info
+		dept = s_course["Dept-Abbr"].strip()
+		c_num_raw = s_course["Course Nbr"].strip()
+		c_num = c_num_raw[1:] if c_num_raw[0].isalpha() else c_num_raw
+		topic = s_course["Topic"].strip()
+		title = s_course["Title"].strip()
+		
+		# prof info
+		prof_eid = s_course["Instructor EID"].strip()
+
+		# scheduled info
+		session = c_num_raw[0] if c_num_raw[0].isalpha() else None
+		unique_num = s_course["Unique"].strip()
+		days = s_course["Days"].strip()
+		t_from = s_course["From"].strip()
+		t_to = s_course["To"].strip()
+		building = s_course["Building"].strip()
+		room = s_course["Room"].strip()
+		m_enrollment = s_course["Max Enrollment"].strip()
+		seats_taken = s_course["Seats Taken"].strip()
+		x_listings = [listing.strip() for listing in s_course["X-Listings"].strip().split(",")]
+
+		# check to see if course exists
+		topic = -1 if topic.empty() else int(topic)
+		dept_obj = Dept.query.filter_by(abr=dept).first()
+		cur_course = Course.query.filter_by(dept_id=dept_obj.id, num=c_num, topic_num=topic).first()
+
+		if cur_course is None:
+			print(f"Populate scheduled course: cannot find course {dept} {c_num}")
+			continue
+
+		# check to see if prof exists --> if not then add prof
+		cur_prof = Prof.query.filter_by(eid=prof_eid).first()
+		
+		if cur_prof is None:
+			populate_prof(fetch_prof(prof_eid))
+			cur_prof = Prof.query.filter_by(eid=prof_eid).first()
+
+		# check to see if scheduled course exists
+
+		unique_no = db.Column(db.Integer, nullable=False)
+		session = db.Column(db.String(1), nullable=True)
+
+		days = db.Column(db.String(10))
+		time_from = db.Column(db.String(8))
+		time_to = db.Column(db.String(8))
+		location = db.Column(db.String(20))
+		max_enrollement = db.Column(db.Integer)
+		seats_taken = db.Column(db.Integer)
+
+		sem_id = db.Column(db.Integer, db.ForeignKey("semester.id"), nullable=False)
+		course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+		prof_id = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=False)
+		cross_listed = db.Column(db.Integer, db.ForeignKey('cross_listed.id'), nullable=True)
+		
+		
+
 
 
 def populate_prof(prof_info):
