@@ -48,6 +48,27 @@ def populate_dept_info(dept_info):
 		
 		db.session.commit()
 
+
+def populate_prof(prof_info):
+
+	if len(prof_info) > 1:
+
+		first_name, last_name = __parse_prof_name(prof_info[0])
+		eid = prof_info[1]
+
+		cur_prof = Prof.query.filter_by(first_name=first_name, last_name=last_name, eid=eid).first()
+		if cur_prof is None:
+			print(f"Adding professor {first_name} {last_name}")
+			prof = Prof(first_name=first_name, last_name=last_name, eid=eid)
+			db.session.add(prof)
+			db.session.commit()
+		else:
+			print(f"Professor {first_name} {last_name} already exists")
+
+	else:
+		print("Invalid input to populate_prof")
+
+
 def populate_course(course_info):
 
 	__inherit = "(See Base Topic for inherited information.)"
@@ -176,3 +197,12 @@ def __get_topic_zero(topic_courses):
 		if topic_course.topic_num == 0:
 			return topic_course
 	return None
+
+
+def __parse_prof_name(name):
+
+    name_parts = name.split()
+    if len(name_parts) > 1:
+        return name_parts[0], ' '.join(name_parts[1:])
+    return '', name
+

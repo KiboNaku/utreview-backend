@@ -30,4 +30,7 @@ if __name__ == '__main__':
     # populate_dept_info(dept_info)
 
 
-    app.run(debug=True)
+    from utreview.services.fetch_prof import fetch_prof
+    print(fetch_prof("mlg92"))
+
+    # app.run(debug=True)
