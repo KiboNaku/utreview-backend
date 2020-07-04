@@ -49,6 +49,11 @@ def populate_dept_info(dept_info):
 		db.session.commit()
 
 
+# def populate_scheduled_course(course_info):
+	
+	# for course in course_info:
+
+
 def populate_prof(prof_info):
 
 	if len(prof_info) > 1:
