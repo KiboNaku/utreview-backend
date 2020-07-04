@@ -49,10 +49,10 @@ class ScheduledCourse(db.Model):
     max_enrollement = db.Column(db.Integer)
     seats_taken = db.Column(db.Integer)
 
-    sem_id = db.Column(db.Integer, db.ForeignKey("semester.id"))
-    cross_listed = db.Column(db.Integer, db.ForeignKey('cross_listed.id'))
+    sem_id = db.Column(db.Integer, db.ForeignKey("semester.id"), nullable=False)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
-    prof_id = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=True)
+    prof_id = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=False)
+    cross_listed = db.Column(db.Integer, db.ForeignKey('cross_listed.id'), nullable=True)
 
     def __repr__(self):
         return f"""ScheduledCourse(

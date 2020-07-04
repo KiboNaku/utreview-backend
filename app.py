@@ -23,11 +23,11 @@ if __name__ == '__main__':
     # depts = fetch_depts()
     # populate_dept(depts, override=True)
 
-    courses = fetch_courses('input_data/Data Requests.xlsx', [0])
-    populate_course(courses)
+    # courses = fetch_courses('input_data/Data Requests.xlsx', [0])
+    # populate_course(courses)
 
     # dept_info = fetch_dept_info('input_data/Data Requests.xlsx', [0])
     # populate_dept_info(dept_info)
 
 
-    # app.run(debug=True)
+    app.run(debug=True)
