@@ -10,7 +10,7 @@ KEY_TOPIC_NUM = "topic_num"
 KEY_PRE_REQ = "pre_req"
 
 
-def fetch_courses(file_name, sheet_name):
+def fetch_courses(file_name, sheet_lst):
 	"""Parse the course info from the excel sheet 
 
 	Args:

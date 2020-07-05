@@ -23,7 +23,7 @@ class Dept(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     abr = db.Column(db.String(3), nullable=False, unique=True)
-    name = db.Column(db.String(75), nullable=False, unique=True)
+    name = db.Column(db.String(75), nullable=False)
 
     college = db.Column(db.String(5), default='')
     dept = db.Column(db.String(4), default='')
@@ -68,11 +68,11 @@ class ProfCourse(db.Model):
     
     id = db.Column(db.Integer, primary_key=True) 
 
-    prof_course_sem = db.relationship('ProfCourseSemester', backref="prof_course", lazy=True)
-
     prof_id = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=False)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
     
+    prof_course_sem = db.relationship('ProfCourseSemester', backref="prof_course", lazy=True)
+
     def __repr__(self):
         return f"""ProfCourse(
                             '{self.year}{self.semester}', 
@@ -85,4 +85,4 @@ class ProfCourseSemester(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     prof_course_id = db.Column(db.Integer, db.ForeignKey('prof_course.id'), nullable=False)
-    sem_id  =db.Column(db.Integer, db.ForeignKey('semester.id'), nullable=False)
+    sem_id = db.Column(db.Integer, db.ForeignKey('semester.id'), nullable=False)
