@@ -36,25 +36,31 @@ if __name__ == '__main__':
     # from utreview.services.fetch_ftp import fetch_ftp_files, parse_ftp
     # fetch_ftp_files('input_data')
 
+    # fetch semester values 
+    from utreview.services.fetch_ftp import fetch_sem_values
+    fetch_sem_values("input_data", "")
+    update_sem_vals("semester.txt")
+
+    # fetch dept info----------------------
+
     # depts = fetch_depts()
     # populate_dept(depts, override=True)
 
-    dept_info = fetch_dept_info('input_data/Data Requests.xlsx', [0, 1, 2])
-    populate_dept_info(dept_info)
+    # dept_info = fetch_dept_info('input_data/Data Requests.xlsx', [0, 1, 2])
+    # populate_dept_info(dept_info)
+
+    # ----------finish fetch dept info---------------
+
+    # fetch course info---------------------
 
     courses = fetch_courses('input_data/Data Requests.xlsx', [0, 1, 2])
-    populate_course(courses)
+    populate_course(courses, cur_sem = int(sem_current))
 
-    # from utreview.services.fetch_prof import fetch_prof
-    # print(fetch_prof("mlg92"))
+    # --------------finish fetch course info---------------------
 
-    # from utreview.services.fetch_ftp import fetch_sem_values
-    # fetch_sem_values("input_data", "")
-    # update_sem_vals("semester.txt")
-
-    from utreview.services.fetch_ftp import parse_ftp
-    ftp_info = parse_ftp("input_data")
-    from utreview.database.populate_database import populate_scheduled_course
-    populate_scheduled_course(ftp_info)
+    # from utreview.services.fetch_ftp import parse_ftp
+    # ftp_info = parse_ftp("input_data")
+    # from utreview.database.populate_database import populate_scheduled_course
+    # populate_scheduled_course(ftp_info)
 
     # app.run(debug=True)

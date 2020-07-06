@@ -1,4 +1,7 @@
 
+import re
+from titlecase import titlecase
+
 from utreview import db
 from utreview.services.fetch_course_info import *
 from utreview.models import *
@@ -182,18 +185,7 @@ def populate_prof(prof_info):
 		print("Invalid input to populate_prof")
 
 
-def __parse_location(title, building, room):
-
-	__default = "N/A"
-	__web_tag = "-W"
-
-	if building.empty() or room.empty():
-		return 'WEB' if __web_tag in title else 'N/A'
-	
-	return f'{building} {room}'
-
-
-def populate_course(course_info):
+def populate_course(course_info, cur_sem=None):
 
 	__inherit = "(See Base Topic for inherited information.)"
 	null_depts = set()
@@ -201,9 +193,11 @@ def populate_course(course_info):
 	for course in course_info:
 
 		# fetch values from dictionary
+		semester = course[KEY_SEM]
 		dept = course[KEY_DEPT]
 		num = course[KEY_NUM]
 		title = course[KEY_TITLE]
+		cs_title = course[KEY_CS_TITLE]
 		description = course[KEY_DESCRIPTION]
 		restrictions = course[KEY_RESTRICTION]
 		t_num = course[KEY_TOPIC_NUM]
@@ -216,6 +210,11 @@ def populate_course(course_info):
 			null_depts.add(dept)
 			continue
 		
+		# if topic number > 0, then title = modified cs title
+		if t_num > 0:
+			cs_title = __parse_title(cs_title)
+			title = title if cs_title is None else cs_title
+
 		# None if course doesn't currently exist
 		old_course = None
 		# define new base course variable
@@ -271,10 +270,13 @@ def populate_course(course_info):
 			# new course
 			print("Creating new course", dept_obj.abr, new_course.num)
 			db.session.add(new_course)
-		else:
-			# course existed
+		elif cur_sem is None or semester==cur_sem:
+			# course existed but replacing
 			print("Replacing previous", old_course.dept.abr, old_course.num)
 			__replace_course(old_course, new_course)
+		else:
+			# course existed and skipping
+			print("Already existed:", old_course.dept.abr, old_course.num)
 
 		db.session.commit()
 
@@ -282,6 +284,22 @@ def populate_course(course_info):
 	null_depts.sort()
 	for dept in null_depts:
 		print("Unexpected Error: department", dept, "cannot be found in the database")
+
+
+def __parse_title(cs_title):
+	m = re.search(r"^\d+-(.*)", cs_title)
+	return None if m is None else titlecase(m.group(1))
+
+
+def __parse_location(title, building, room):
+
+	__default = "N/A"
+	__web_tag = "-W"
+
+	if building.empty() or room.empty():
+		return 'WEB' if __web_tag in title else 'N/A'
+	
+	return f'{building} {room}'
 
 
 def __populate_child_topics(parent_topic, child_topics, inherit_str):
