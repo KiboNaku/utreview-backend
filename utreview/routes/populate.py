@@ -2,13 +2,13 @@ from flask import Flask, render_template, url_for, flash, redirect, request, jso
 from flask_jwt_extended import (create_access_token)
 from utreview.models import *
 from utreview import app, db, bcrypt, jwt, course_ix, prof_ix
-from course_info import get_ecis
 from whoosh.index import create_in
 from whoosh import scoring
 from whoosh.fields import *
 from whoosh.qparser import QueryParser
 import time
 
+from .course_info import get_ecis
 
 @app.route('/api/populate_results', methods=['POST'])
 def populate_results():

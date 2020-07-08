@@ -3,6 +3,7 @@ import json
 
 from utreview import db, app
 from utreview.models import *
+from utreview.routes import *
 from utreview.services import *
 from utreview.database.populate_database import *
 from utreview.services.fetch_ftp import key_current, key_next, key_future
