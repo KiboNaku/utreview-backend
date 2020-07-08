@@ -8,7 +8,7 @@ from whoosh.fields import *
 from whoosh.qparser import QueryParser
 import time
 
-@app.route('api/course_id', methods=['POST'])
+@app.route('/api/course_id', methods=['POST'])
 def course_id():
     """
     Takes a course pathname and parses it to check if it is a valid course 
