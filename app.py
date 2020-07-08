@@ -1,15 +1,32 @@
 
+import json
+
 from utreview import db, app
 from utreview.models import *
 from utreview.services import *
 from utreview.database.populate_database import *
+from utreview.services.fetch_ftp import key_current, key_next, key_future
 
-# def populate_depts():
-#     depts = fetch_depts()
-#     for dept in depts:
-#         d = Dept(abr=dept[0], name=dept[1])
-#         db.session.add(d)
-#         db.session.commit()
+
+sem_current = None
+sem_next = None
+sem_future = None
+
+
+def update_sem_vals(sem_path):
+
+    print("Updating global semester values")
+
+    global sem_current
+    global sem_next
+    global sem_future
+
+    with open(sem_path, 'r') as f:
+        sem_dict = json.load(f) 
+        sem_current = sem_dict[key_current]
+        sem_next = sem_dict[key_next]
+        sem_future = sem_dict[key_future]
+
 
 if __name__ == '__main__':
 
@@ -18,16 +35,33 @@ if __name__ == '__main__':
     # app.run(debug=True)
     # from utreview.services.fetch_ftp import fetch_ftp_files, parse_ftp
     # fetch_ftp_files('input_data')
-    # print(parse_ftp('input_data'))
+
+    # fetch semester values 
+    # from utreview.services.fetch_ftp import fetch_sem_values
+    # fetch_sem_values("input_data", "")
+    # update_sem_vals("semester.txt")
+
+    # fetch dept info----------------------
 
     # depts = fetch_depts()
     # populate_dept(depts, override=True)
 
-    courses = fetch_courses('input_data/Data Requests.xlsx', [0])
-    populate_course(courses)
-
-    # dept_info = fetch_dept_info('input_data/Data Requests.xlsx', [0])
+    # dept_info = fetch_dept_info('input_data/Data Requests.xlsx', [0, 1, 2])
     # populate_dept_info(dept_info)
 
+    # ----------finish fetch dept info---------------
 
-    # app.run(debug=True)
+    # fetch course info---------------------
+
+    # courses = fetch_courses('input_data/Data Requests.xlsx', [0, 1, 2])
+    # populate_course(courses, cur_sem = int(sem_current))
+
+    # --------------finish fetch course info---------------------
+
+    # fetch schedule info ----------------------
+    # from utreview.services.fetch_ftp import parse_ftp
+    # ftp_info = parse_ftp("input_data")
+    # from utreview.database.populate_database import populate_scheduled_course
+    # populate_scheduled_course(ftp_info)
+
+    app.run(debug=True)

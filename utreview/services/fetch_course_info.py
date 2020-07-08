@@ -1,16 +1,18 @@
 import pandas as pd
 
 # fetch_courses keys
+KEY_SEM = "sem"
 KEY_DEPT = "dept"
 KEY_NUM = "num"
 KEY_TITLE = "title"
+KEY_CS_TITLE = "cs_title"
 KEY_DESCRIPTION = "description"
 KEY_RESTRICTION = "restriction"
 KEY_TOPIC_NUM = "topic_num"
 KEY_PRE_REQ = "pre_req"
 
 
-def fetch_courses(file_name, sheet_name):
+def fetch_courses(file_name, sheet_lst):
 	"""Parse the course info from the excel sheet 
 
 	Args:
@@ -30,19 +32,23 @@ def fetch_courses(file_name, sheet_name):
 
 
 		for index, row in df.iterrows():
-
+			
+			__sem = "Report CCYYS"
 			__field_of_study = "Field of Study"
 			__course_num = "Course Number"
 			__catalog_title = "Catalog Title"
+			__cs_title = "CS Title"
 			__description = "Subject Matter Description"
 			__restriction = "Restrictive Statement"
 			__topic_num = "Topic Number"
 			__pre_req = "Prerequisites"
 
 			course = {
+				KEY_SEM: int(row[__sem]),
 				KEY_DEPT: row[__field_of_study].strip(),
 				KEY_NUM: row[__course_num].strip(),
 				KEY_TITLE: row[__catalog_title].strip()[:-1],
+				KEY_CS_TITLE: row[__cs_title].strip(),
 				KEY_DESCRIPTION: row[__description].strip(),
 				KEY_RESTRICTION: row[__restriction].strip(),
 				KEY_TOPIC_NUM: parse_topic(row[__topic_num]),

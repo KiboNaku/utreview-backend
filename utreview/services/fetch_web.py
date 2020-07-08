@@ -1,6 +1,7 @@
 import os
 from urllib.request import urlopen, http
 from bs4 import BeautifulSoup as BSoup
+from titlecase import titlecase
 
 failed_requests = []
 
@@ -61,14 +62,7 @@ def fetch_depts():
         for dl in dept_dl_group 
         for dd in dl.findAll("dd")
         ]
-    dept_names = [
-        " ".join(
-            w.capitalize() if not w[0].isupper() and w not in ['and', 'or', 'of'] 
-            else w
-            for w in name.split() 
-            )
-        for name in dept_names
-    ]
+    dept_names = [titlecase(name) for name in dept_names]
 
     if len(dept_abrs) != len(dept_names):
         print("Unexpected Error for Dept: number of abr does not equal number of names. Failed fetch")
