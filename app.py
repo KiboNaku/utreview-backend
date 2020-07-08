@@ -37,9 +37,9 @@ if __name__ == '__main__':
     # fetch_ftp_files('input_data')
 
     # fetch semester values 
-    from utreview.services.fetch_ftp import fetch_sem_values
-    fetch_sem_values("input_data", "")
-    update_sem_vals("semester.txt")
+    # from utreview.services.fetch_ftp import fetch_sem_values
+    # fetch_sem_values("input_data", "")
+    # update_sem_vals("semester.txt")
 
     # fetch dept info----------------------
 
@@ -53,14 +53,15 @@ if __name__ == '__main__':
 
     # fetch course info---------------------
 
-    courses = fetch_courses('input_data/Data Requests.xlsx', [0, 1, 2])
-    populate_course(courses, cur_sem = int(sem_current))
+    # courses = fetch_courses('input_data/Data Requests.xlsx', [0, 1, 2])
+    # populate_course(courses, cur_sem = int(sem_current))
 
     # --------------finish fetch course info---------------------
 
+    # fetch schedule info ----------------------
     # from utreview.services.fetch_ftp import parse_ftp
     # ftp_info = parse_ftp("input_data")
     # from utreview.database.populate_database import populate_scheduled_course
     # populate_scheduled_course(ftp_info)
 
-    # app.run(debug=True)
+    app.run(debug=True)

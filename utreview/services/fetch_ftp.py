@@ -87,13 +87,12 @@ def parse_ftp(in_dir):
 	Args:
 		in_dir (str): directory containinig the ftp files
 	"""
-
-	file_dict = {}
+	
+	courses = []
 
 	for filename in (filename_current, filename_next, filename_future):
 
 		filepath = join(in_dir, filename)
-		courses = []
 
 		if isfile(filepath):
 
@@ -118,9 +117,7 @@ def parse_ftp(in_dir):
 		else:
 			print(f'FTP: {filename} does not exist in {in_dir}')
 
-		file_dict[filename] = courses
-	
-	return file_dict
+	return courses
 
 
 def __parse_categories(ftp_lines):
@@ -131,13 +128,10 @@ def __parse_categories(ftp_lines):
 
 		line_num += 1
 
-		line = line.lower()
-
 		if "year" in line.lower():
 
-			categories = line.lower().split("\t")
+			categories = line.split("\t")
 			categories = [category.strip() for category in categories if len(category.strip()) > 0]
-			
 			return categories, ftp_lines[line_num:]
 	
 	return None, ftp_lines

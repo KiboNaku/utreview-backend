@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup as BSoup
 
 def fetch_prof(query):
 
+    print(f"Fetching Prof: {query}")
+
     __name_tag = "Name"
     __eid_tag = "UT EID"
 

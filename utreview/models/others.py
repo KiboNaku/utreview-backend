@@ -51,7 +51,7 @@ class ScheduledCourse(db.Model):
 
     sem_id = db.Column(db.Integer, db.ForeignKey("semester.id"), nullable=False)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
-    prof_id = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=False)
+    prof_id = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=True)
     cross_listed = db.Column(db.Integer, db.ForeignKey('cross_listed.id'), nullable=True)
 
     def __repr__(self):
