@@ -1,5 +1,6 @@
 
 from flask import render_template
+from utreview import app
 
 
 """routes used in backend to visualize files such as the confirmation email"""

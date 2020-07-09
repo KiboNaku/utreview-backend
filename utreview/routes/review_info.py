@@ -1,7 +1,5 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
 from flask_jwt_extended import (create_access_token)
-from course_info import get_course_name
-from prof_info import get_prof_name
 from utreview.models import *
 from utreview import app, db, bcrypt, jwt
 

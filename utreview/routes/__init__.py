@@ -1,8 +1,8 @@
 
-from .append import *
+from .admission import *
 from .backend import *
+from .course_info import *
 from .get_info import *
 from .populate import *
-from .review import *
-from .admission import *
+from .review_info import *
 
