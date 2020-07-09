@@ -4,6 +4,7 @@ from utreview.models import *
 from utreview import app, db, bcrypt, jwt
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
 from flask_mail import Mail, Message
+import random
 
 mail = Mail(app)
 
@@ -38,21 +39,20 @@ def register():
     last_name = request.get_json()['last_name']
     email = request.get_json()['email']
     major = request.get_json()['major']
-    password_hash = bcrypt.generate_password_hash(
-        request.get_json()['password']).decode('utf-8')
+    password_hash = bcrypt.generate_password_hash(request.get_json()['password']).decode('utf-8')
     dept = Dept.query.filter_by(name=major).first()
-    profile_name = request.get_json()['profile_pic']
-    profile_pic = ProfilePic.query.filter_by(file_name=profile_name).first()
+
+    profile_pics = ProfilePic.query.all()
+    profile_pic = random.choice(profile_pics)
 
     user = User.query.filter_by(email=email).first()
     if user:
-        result = jsonify({"error": "An account already exists for this email"})
+        result = jsonify({"error": "An account already exists for this email."})
     else:
         user = User(first_name=first_name, last_name=last_name, 
             email=email, password_hash=password_hash, profile_pic_id=profile_pic.id, 
             verified=False, major_id=dept.id)
         db.session.add(user)
-        db.session.commit()
 
         e_token = s.dumps(user.email, salt="confirm_email")
 
@@ -78,6 +78,7 @@ def register():
             'verified': user.verified
         })
         result = access_token
+        # db.session.commit()
     return result
 
 
