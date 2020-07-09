@@ -40,8 +40,10 @@ def prof_id():
             if(first_name == prof_first and last_name == prof_last):
                 prof_found = True
                 prof_id = prof.id
+                result_first = prof.first_name
+                result_last = prof.last_name
     if(prof_found):
-        result = jsonify({"profId": prof_id})
+        result = jsonify({"profId": prof_id, "firstName": result_first, "lastName": result_last})
     else:
         result = jsonify({"error": "No prof was found"})
     return result
@@ -224,6 +226,7 @@ def get_review_info(review, percentLiked, clear, engaging, grading, logged_in, c
             'courseDept' (string): course dept abr
             'courseNum' (string): course num
             'courseTopic' (int): course topic num
+            'grade' (string): grade the user got in the course
             'numLiked' (int): number of likes the review has
             'numDisliked' (int): number of dislikes the review has
             'likePressed' (boolean): whether the current user liked the review
@@ -284,6 +287,7 @@ def get_review_info(review, percentLiked, clear, engaging, grading, logged_in, c
         'courseDept': course.dept.abr,
         'courseNum': course.num,
         'courseTopic': course.topic_num,
+        'grade': review.grade,
         'numLiked': num_liked,
         'numDisliked': num_disliked,
         'likePressed': like_pressed,

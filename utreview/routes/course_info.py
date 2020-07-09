@@ -45,8 +45,18 @@ def course_id():
             if(dept.abr.lower().replace(" ", "") == course_dept):
                 course_found = True
                 course_id = course.id
+                result_dept = course.dept.abr
+                result_num = course.num
+                if(topic_num >= 0):
+                    topic_id = course.topic_id
+                    for topic in course.topic.courses:
+                        if(topic.topic_num == 0):
+                            parent_id = topic.id
+                else:
+                    topic_id = -1
+
     if(course_found):
-        result = jsonify({"courseId": course_id})
+        result = jsonify({"courseId": course_id, "courseDept": result_dept, "courseNum": result_num, "topicId": topic_id, "parentId": parent_id})
     else:
         result = jsonify({"error": "No course was found"})
     return result
@@ -149,6 +159,7 @@ def get_course_info(course_id):
         for course_topic in topic.courses:
             if course_topic.topic_num == 0:
                 parent_title = course_topic.title
+                parent_id = course_topic.id
 
     course_info = {
         'id': course.id,
@@ -156,7 +167,9 @@ def get_course_info(course_id):
         'courseNum': course.num,
         'courseTitle': course.title,
         'courseDes': course.description,
+        'topicId': course.topic_id,
         'topicNum': topic_num,
+        'parentId': parent_id,
         'parentTitle': parent_title,
         'topicsList': topics_list
     }
@@ -356,6 +369,7 @@ def get_review_info(review, percentLiked, usefulness, difficulty, workload, logg
             'profId' (int): prof id
             'profFirst' (string): prof first name
             'profLast' (string): prof last name
+            'grade' (string): grade the user got in the course
             'numLiked' (int): number of likes the review has
             'numDisliked' (int): number of dislikes the review has
             'likePressed' (boolean): whether the current user liked the review
@@ -417,11 +431,12 @@ def get_review_info(review, percentLiked, usefulness, difficulty, workload, logg
         'profFirst': prof.first_name,
         'profLast': prof.last_name,
         'numLiked': num_liked,
+        'grade': review.grade,
         'numDisliked': num_disliked,
         'likePressed': like_pressed,
         'dislikePressed': dislike_pressed,
         'date': review.date_posted.strftime("%Y-%m-%d"),
-        'year': review.year,
+        'year': review.semester.year,
         'semester': semester
     }
     return review_object
