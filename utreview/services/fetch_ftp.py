@@ -1,5 +1,5 @@
 
-from os import chdir
+from os import chdir, getcwd
 from os.path import join, isfile
 from ftplib import FTP
 import re
@@ -67,6 +67,8 @@ def fetch_ftp_files(out_dir):
 	__url = 'reg-it.austin.utexas.edu'
 	__username = 'anonymous'
 
+	cur_dir = getcwd()
+
 	ftp = FTP(__url)
 	ftp.login(user=__username)
 
@@ -79,6 +81,8 @@ def fetch_ftp_files(out_dir):
 		localfile.close()
 	
 	ftp.quit()
+
+	chdir(cur_dir)
 
 
 def parse_ftp(in_dir):

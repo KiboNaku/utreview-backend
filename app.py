@@ -28,6 +28,12 @@ def update_sem_vals(sem_path):
         sem_next = sem_dict[key_next]
         sem_future = sem_dict[key_future]
 
+def __get_topic_zero(topic_courses):
+
+	for topic_course in topic_courses:
+		if topic_course.topic_num == 0:
+			return topic_course
+	return None
 
 if __name__ == '__main__':
 
@@ -43,7 +49,6 @@ if __name__ == '__main__':
     # update_sem_vals("semester.txt")
 
     # fetch dept info----------------------
-
     # depts = fetch_depts()
     # populate_dept(depts, override=True)
 
