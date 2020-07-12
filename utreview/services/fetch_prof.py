@@ -20,7 +20,10 @@ def fetch_prof(query):
 
     soup = BSoup(html, "html.parser")
 
-    prof_info_table = soup.find("table", {"class": "dir_info"}).findAll("tr")
+    prof_info_table = soup.find("table", {"class": "dir_info"})
+    if prof_info_table is None:
+        return None
+    prof_info_table = prof_info_table.findAll("tr")
     prof_info_table = [tr.findAll("td") for tr in prof_info_table]
 
     for tr in prof_info_table:

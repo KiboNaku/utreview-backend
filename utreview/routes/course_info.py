@@ -38,15 +38,26 @@ def course_id():
 
     course_found = False
     course_id = None
+    parent_id = None
     if(not invalid_input):
-        courses = Course.query.filter_by(num=course_num.upper(), topic_num=topic_num).first()
+        courses = Course.query.filter_by(num=course_num.upper(), topic_num=topic_num)
         for course in courses:
             dept = course.dept
             if(dept.abr.lower().replace(" ", "") == course_dept):
                 course_found = True
                 course_id = course.id
+                result_dept = course.dept.abr
+                result_num = course.num
+                if(topic_num >= 0):
+                    topic_id = course.topic_id
+                    for topic in course.topic.courses:
+                        if(topic.topic_num == 0):
+                            parent_id = topic.id
+                else:
+                    topic_id = -1
+
     if(course_found):
-        result = jsonify({"courseId": course_id})
+        result = jsonify({"courseId": course_id, "courseDept": result_dept, "courseNum": result_num, "topicId": topic_id, "parentId": parent_id})
     else:
         result = jsonify({"error": "No course was found"})
     return result
@@ -78,11 +89,15 @@ def course_details():
 
     if(logged_in):
         curr_user = User.query.filter_by(email=user_email).first()
-
+    print("get course info")
     course_info, course, is_parent = get_course_info(course_id)
+    print("get course requisites")
     course_requisites = get_course_requisites(course)
+    print("get course reviews")
     course_rating, review_list = get_course_reviews(course, logged_in, curr_user, is_parent)
+    print("get course schedule")
     course_schedule = get_course_schedule(course, is_parent)
+    print("get course profs")
     prof_list = get_course_profs(course, is_parent)
 
     result = jsonify({"course_info": course_info,
@@ -127,14 +142,19 @@ def get_course_info(course_id):
     topic_num = course.topic_num
 
     is_parent = False
+    parent_id = None
     if(topic_num == -1):
         parent_title = None
         topics_list = None
     elif(topic_num == 0):
         is_parent = True
+        parent_id = course.id
+        parent_title = course.title
         topic = course.topic
         topics_list = []
         for course_topic in topic.courses:
+            if (course_topic.topic_num == 0):
+                continue
             topic_obj = {
                 'id': course_topic.id,
                 'topicNum': course_topic.topic_num,
@@ -146,9 +166,13 @@ def get_course_info(course_id):
     else:
         topic = course.topic
         parent_title = ""
+        topics_list = None
+
         for course_topic in topic.courses:
+            print(course_topic)
             if course_topic.topic_num == 0:
                 parent_title = course_topic.title
+                parent_id = course_topic.id
 
     course_info = {
         'id': course.id,
@@ -156,7 +180,9 @@ def get_course_info(course_id):
         'courseNum': course.num,
         'courseTitle': course.title,
         'courseDes': course.description,
+        'topicId': course.topic_id,
         'topicNum': topic_num,
+        'parentId': parent_id,
         'parentTitle': parent_title,
         'topicsList': topics_list
     }
@@ -178,7 +204,7 @@ def get_course_requisites(course):
             }
     """
     course_requisites = {
-        'preReqs': course.pre_reqs,
+        'preReqs': course.pre_req,
         'restrictions': course.restrictions
     }
     return course_requisites
@@ -209,6 +235,32 @@ def get_ecis(obj):
         course_ecis = round(course_ecis / total_students, 1)
         prof_ecis = round(prof_ecis / total_students, 1)
     return course_ecis, prof_ecis
+
+def time_to_string(time_to_string):
+    if(time_to_string == None):
+        return None
+    time_string = ""
+    time_num = int(time_to_string)
+    
+    if(time_num < 1200 and time_num >= 100):
+        if(len(time_to_string) == 3):
+            time_string = time_to_string[0:1] + ":" + time_to_string[1:3]
+        else:
+            time_string = time_to_string[0:2] + ":" + time_to_string[2:4]
+        time_string += " AM"
+    elif(time_num <= 0 and time_num < 100):
+        time_string = "12" + ":" + time_to_string[1:3] + " AM"
+    elif(time_num <= 1200 and time_num < 1300):
+        time_string = "12" + ":" + time_to_string[2:4] + " PM"
+    else:
+        time_num = time_num - 1200
+        time_to_string = str(time_num) 
+        if(len(time_to_string) == 3):
+            time_string = time_to_string[0:1] + ":" + time_to_string[1:3]
+        else:
+            time_string = time_to_string[0:2] + ":" + time_to_string[2:4]   
+        time_string += " PM"
+    return time_string
 
 def get_scheduled_course(scheduled_course):
     """
@@ -253,24 +305,25 @@ def get_scheduled_course(scheduled_course):
         semester_name = "Fall"
 
     x_listed = []
-    for x_course in scheduled_course.cross_listed.courses:
-        x_listed_obj = {
-            'id': x_course.id,
-            'dept': x_course.dept.abr,
-            'num': x_course.num,
-            'title': x_course.title,
-            'topicNum': x_course.topic_num
-        }
-        x_listed.append(x_listed_obj)
+    if(scheduled_course.cross_listed is not None):
+        for x_course in scheduled_course.cross_listed.courses:
+            x_listed_obj = {
+                'id': x_course.id,
+                'dept': x_course.dept.abr,
+                'num': x_course.num,
+                'title': x_course.title,
+                'topicNum': x_course.topic_num
+            }
+            x_listed.append(x_listed_obj)
 
     scheduled_obj = {
         "id": scheduled_course.id,
         'uniqueNum': scheduled_course.unique_no,
         'days': scheduled_course.days,
-        'timeFrom': scheduled_course.time_from,
-        'timeTo': scheduled_course.time_to,
+        'timeFrom': time_to_string(scheduled_course.time_from),
+        'timeTo': time_to_string(scheduled_course.time_to),
         'location': scheduled_course.location,
-        'maxEnrollment': scheduled_course.max_enrollment,
+        'maxEnrollment': scheduled_course.max_enrollement,
         'seatsTaken': scheduled_course.seats_taken,
         'profId': prof.id,
         'profFirst': prof.first_name,
@@ -307,19 +360,25 @@ def get_course_schedule(course, is_parent):
     }
     current_list = []
     future_list = []
+    courses_scheduled_ids = []
     courses_scheduled = course.scheduled
+    for i in range(len(course.scheduled)):
+        courses_scheduled_ids.append(course.scheduled[i].id)
     if(is_parent):
         topic = course.topic
         for topic_course in topic.courses:
-            for scheduled in topic_course.scheduled:
-                courses_scheduled.append(scheduled)
+            for i in range(len(topic_course.scheduled)):
+                if(topic_course.scheduled[i].id in courses_scheduled_ids):
+                    continue
+                courses_scheduled_ids.append(topic_course.scheduled[i].id)
+                courses_scheduled.append(topic_course.scheduled[i])
     for scheduled_course in courses_scheduled:
         scheduled_obj = get_scheduled_course(scheduled_course)
-        if(scheduled_course.semester.year == current_sem.year and
-        scheduled_course.semester.semester == current_sem.sem):
+        if(scheduled_course.semester.year == current_sem['year'] and
+        scheduled_course.semester.semester == current_sem['sem']):
             current_list.append(scheduled_obj)
-        elif(scheduled_course.semester.year == future_sem.year and
-        scheduled_course.semester.semester == future_sem.sem):
+        elif(scheduled_course.semester.year == future_sem['year'] and
+        scheduled_course.semester.semester == future_sem['sem']):
             future_list.append(scheduled_obj)
 
     course_schedule = {
@@ -356,6 +415,7 @@ def get_review_info(review, percentLiked, usefulness, difficulty, workload, logg
             'profId' (int): prof id
             'profFirst' (string): prof first name
             'profLast' (string): prof last name
+            'grade' (string): grade the user got in the course
             'numLiked' (int): number of likes the review has
             'numDisliked' (int): number of dislikes the review has
             'likePressed' (boolean): whether the current user liked the review
@@ -417,11 +477,12 @@ def get_review_info(review, percentLiked, usefulness, difficulty, workload, logg
         'profFirst': prof.first_name,
         'profLast': prof.last_name,
         'numLiked': num_liked,
+        'grade': review.grade,
         'numDisliked': num_disliked,
         'likePressed': like_pressed,
         'dislikePressed': dislike_pressed,
         'date': review.date_posted.strftime("%Y-%m-%d"),
-        'year': review.year,
+        'year': review.semester.year,
         'semester': semester
     }
     return review_object
@@ -449,12 +510,18 @@ def get_course_reviews(course, logged_in, curr_user, is_parent):
         review_list (list): list of all reviews for the course
     """
     ecis_course_score, ecis_prof_score = get_ecis(course)
+    course_review_ids = []
     course_reviews = course.reviews
+    for i in range(len(course.reviews)):
+        course_reviews_ids.append(course.reviews[i].id)
     if(is_parent):
         topic = course.topic
         for topic_course in topic.courses:
-            for topic_review in topic_course.reviews:
-                course_reviews.append(topic_review)
+            for i in range(len(topic_course.reviews)):
+                if(topic_course.reviews[i].id in course_reviews_ids):
+                    continue
+                course_reviews_ids.append(topic_course.reviews[i].id)
+                course_reviews.append(topic_course.reviews[i])
     review_list = []
     if(len(course_reviews) == 0):
         percentLiked = None
@@ -509,11 +576,17 @@ def get_course_profs(course, is_parent):
     """
     prof_list = []
     course_prof = course.prof_course
+    course_prof_ids = []
+    for i in range(len(course.prof_course)):
+        course_prof_ids.append(course.prof_course[i].id)
     if(is_parent):
         topic = course.topic
         for topic_course in topic.courses:
-            for prof_course in topic_course.prof_course:
-                course_prof.append(prof_course)
+            for i in range(len(topic_course.prof_course)):
+                if(topic_course.prof_course[i].id in course_prof_ids):
+                    continue
+                course_prof_ids.append(topic_course.prof_course[i].id)
+                course_prof.append(topic_course.prof_course[i])
     for prof_course in course_prof:
         prof = prof_course.prof
         ecis_course_score, ecis_prof_score = get_ecis(prof)

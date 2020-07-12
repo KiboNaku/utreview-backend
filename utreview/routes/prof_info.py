@@ -1,7 +1,7 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
 from flask_jwt_extended import (create_access_token)
 from utreview.models import *
-from course_info import get_ecis
+from .course_info import get_ecis, time_to_string
 from utreview import app, db, bcrypt, jwt, course_ix, prof_ix
 from whoosh.index import create_in
 from whoosh import scoring
@@ -9,7 +9,7 @@ from whoosh.fields import *
 from whoosh.qparser import QueryParser
 import time
 
-@app.route('api/prof_id', methods=['POST'])
+@app.route('/api/prof_id', methods=['POST'])
 def prof_id():
     """
     Takes a prof pathname and parses it to check if it is a valid prof 
@@ -40,8 +40,10 @@ def prof_id():
             if(first_name == prof_first and last_name == prof_last):
                 prof_found = True
                 prof_id = prof.id
+                result_first = prof.first_name
+                result_last = prof.last_name
     if(prof_found):
-        result = jsonify({"profId": prof_id})
+        result = jsonify({"profId": prof_id, "firstName": result_first, "lastName": result_last})
     else:
         result = jsonify({"error": "No prof was found"})
     return result
@@ -130,27 +132,29 @@ def get_scheduled_prof(scheduled_prof):
     course = scheduled_prof.course
 
     x_listed = []
-    for x_course in scheduled_prof.cross_listed.courses:
-        x_listed_obj = {
-            'id': x_course.id,
-            'dept': x_course.dept.abr,
-            'num': x_course.num,
-            'title': x_course.title
-        }
-        x_listed.append(x_course.dept.abr + " " + x_course.num)
+    if(scheduled_prof.cross_listed is not None):
+        for x_course in scheduled_prof.cross_listed.courses:
+            x_listed_obj = {
+                'id': x_course.id,
+                'dept': x_course.dept.abr,
+                'num': x_course.num,
+                'title': x_course.title
+            }
+            x_listed.append(x_course.dept.abr + " " + x_course.num)
 
     scheduled_obj = {
         "id": scheduled_prof.id,
         'uniqueNum': scheduled_prof.unique_no,
         'days': scheduled_prof.days,
-        'timeFrom': scheduled_prof.time_from,
-        'timeTo': scheduled_prof.time_to,
+        'timeFrom': time_to_string(scheduled_prof.time_from),
+        'timeTo': time_to_string(scheduled_prof.time_to),
         'location': scheduled_prof.location,
-        'maxEnrollment': scheduled_prof.max_enrollment,
+        'maxEnrollment': scheduled_prof.max_enrollement,
         'seatsTaken': scheduled_prof.seats_taken,
         'courseId': course.id,
         'courseDept': course.dept.abr,
         'courseNum': course.num,
+        'topicNum': course.topic_num,
         'crossListed': x_listed
     }
     return scheduled_obj
@@ -183,11 +187,11 @@ def get_prof_schedule(prof):
     profs_scheduled = prof.scheduled
     for scheduled_prof in profs_scheduled:
         scheduled_obj = get_scheduled_prof(scheduled_prof)
-        if(scheduled_prof.semester.year == current_sem.year and
-        scheduled_prof.semester.semester == current_sem.sem):
+        if(scheduled_prof.semester.year == current_sem['year'] and
+        scheduled_prof.semester.semester == current_sem['sem']):
             current_list.append(scheduled_obj)
-        elif(scheduled_prof.semester.year == future_sem.year and
-        scheduled_prof.semester.semester == future_sem.sem):
+        elif(scheduled_prof.semester.year == future_sem['year']  and
+        scheduled_prof.semester.semester == future_sem['sem'] ):
             future_list.append(scheduled_obj)
     prof_schedule = {
         "currentSem": current_list,
@@ -224,6 +228,7 @@ def get_review_info(review, percentLiked, clear, engaging, grading, logged_in, c
             'courseDept' (string): course dept abr
             'courseNum' (string): course num
             'courseTopic' (int): course topic num
+            'grade' (string): grade the user got in the course
             'numLiked' (int): number of likes the review has
             'numDisliked' (int): number of dislikes the review has
             'likePressed' (boolean): whether the current user liked the review
@@ -284,6 +289,7 @@ def get_review_info(review, percentLiked, clear, engaging, grading, logged_in, c
         'courseDept': course.dept.abr,
         'courseNum': course.num,
         'courseTopic': course.topic_num,
+        'grade': review.grade,
         'numLiked': num_liked,
         'numDisliked': num_disliked,
         'likePressed': like_pressed,
