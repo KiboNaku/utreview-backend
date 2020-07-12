@@ -69,17 +69,7 @@ def register():
         msg.html = render_template('confirm_email.html', name='Andy', link=link, email=email)
         mail.send(msg)
 
-        access_token = create_access_token(identity={
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'email': user.email,
-            'major': dept.name,
-            'profile_pic': profile_pic.file_name,
-            'verified': user.verified
-        })
-        result = access_token
-        # db.session.commit()
-    return result
+    return {'email': user.email}
 
 
 @app.route('/api/confirm_email', methods=['POST'])

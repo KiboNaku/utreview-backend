@@ -352,9 +352,9 @@ def __check_new_topic(topic_courses_flask):
 		topic = topic_courses_flask.first().topic
 	else:
 		topic = Topic()
+		db.session.add(topic)
+		db.session.commit()
 
-	db.session.add(topic)
-	db.session.commit()
 	return topic.id
 
 
