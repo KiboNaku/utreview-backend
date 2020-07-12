@@ -43,7 +43,7 @@ def populate_results():
                     }
             }
     """
-
+    s_time = time.time()
     #  parse request search
     search = request.get_json()['searchValue'].lower().strip()
 
@@ -62,6 +62,8 @@ def populate_results():
         courses_list, profs_list = populate_search(courses_query, profs_query, search)
     
     result = jsonify({"courses": courses_list, "profs": profs_list})
+
+    print("final:", time.time()-s_time)
     return result
 
 
@@ -116,23 +118,27 @@ def populate_search(courses_query, profs_query, search):
 
 def populate_all(courses_query, profs_query):
 
+    s_time = time.time()
     courses_list = []
     profs_list = []
 
     for course in courses_query:
 
-        course_ecis, prof_ecis = get_ecis(course)
+        # course_ecis, prof_ecis = get_ecis(course)
+        course_ecis, prof_ecis = "", ""
         dept = course.dept
-        course_reviews = course.reviews
-        num_ratings = len(course_reviews)
-        if(len(course_reviews) == 0):
-            percentLiked = None
-        else:
-            percentLiked = 0
-            for course_review in course_reviews:
-                if(course_review.approval):
-                    percentLiked += 1
-            percentLiked = round(percentLiked/len(course_reviews), 2) * 100
+        # course_reviews = course.reviews
+        # num_ratings = len(course_reviews)
+        num_ratings = 0
+        percentLiked = None
+        # if(len(course_reviews) == 0):
+        #     percentLiked = None
+        # else:
+        #     percentLiked = 0
+        #     for course_review in course_reviews:
+        #         if(course_review.approval):
+        #             percentLiked += 1
+        #     percentLiked = round(percentLiked/len(course_reviews), 2) * 100
         course_object = {
             'id': course.id,
             'courseDept': dept.abr,
@@ -144,6 +150,7 @@ def populate_all(courses_query, profs_query):
             'numRatings': num_ratings
         }
         courses_list.append(course_object)
+    print(time.time()-s_time)
     
     for prof in profs_query:
         course_ecis, prof_ecis = get_ecis(prof)
@@ -166,6 +173,7 @@ def populate_all(courses_query, profs_query):
             'numRatings': num_ratings
         }
         profs_list.append(prof_object)
+    print(time.time()-s_time)
 
     return courses_list, profs_list
 

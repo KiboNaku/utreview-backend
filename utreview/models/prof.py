@@ -9,6 +9,14 @@ class Prof(db.Model):
     last_name = db.Column(db.String(50), nullable=False)
     eid = db.Column(db.String(10), unique=True)
 
+    # update on review submission/ecis update
+    ecis_avg = db.Column(db.Float, nullable=True)
+    num_ratings = db.Column(db.Integer, default=0)
+    approval = db.Column(db.Float, nullable=True)
+    clear = db.Column(db.Float, nullable=True)
+    engaging = db.Column(db.Float, nullable=True)
+    grading = db.Column(db.Float, nullable=True)
+
     ecis = db.relationship("EcisScore", backref="prof", lazy=True)
     reviews = db.relationship('ProfReview', backref='prof', lazy=True)
     scheduled = db.relationship('ScheduledCourse', backref='prof', lazy=True)
