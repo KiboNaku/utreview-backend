@@ -274,7 +274,7 @@ def review_list():
                 'id': result.semester.id,
                 'year': result.semester.year,
                 'semester': semester_string(result.semester.semester)
-            }
+            },
 
             'prof': {
                 'id': result.prof_review.prof.id,

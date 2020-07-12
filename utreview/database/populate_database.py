@@ -1,7 +1,7 @@
 
 import re
+import time
 from titlecase import titlecase
-
 from utreview import db
 from utreview.services.fetch_course_info import *
 from utreview.models import *
@@ -126,6 +126,9 @@ def populate_scheduled_course(course_info):
 		if cur_prof is None and prof_eid:
 			populate_prof(fetch_prof(prof_eid))
 			cur_prof = Prof.query.filter_by(eid=prof_eid).first()
+			if cur_prof is None:
+				print("Failed to add professor, Skipping")
+				continue
 
 		# check to see if semester exists else add semester
 		semester = Semester.query.filter_by(year=yr, semester=sem).first()
@@ -163,6 +166,7 @@ def populate_scheduled_course(course_info):
 				prof_id=cur_prof.id if cur_prof else None, 
 				cross_listed=x_list.id)
 		else:
+			continue
 			print(f"Updating scheduled course ({yr}{sem}): {dept} {c_num} ", end="")
 			if cur_prof is not None:
 				print(f"by {cur_prof.first_name} {cur_prof.last_name}")
@@ -194,12 +198,14 @@ def populate_scheduled_course(course_info):
 				prof_course_semester = ProfCourseSemester(prof_course_id=prof_course.id, sem_id=semester.id)
 				db.session.add(prof_course_semester)
 				db.session.commit()
+	
+		time.sleep(60)
 
 
 def populate_prof(prof_info):
-
-	if len(prof_info) > 1:
-
+	
+	if prof_info is not None and len(prof_info) > 1:
+		
 		first_name, last_name = __parse_prof_name(prof_info[0])
 		eid = prof_info[1]
 

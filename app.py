@@ -60,9 +60,10 @@ if __name__ == '__main__':
     # --------------finish fetch course info---------------------
 
     # fetch schedule info ----------------------
-    # from utreview.services.fetch_ftp import parse_ftp
+    # from utreview.services.fetch_ftp import parse_ftp, fetch_ftp_files
     # ftp_info = parse_ftp("input_data")
     # from utreview.database.populate_database import populate_scheduled_course
     # populate_scheduled_course(ftp_info)
 
+    
     app.run(debug=True)
