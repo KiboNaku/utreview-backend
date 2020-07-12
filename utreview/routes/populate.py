@@ -43,23 +43,35 @@ def populate_results():
                     }
             }
     """
-    start_time = time.time()
-    search = request.get_json()['searchValue']
-    search = search.lower()
-    search_tokens = search.split()
+
+    #  parse request search
+    search = request.get_json()['searchValue'].lower().strip()
+
+    # initialize list
+    courses_list = []
+    profs_list = []
+
+    # filter query lists
+    courses_query = [course for course in Course.query.all() if course.topic_num <=0]
+    profs_query = Prof.query.all()
+
+    # if empty search, then all courses
+    if search == "":
+        courses_list, profs_list = populate_all(courses_query, profs_query)
+    else:
+        courses_list, profs_list = populate_search(courses_query, profs_query, search)
+    
+    result = jsonify({"courses": courses_list, "profs": profs_list})
+    return result
+
+
+def populate_search(courses_query, profs_query, search):
 
     courses_list = []
-    course_ids = []
     profs_list = []
+    course_ids = []
     prof_ids = []
-
-    if(search == " "):
-        populate_all(courses_list, profs_list)
-        courses = courses_list
-        profs = profs_list
-        result = jsonify({"courses": courses, "profs": profs})
-        elapsed_time = time.time() - start_time
-        return result
+    search_tokens = search.split()
 
     with course_ix.searcher() as searcher:
         query = QueryParser("content", course_ix.schema).parse(search)
@@ -72,9 +84,9 @@ def populate_results():
                 course_ids.append(course_id)
                 course = Course.query.filter_by(id=course_id).first()
                 append_course(course, courses_list, profs_list, prof_ids)
-    courses = Course.query.all()
-    for course in courses:
-        if(search.replace(" ", "") in str(course)):
+                
+    for course in courses_query:
+        if search.replace(" ", "") in str(course):
             if(course.id in course_ids):
                 continue
             else:
@@ -94,28 +106,21 @@ def populate_results():
                 prof = Prof.query.filter_by(id=prof_id).first()
                 append_prof(prof, profs_list, courses_list, course_ids)
 
-    courses = courses_list
-    profs = profs_list
     if(len(courses_list) < 1):
-        courses = "empty"
+        courses_list = "empty"
     if(len(profs_list) < 1):
-        profs = "empty"
+        profs_list = "empty"
 
-    result = jsonify({"courses": courses, "profs": profs})
-    elapsed_time = time.time() - start_time
-    print(elapsed_time)
-    return result
+    return courses_list, profs_list
 
-def populate_all(courses_list, profs_list):
-    """
-    Populates courses_list and profs_list with all existing courses and profs
 
-    Args:
-        courses_list (list): list to hold courses (initially empty)
-        profs_list (list): list to hold profs (initially empty)
-    """
-    courses = Course.query.all()
-    for course in courses:
+def populate_all(courses_query, profs_query):
+
+    courses_list = []
+    profs_list = []
+
+    for course in courses_query:
+
         course_ecis, prof_ecis = get_ecis(course)
         dept = course.dept
         course_reviews = course.reviews
@@ -139,8 +144,8 @@ def populate_all(courses_list, profs_list):
             'numRatings': num_ratings
         }
         courses_list.append(course_object)
-    profs = Prof.query.all()
-    for prof in profs:
+    
+    for prof in profs_query:
         course_ecis, prof_ecis = get_ecis(prof)
         prof_reviews = prof.reviews
         num_ratings = len(prof_reviews)
@@ -161,6 +166,8 @@ def populate_all(courses_list, profs_list):
             'numRatings': num_ratings
         }
         profs_list.append(prof_object)
+
+    return courses_list, profs_list
 
 def append_course(course, courses_list, profs_list, prof_ids):
     """
