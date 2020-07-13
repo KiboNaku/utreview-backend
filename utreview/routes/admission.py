@@ -47,29 +47,30 @@ def register():
 
     user = User.query.filter_by(email=email).first()
     if user:
-        result = jsonify({"error": "An account already exists for this email."})
+        if user.verified:
+            result = jsonify({"error": "An account already exists for this email."})
+        else:
+            user.first_name = first_name
+            user.last_name = last_name
+            user.password_hash = password_hash
     else:
         user = User(first_name=first_name, last_name=last_name, 
             email=email, password_hash=password_hash, profile_pic_id=profile_pic.id, 
             verified=False, major_id=dept.id)
         db.session.add(user)
-
-        e_token = s.dumps(user.email, salt="confirm_email")
-
         # sending confirmation email
+        send_confirm_email(user.email, user.first_name)
 
-        msg = Message(
-            'UT Review Confirmation Email',
-            sender=("UT Review", "utexas.review@gmail.com"), 
-            recipients=[email])
-
-        # TODO: update link as needed
-        link = "http://localhost:3000/confirm_email?token=" + e_token
-
-        msg.html = render_template('confirm_email.html', name='Andy', link=link, email=email)
-        mail.send(msg)
-
+    db.session.commit()
     return {'email': user.email}
+
+
+@app.route('/api/send_confirm_email', methods=['POST'])
+def send_confirm_email():
+
+    email = request.get_json()['email']
+    user = User.query.filter_by(email=email).first()
+    send_confirm_email(email, user.first_name)
 
 
 @app.route('/api/confirm_email', methods=['POST'])
@@ -136,3 +137,27 @@ def login():
         result = jsonify({"error": "Invalid username and password"})
 
     return result
+
+
+def send_confirm_email(email, name=None):
+
+    if name is None:
+        
+        user = User.query.filter_by(email=email).first()
+        if user is None:
+            return False
+        name = user.first_name
+
+    msg = Message(
+            'UT Review Confirmation Email',
+            sender=("UT Review", "utexas.review@gmail.com"), 
+            recipients=[email])
+
+    # TODO: update link as needed
+    e_token = s.dumps(email, salt="confirm_email")
+    link = "http://localhost:3000/confirm_email?token=" + e_token
+
+    msg.html = render_template('confirm_email.html', name=name, link=link, email=email)
+    mail.send(msg)
+    return True
+
