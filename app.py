@@ -41,8 +41,8 @@ if __name__ == '__main__':
     # fetch_ftp_files('input_data')
 
     # fetch semester values 
-    from utreview.services.fetch_ftp import fetch_sem_values
-    fetch_sem_values("input_data", "")
+    # from utreview.services.fetch_ftp import fetch_sem_values
+    # fetch_sem_values("input_data", "")
     update_sem_vals("semester.txt")
 
     # fetch dept info----------------------
@@ -68,4 +68,4 @@ if __name__ == '__main__':
     # populate_scheduled_course(ftp_info)
 
     
-    # app.run(debug=True)
+    app.run(debug=True)
