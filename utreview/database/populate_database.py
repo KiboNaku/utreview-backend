@@ -6,6 +6,7 @@ from utreview import db
 from utreview.services.fetch_course_info import *
 from utreview.models import *
 from utreview.services.fetch_prof import fetch_prof
+from string import ascii_lowercase
 
 
 def populate_dept(dept_info, override=False):
@@ -56,9 +57,13 @@ def populate_dept_info(dept_info):
 
 
 def populate_scheduled_course(course_info):
-	# problem: topic number inconsistencies
+
+	count = 0
 	
 	for s_course in course_info:
+
+		if count >= 20:
+			break
 		
 		# extract variable info 
 		# sem info                                                                                                                                                                                                                                                                              
@@ -84,7 +89,7 @@ def populate_scheduled_course(course_info):
 		c_num = c_num_raw[1:] if c_num_raw[0].isalpha() else c_num_raw
 
 		# prof info
-		prof_eid = s_course["Instructor EID"].strip()
+		prof_eid = s_course["Instructor EID"].strip().lower()
 
 		# scheduled info
 		session = c_num_raw[0] if c_num_raw[0].isalpha() else None
@@ -165,6 +170,8 @@ def populate_scheduled_course(course_info):
 				course_id=cur_course.id, 
 				prof_id=cur_prof.id if cur_prof else None, 
 				cross_listed=x_list.id)
+				
+			count += 1
 		else:
 			continue
 			print(f"Updating scheduled course ({yr}{sem}): {dept} {c_num} ", end="")
@@ -328,7 +335,21 @@ def populate_course(course_info, cur_sem=None):
 
 def __parse_title(cs_title):
 	m = re.search(r"^\d+-(.*)", cs_title)
-	return None if m is None else titlecase(m.group(1))
+
+	if m is None:
+		return None
+
+	title_words = titlecase(m.group(1)).split()
+	return ' '.join([word.upper() if __is_all_one_letter(word) else word for word in title_words])
+
+
+def __is_all_one_letter(word):
+
+	word = word.lower()
+	for c in ascii_lowercase:
+		if word == c * len(word):
+			return True
+	return False
 
 
 def __parse_location(title, building, room):

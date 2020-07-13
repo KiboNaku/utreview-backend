@@ -37,16 +37,13 @@ def __get_topic_zero(topic_courses):
 
 if __name__ == '__main__':
 
-
-
-    # app.run(debug=True)
     # from utreview.services.fetch_ftp import fetch_ftp_files, parse_ftp
     # fetch_ftp_files('input_data')
 
     # fetch semester values 
     # from utreview.services.fetch_ftp import fetch_sem_values
     # fetch_sem_values("input_data", "")
-    # update_sem_vals("semester.txt")
+    update_sem_vals("semester.txt")
 
     # fetch dept info----------------------
     # depts = fetch_depts()

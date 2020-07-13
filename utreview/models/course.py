@@ -33,6 +33,14 @@ class Course(db.Model):
     topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'), nullable=True)
     dept_id = db.Column(db.Integer, db.ForeignKey('dept.id'), nullable=False)
     
+    # update on review submission/ecis update
+    ecis_avg = db.Column(db.Float, nullable=True)
+    num_ratings = db.Column(db.Integer, default=0)
+    approval = db.Column(db.Float, nullable=True)
+    clear = db.Column(db.Float, nullable=True)
+    engaging = db.Column(db.Float, nullable=True)
+    grading = db.Column(db.Float, nullable=True)
+
     ecis = db.relationship("EcisScore", backref="course", lazy=True)
     reviews = db.relationship('CourseReview', backref='course', lazy=True)
     scheduled = db.relationship('ScheduledCourse', backref='course', lazy=True)
