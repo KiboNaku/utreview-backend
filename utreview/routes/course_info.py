@@ -212,26 +212,31 @@ def get_course_requisites(course):
     }
     return course_requisites
 
-def get_ecis(obj):
+def get_ecis(course, prof):
     """
-    Given a course or prof model instance, obtain the average ecis scores over all semesters
+    Given a course and prof model instance, obtain the average ecis scores over all semesters
 
     Args:
-        obj (model instance): course or prof instance
+        course (model instance): course instance,
+        prof (model instance): prof instance
         
     Returns:
         course_ecis (float): Average course ecis score
         prof_ecis (float): Average prof ecis score
     """
-    ecis_scores = obj.ecis
-    if len(ecis_scores) == 0:
+    ecis_scores = EcisScore.query.all()
+    scores = []
+    for ecis_score in ecis_scores:
+        if(ecis_score.course_id == course.id and ecis_score.prof_id == prof.id):
+            scores.append(ecis_score)
+    if len(scores) == 0:
         course_ecis = None
         prof_ecis = None
     else:
         total_students = 0
         course_ecis = 0
         prof_ecis = 0
-        for ecis in ecis_scores:
+        for ecis in scores:
             course_ecis += ecis.course_avg * ecis.num_students
             prof_ecis += ecis.prof_avg * ecis.num_students
             total_students += ecis.num_students
@@ -391,7 +396,7 @@ def get_course_schedule(course, is_parent):
 
     return course_schedule
 
-def get_review_info(review, percentLiked, usefulness, difficulty, workload, logged_in, curr_user):
+def get_review_info(review, logged_in, curr_user):
     """
     Get review information for a particular review instance
 
@@ -440,11 +445,6 @@ def get_review_info(review, percentLiked, usefulness, difficulty, workload, logg
         semester = "N/A"
     
     course_review = review.course_review[0]
-    if(course_review.approval):
-        percentLiked += 1
-    difficulty += course_review.difficulty
-    usefulness += course_review.usefulness
-    workload += course_review.workload
 
     user = review.author
     prof = review.prof_review[0].prof
@@ -512,8 +512,8 @@ def get_course_reviews(course, logged_in, curr_user, is_parent):
             }
         review_list (list): list of all reviews for the course
     """
-    ecis_course_score, ecis_prof_score = get_ecis(course)
-    course_review_ids = []
+
+    course_reviews_ids = []
     course_reviews = course.reviews
     for i in range(len(course.reviews)):
         course_reviews_ids.append(course.reviews[i].id)
@@ -525,34 +525,19 @@ def get_course_reviews(course, logged_in, curr_user, is_parent):
                     continue
                 course_reviews_ids.append(topic_course.reviews[i].id)
                 course_reviews.append(topic_course.reviews[i])
+
     review_list = []
-    if(len(course_reviews) == 0):
-        percentLiked = None
-        difficulty = None
-        usefulness = None
-        workload = None
-    else:
-        percentLiked = 0
-        difficulty = 0
-        usefulness = 0
-        workload = 0
-        for course_review in course_reviews:
-            review = course_review.review
-            review_object = get_review_info(review, percentLiked, 
-                difficulty, usefulness, workload, logged_in, curr_user)
-            review_list.append(review_object)
-        percentLiked = round(percentLiked/len(course_reviews), 2) * 100
-        difficulty = round(difficulty/len(course_reviews), 1)
-        usefulness = round(usefulness/len(course_reviews), 1)
-        workload = round(workload/len(course_reviews), 1)
-    numRatings = len(course_reviews)
+    for course_review in course_reviews:
+        review = course_review.review
+        review_object = get_review_info(review, logged_in, curr_user)
+        review_list.append(review_object)
     course_rating = {
-        'eCIS': course.ecis_avg,
-        'percentLiked': percentLiked,
-        'difficulty': difficulty,
-        'usefulness': usefulness,
-        'workload': workload,
-        'numRatings': numRatings
+        'eCIS': round(course.ecis_avg, 1),
+        'percentLiked': round(course.approval, 2) * 100,
+        'difficulty': round(course.difficulty, 1),
+        'usefulness': round(course.usefulness, 1),
+        'workload': round(course.workload, 1),
+        'numRatings': course.num_ratings
     }
     return course_rating, review_list
 
@@ -592,7 +577,7 @@ def get_course_profs(course, is_parent):
                 course_prof.append(topic_course.prof_course[i])
     for prof_course in course_prof:
         prof = prof_course.prof
-        ecis_course_score, ecis_prof_score = get_ecis(prof)
+        course_ecis, prof_ecis = get_ecis(course, prof)
         prof_reviews = prof.reviews
         course_reviews = course.reviews
         review_ids = [course_review.review_id for course_review in course_reviews]
@@ -629,7 +614,7 @@ def get_course_profs(course, is_parent):
             'clear': clear,
             'engaging': engaging,
             'grading': grading,
-            'eCIS': ecis_prof_score
+            'eCIS': prof_ecis
         }
         prof_list.append(prof_obj)
     

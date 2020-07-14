@@ -49,9 +49,13 @@ def new_review():
     prof_clear = request.get_json()['prof_clear']
     prof_engaging = request.get_json()['prof_engaging']
     prof_grading = request.get_json()['prof_grading']
+
     course = Course.query.filter_by(id=course_id).first()
     user = User.query.filter_by(email=user_email).first()
     prof = Prof.query.filter_by(id=prof_id).first()
+
+    update_course_stats(course, course_approval, course_difficulty, course_usefulness, course_workload, False, None)
+    update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, False, None)
 
     sem = Semester.query.filter_by(id=sem_id).first()
     review = Review(user_id=user.id, sem_id=sem.id, grade=grade)
@@ -78,6 +82,76 @@ def new_review():
     result = jsonify({'result': result_review})
 
     return result
+
+def update_course_stats(course, course_approval, course_difficulty, course_usefulness, course_workload, editing, prev_course_review):
+    if(editing):
+        num_liked = course.approval * course.num_ratings
+        if(course_approval): 
+            if(not prev_course_review.approval):
+                course.approval = (num_liked + 1)/(course.num_ratings)
+        else:
+            if(prev_course_review.approval):
+                course.approval = (num_liked - 1)/(course.num_ratings)
+        course.usefulness = (course.usefulness * course.num_ratings - prev_course_review.usefulness + course_usefulness)/(course.num_ratings)
+        course.difficulty = (course.difficulty * course.num_ratings - prev_course_review.difficulty + course_difficulty)/(course.num_ratings)
+        course.workload = (course.workload * course.num_ratings - prev_course_review.workload + course_workload)/(course.num_ratings)
+    else:
+        if(course.num_ratings == 0):
+            if(course_approval):
+                course.approval = 1
+            else:
+                course.approval = 0
+            course.usefulness = course_usefulness
+            course.difficulty = course_difficulty
+            course.workload = course_workload
+            course.num_ratings = 1
+        else:
+            num_liked = course.approval * course.num_ratings
+            if(course_approval):            
+                course.approval = (num_liked + 1)/(course.num_ratings + 1)
+            else:
+                course.approval = num_liked/(course.num_ratings + 1)
+            course.usefulness = (course.usefulness * course.num_ratings + course_usefulness)/(course.num_ratings + 1)
+            course.difficulty = (course.difficulty * course.num_ratings + course_difficulty)/(course.num_ratings + 1)
+            course.workload = (course.workload * course.num_ratings + course_workload)/(course.num_ratings + 1)
+            couse.num_ratings = course.num_ratings + 1
+    
+    db.session.commit()
+
+def update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, editing, prev_prof_review):
+    if(editing):
+        num_liked = prof.approval * prof.num_ratings
+        if(prof_approval):
+            if(not prev_prof_review.approval):
+                prof.approval = (num_liked + 1)/(prof.num_ratings)
+        else:
+            if(prev_prof_review.approval):
+                prof.approval = (num_liked - 1)/(prof.num_ratings)
+        prof.clear = (prof.clear * prof.num_ratings - prev_prof_review.clear + prof_clear)/(prof.num_ratings)
+        prof.engaging = (prof.engaging * prof.num_ratings - prev_prof_review.engaging + prof_engaging)/(prof.num_ratings)
+        prof.grading = (prof.grading * prof.num_ratings - prev_prof_review.grading + prof_grading)/(prof.num_ratings)
+    else:
+        if(prof.num_ratings == 0):
+            if(prof_approval):
+                prof.approval = 1
+            else:
+                prof.approval = 0
+            prof.clear = prof_clear
+            prof.engaging = prof_engaging
+            prof.grading = prof_grading
+            prof.num_ratings = 1
+        else:
+            num_liked = prof.approval * prof.num_ratings
+            if(prof_approval):            
+                prof.approval = (num_liked + 1)/(prof.num_ratings + 1)
+            else:
+                prof.approval = num_liked/(prof.num_ratings + 1)
+            prof.clear = (prof.clear * prof.num_ratings + prof_clear)/(prof.num_ratings + 1)
+            prof.engaging = (prof.engaging * prof.num_ratings + prof_engaging)/(prof.num_ratings + 1)
+            prof.grading = (prof.grading * prof.num_ratings + prof_grading)/(prof.num_ratings + 1)
+            prof.num_ratings = prof.num_ratings + 1
+
+    db.session.commit()
 
 
 @app.route('/api/review_error', methods=['POST'])
@@ -202,6 +276,9 @@ def edit_review():
 
     prev_course_review = CourseReview.query.filter_by(review_id=review.id)
     prev_prof_review = ProfReview.query.filter_by(review_id=review.id)
+
+    update_course_stats(course, course_approval, course_difficulty, course_usefulness, course_workload, True, prev_course_review)
+    update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, True, prev_prof_review)
 
     db.session.delete(prev_course_review)
     db.session.delete(prev_prof_review)

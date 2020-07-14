@@ -202,7 +202,7 @@ def get_prof_schedule(prof):
 
     return prof_schedule
 
-def get_review_info(review, percentLiked, clear, engaging, grading, logged_in, curr_user):
+def get_review_info(review, logged_in, curr_user):
     """
     Get review information for a particular review instance
 
@@ -251,11 +251,6 @@ def get_review_info(review, percentLiked, clear, engaging, grading, logged_in, c
         semester = "N/A"
     
     prof_review = review.prof_review[0]
-    if(prof_review.approval):
-        percentLiked += 1
-    clear += prof_review.clear
-    engaging += prof_review.engaging
-    grading += prof_review.grading
 
     user = review.author
     course = review.course_review[0].course
@@ -323,7 +318,6 @@ def get_prof_reviews(prof, logged_in, curr_user):
             }
         review_list (list): list of all reviews for the prof
     """
-    ecis_course_score, ecis_prof_score = get_ecis(prof)
     prof_reviews = prof.reviews
     review_list = []
     if(len(prof_reviews) == 0):
@@ -338,8 +332,7 @@ def get_prof_reviews(prof, logged_in, curr_user):
         grading = 0
         for prof_review in prof_reviews:
             review = prof_review.review
-            review_object = get_review_info(review, percentLiked, 
-                clear, engaging, grading, logged_in, curr_user)
+            review_object = get_review_info(review, logged_in, curr_user)
             review_list.append(review_object)
         percentLiked = round(percentLiked/len(prof_reviews), 2) * 100
         clear = round(clear/len(prof_reviews), 1)
@@ -347,12 +340,12 @@ def get_prof_reviews(prof, logged_in, curr_user):
         grading = round(grading/len(prof_reviews), 1)
     numRatings = len(prof_reviews)
     prof_rating = {
-        'eCIS': ecis_prof_score,
-        'percentLiked': percentLiked,
-        'clear': clear,
-        'engaging': engaging,
-        'grading': grading,
-        'numRatings': numRatings
+        'eCIS': round(prof.ecis_avg, 1),
+        'percentLiked': round(prof.approval, 2) * 100,
+        'clear': round(prof.clear, 1),
+        'engaging': round(prof.engaging, 1),
+        'grading': round(prof.grading, 1),
+        'numRatings': prof.num_ratings
     }
     return prof_rating, review_list
 
@@ -381,7 +374,7 @@ def get_prof_courses(prof):
     course_prof = prof.prof_course
     for prof_course in course_prof:
         course = prof_course.course
-        ecis_course_score, ecis_prof_score = get_ecis(course)
+        course_ecis, prof_ecis = get_ecis(course, prof)
         prof_reviews = prof.reviews
         course_reviews = course.reviews
         review_ids = [prof_review.review_id for prof_review in prof_reviews]
@@ -419,7 +412,7 @@ def get_prof_courses(prof):
             'difficulty': difficulty,
             'usefulness': usefulness,
             'workload': workload,
-            'eCIS': ecis_course_score
+            'eCIS': course_ecis
         }
         course_list.append(course_obj)
     
