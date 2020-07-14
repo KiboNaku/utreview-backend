@@ -11,7 +11,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(120), nullable=False)
     verified = db.Column(db.Boolean, nullable=False)
-    other_major = db.Column(db.String(50))
+    other_major = db.Column(db.String(50), nullable=True)
 
     major_id = db.Column(db.Integer, db.ForeignKey('dept.id'))
     profile_pic_id = db.Column(db.Integer, db.ForeignKey('profile_pic.id'), nullable=False)
