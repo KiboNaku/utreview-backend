@@ -35,6 +35,9 @@ def register():
             'verified' (boolean): whether the user has verified their account
         returns error if account already exists for the specified email
     """
+
+    r_val = {'email': None, 'success': 0, 'error': None}
+
     first_name = request.get_json()['first_name']
     last_name = request.get_json()['last_name']
     email = request.get_json()['email']
@@ -48,12 +51,14 @@ def register():
     user = User.query.filter_by(email=email).first()
     if user:
         if user.verified:
-            result = jsonify({"error": "An account already exists for this email."})
+            r_val['success'] = -1
+            r_val['error'] = "An account already exists for this email."
         else:
             user.first_name = first_name
             user.last_name = last_name
             user.password_hash = password_hash
     else:
+        r_val['email'] = user.email
         user = User(first_name=first_name, last_name=last_name, 
             email=email, password_hash=password_hash, profile_pic_id=profile_pic.id, 
             verified=False, major_id=dept.id)
@@ -62,7 +67,7 @@ def register():
         send_confirm_email(user.email, user.first_name)
 
     db.session.commit()
-    return {'email': user.email}
+    return r_val
 
 
 @app.route('/api/send_confirm_email', methods=['POST'])
@@ -70,13 +75,17 @@ def send_confirm_email():
 
     email = request.get_json()['email']
     user = User.query.filter_by(email=email).first()
-    send_confirm_email(email, user.first_name)
+
+    if user is None:
+        return {'success': -3}
+
+    return send_confirm_email(email, user.first_name)
 
 
 @app.route('/api/confirm_email', methods=['POST'])
 def confirm_email():
     token = request.get_json()['token']
-    r_val = {'success': 0, 'error': None}
+    r_val = {'token': None, 'success': 0, 'error': None}
     try:
         email = s.loads(token, salt='confirm_email', max_age=3600)
         user = User.query.filter_by(email=email).first()
@@ -88,6 +97,7 @@ def confirm_email():
             user.verified = True
             db.session.commit()
             r_val['success'] = 1
+            r_val['token'] = get_user_token(email)
     except SignatureExpired:
         r_val["success"] = -2
         r_val['error'] = "The confirmation code has expired."
@@ -119,35 +129,51 @@ def login():
     """
     email = request.get_json()['email']
     password = request.get_json()['password']
+    r_val = {'token': None, 'success': 0, 'error': None}
 
     user = User.query.filter_by(email=email).first()
 
-    if user and bcrypt.check_password_hash(user.password, password):
-        major = Dept.query.filter_by(id=user.major_id).first()
-        profile_pic = ProfilePic.query.filter_by(id=user.profile_pic_id).first()
-        access_token = create_access_token(identity={
+    if user and bcrypt.check_password_hash(user.password_hash, password):
+        
+        if user.verified:
+            r_val["success"] = 1
+            r_val['token'] = get_user_token(email)
+        else:
+            r_val["success"] = -101
+            r_val['error'] = "Account not verified."
+    else:
+        r_val["success"] = -1
+        r_val['error'] = "Invalid username and password combination."
+
+    return r_val
+
+
+def get_user_token(email):
+    
+    user = User.query.filter_by(email=email).first()
+    access_token = create_access_token(identity={
             'first_name': user.first_name,
             'last_name': user.last_name,
             'email': user.email,
-            'major': major.name,
-            'profile_pic': profile_pic.file_name
+            'major': user.major.name,
+            'profile_pic': user.pic
         })
-        result = access_token
-    else:
-        result = jsonify({"error": "Invalid username and password"})
-
-    return result
+    return access_token
 
 
 def send_confirm_email(email, name=None):
+
+    r_val = {'success': 0}
 
     if name is None:
         
         user = User.query.filter_by(email=email).first()
         if user is None:
-            return False
+            r_val['success'] = -1
+            return r_val
         name = user.first_name
 
+    r_val['success'] = 1
     msg = Message(
             'UT Review Confirmation Email',
             sender=("UT Review", "utexas.review@gmail.com"), 
@@ -159,5 +185,5 @@ def send_confirm_email(email, name=None):
 
     msg.html = render_template('confirm_email.html', name=name, link=link, email=email)
     mail.send(msg)
-    return True
+    return r_val
 
