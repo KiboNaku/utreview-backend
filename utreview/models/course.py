@@ -37,9 +37,9 @@ class Course(db.Model):
     ecis_avg = db.Column(db.Float, nullable=True)
     num_ratings = db.Column(db.Integer, default=0)
     approval = db.Column(db.Float, nullable=True)
-    clear = db.Column(db.Float, nullable=True)
-    engaging = db.Column(db.Float, nullable=True)
-    grading = db.Column(db.Float, nullable=True)
+    difficulty = db.Column(db.Float, nullable=True)
+    usefulness = db.Column(db.Float, nullable=True)
+    workload = db.Column(db.Float, nullable=True)
 
     ecis = db.relationship("EcisScore", backref="course", lazy=True)
     reviews = db.relationship('CourseReview', backref='course', lazy=True)

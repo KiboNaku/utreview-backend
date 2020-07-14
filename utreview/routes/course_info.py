@@ -91,7 +91,7 @@ def course_details():
         curr_user = User.query.filter_by(email=user_email).first()
     else:
         curr_user = None
-        
+
     print("get course info")
     course_info, course, is_parent = get_course_info(course_id)
     print("get course requisites")
@@ -547,7 +547,7 @@ def get_course_reviews(course, logged_in, curr_user, is_parent):
         workload = round(workload/len(course_reviews), 1)
     numRatings = len(course_reviews)
     course_rating = {
-        'eCIS': ecis_course_score,
+        'eCIS': course.ecis_avg,
         'percentLiked': percentLiked,
         'difficulty': difficulty,
         'usefulness': usefulness,
