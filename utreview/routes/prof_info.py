@@ -77,6 +77,8 @@ def prof_details():
 
     if(logged_in):
         curr_user = User.query.filter_by(email=user_email).first()
+    else:
+        curr_user = None
 
     prof = Prof.query.filter_by(id=prof_id).first()
     prof_info = {
