@@ -88,7 +88,9 @@ def populate_search(courses_query, profs_query, search):
                 append_course(course, courses_list, profs_list, prof_ids)
                 
     for course in courses_query:
-        if search.replace(" ", "") in str(course):
+        course_str = course.dept.abr + course.num
+        course_str = course_str.lower().replace(" ", "")
+        if search.replace(" ", "") in course_str:
             if(course.id in course_ids):
                 continue
             else:
@@ -123,54 +125,28 @@ def populate_all(courses_query, profs_query):
     profs_list = []
 
     for course in courses_query:
-
-        # course_ecis, prof_ecis = get_ecis(course)
-        course_ecis, prof_ecis = "", ""
         dept = course.dept
-        # course_reviews = course.reviews
-        # num_ratings = len(course_reviews)
-        num_ratings = 0
-        percentLiked = None
-        # if(len(course_reviews) == 0):
-        #     percentLiked = None
-        # else:
-        #     percentLiked = 0
-        #     for course_review in course_reviews:
-        #         if(course_review.approval):
-        #             percentLiked += 1
-        #     percentLiked = round(percentLiked/len(course_reviews), 2) * 100
         course_object = {
             'id': course.id,
             'courseDept': dept.abr,
             'courseNum': course.num,
             'courseTitle': course.title,
             'courseTopic': course.topic_num,
-            'approval': percentLiked,
-            'eCIS': course_ecis,
-            'numRatings': num_ratings
+            'approval': round(course.approval, 2) * 100 if course.approval != None else None,
+            'eCIS': round(course.ecis_avg, 1) if course.ecis_avg != None else None,
+            'numRatings': course.num_ratings
         }
         courses_list.append(course_object)
     print(time.time()-s_time)
     
     for prof in profs_query:
-        course_ecis, prof_ecis = get_ecis(prof)
-        prof_reviews = prof.reviews
-        num_ratings = len(prof_reviews)
-        if(len(prof_reviews) == 0):
-            percentLiked = None
-        else:
-            percentLiked = 0
-            for prof_review in prof_reviews:
-                if(prof_review.approval):
-                    percentLiked += 1
-            percentLiked = round(percentLiked/len(prof_reviews), 2) * 100
         prof_object = {
             'id': prof.id,
             'firstName': prof.first_name,
             'lastName': prof.last_name,
-            'approval': percentLiked,
-            'eCIS': prof_ecis,
-            'numRatings': num_ratings
+            'approval': round(prof.approval, 2) * 100 if prof.approval != None else None,
+            'eCIS': round(prof.ecis_avg, 1) if prof.ecis_avg != None else None,
+            'numRatings': prof.num_ratings
         }
         profs_list.append(prof_object)
     print(time.time()-s_time)
@@ -191,49 +167,28 @@ def append_course(course, courses_list, profs_list, prof_ids):
     dept = course.dept
     for course_pc in course.prof_course:
         prof = course_pc.prof
-        course_ecis, prof_ecis = get_ecis(prof)
         if(prof.id in prof_ids):
             continue
         prof_ids.append(prof.id)
-        prof_reviews = prof.reviews
-        num_ratings = len(prof_reviews)
-        if(len(prof_reviews) == 0):
-            percentLiked = None
-        else:
-            percentLiked = 0
-            for prof_review in prof_reviews:
-                if(prof_review.approval):
-                    percentLiked += 1
-            percentLiked = round(percentLiked/len(prof_reviews), 2) * 100
         prof_object = {
             'id': prof.id,
             'firstName': prof.first_name,
             'lastName': prof.last_name,
-            'approval': percentLiked,
-            'eCIS': prof_ecis,
-            'numRatings': num_ratings
+            'approval': round(prof.approval, 2) * 100 if prof.approval != None else None,
+            'eCIS': round(prof.ecis_avg, 1) if prof.ecis_avg != None else None,
+            'numRatings': prof.num_ratings
         }
         profs_list.append(prof_object)
-    course_reviews = course.reviews
-    num_ratings = len(course_reviews)
-    if(len(course_reviews) == 0):
-        percentLiked = None
-    else:
-        percentLiked = 0
-        for course_review in course_reviews:
-            if(course_review.approval):
-                percentLiked += 1
-        percentLiked = round(percentLiked/len(course_reviews), 2) * 100
-    course_ecis, prof_ecis = get_ecis(course)
+
     course_object = {
         'id': course.id,
         'courseDept': dept.abr,
         'courseNum': course.num,
         'courseTitle': course.title,
         'courseTopic': course.topic_num,
-        'approval': percentLiked,
-        'eCIS': course_ecis,
-        'numRatings': num_ratings
+        'approval': round(course.approval, 2) * 100 if course.approval != None else None,
+        'eCIS': round(course.ecis_avg, 1) if course.ecis_avg != None else None,
+        'numRatings': course.num_ratings
     }
     courses_list.append(course_object)
 
@@ -251,49 +206,27 @@ def append_prof(prof, profs_list, courses_list, course_ids):
     """
     for prof_pc in prof.prof_course:
         course = prof_pc.course
-        course_ecis, prof_ecis = get_ecis(course)
         dept = course.dept
         if(course.id in course_ids):
             continue
         course_ids.append(course_ids)
-        course_reviews = course.reviews
-        num_ratings = len(course_reviews)
-        if(len(course_reviews) == 0):
-            percentLiked = None
-        else:
-            percentLiked = 0
-            for course_review in course_reviews:
-                if(course_review.approval):
-                    percentLiked += 1
-            percentLiked = round(percentLiked/len(course_reviews), 2) * 100
         course_object = {
             'id': course.id,
             'courseDept': dept.abr,
             'courseNum': course.num,
             'courseTitle': course.title,
             'courseTopic': course.topic_num,
-            'approval': percentLiked,
-            'eCIS': course_ecis,
-            'numRatings': num_ratings
+            'approval': round(course.approval, 2) * 100 if course.approval != None else None,
+            'eCIS': round(course.ecis_avg, 1) if course.ecis_avg != None else None,
+            'numRatings': course.num_ratings
         }
         courses_list.append(course_object)
-    course_ecis, prof_ecis = get_ecis(prof)
-    prof_reviews = prof.reviews
-    num_ratings = len(prof_reviews)
-    if(len(prof_reviews) == 0):
-        percentLiked = None
-    else:
-        percentLiked = 0
-        for prof_review in prof_reviews:
-            if(prof_review.approval):
-                percentLiked += 1
-        percentLiked = round(percentLiked/len(prof_reviews), 2) * 100
     prof_object = {
         'id': prof.id,
         'firstName': prof.first_name,
         'lastName': prof.last_name,
-        'approval': percentLiked,
-        'eCIS': prof_ecis,
-        'numRatings': num_ratings
+        'approval': round(prof.approval, 2) * 100 if prof.approval != None else None,
+        'eCIS': round(prof.ecis_avg, 1) if prof.ecis_avg != None else None,
+        'numRatings': prof.num_ratings
     }
     profs_list.append(prof_object)
