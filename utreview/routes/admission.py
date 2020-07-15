@@ -54,6 +54,7 @@ def register():
             r_val['success'] = -1
             r_val['error'] = "An account already exists for this email."
         else:
+            r_val['email'] = email
             user.first_name = first_name
             user.last_name = last_name
             user.password_hash = password_hash
