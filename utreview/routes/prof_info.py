@@ -320,31 +320,16 @@ def get_prof_reviews(prof, logged_in, curr_user):
     """
     prof_reviews = prof.reviews
     review_list = []
-    if(len(prof_reviews) == 0):
-        percentLiked = None
-        clear = None
-        engaging = None
-        grading = None
-    else:
-        percentLiked = 0
-        clear = 0
-        engaging = 0
-        grading = 0
-        for prof_review in prof_reviews:
-            review = prof_review.review
-            review_object = get_review_info(review, logged_in, curr_user)
-            review_list.append(review_object)
-        percentLiked = round(percentLiked/len(prof_reviews), 2) * 100
-        clear = round(clear/len(prof_reviews), 1)
-        engaging = round(engaging/len(prof_reviews), 1)
-        grading = round(grading/len(prof_reviews), 1)
-    numRatings = len(prof_reviews)
+    for prof_review in prof_reviews:
+        review = prof_review.review
+        review_object = get_review_info(review, logged_in, curr_user)
+        review_list.append(review_object)
     prof_rating = {
-        'eCIS': round(prof.ecis_avg, 1),
-        'percentLiked': round(prof.approval, 2) * 100,
-        'clear': round(prof.clear, 1),
-        'engaging': round(prof.engaging, 1),
-        'grading': round(prof.grading, 1),
+        'eCIS': round(prof.ecis_avg, 1) if prof.ecis_avg != None else None,
+        'percentLiked': round(prof.approval, 2) * 100 if prof.approval != None else None,
+        'clear': round(prof.clear, 1) if prof.clear != None else None,
+        'engaging': round(prof.engaging, 1) if prof.engaging != None else None,
+        'grading': round(prof.grading, 1) if prof.grading != None else None,
         'numRatings': prof.num_ratings
     }
     return prof_rating, review_list

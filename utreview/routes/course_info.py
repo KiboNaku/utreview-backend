@@ -532,11 +532,11 @@ def get_course_reviews(course, logged_in, curr_user, is_parent):
         review_object = get_review_info(review, logged_in, curr_user)
         review_list.append(review_object)
     course_rating = {
-        'eCIS': round(course.ecis_avg, 1),
-        'percentLiked': round(course.approval, 2) * 100,
-        'difficulty': round(course.difficulty, 1),
-        'usefulness': round(course.usefulness, 1),
-        'workload': round(course.workload, 1),
+        'eCIS': round(course.ecis_avg, 1) if course.ecis_avg != None else None,
+        'percentLiked': round(course.approval, 2) * 100 if course.approval != None else None,
+        'difficulty': round(course.difficulty, 1) if course.difficulty != None else None,
+        'usefulness': round(course.usefulness, 1) if course.usefulness != None else None,
+        'workload': round(course.workload, 1) if course.workload != None else None,
         'numRatings': course.num_ratings
     }
     return course_rating, review_list
