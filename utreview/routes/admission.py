@@ -58,7 +58,7 @@ def register():
             user.last_name = last_name
             user.password_hash = password_hash
     else:
-        r_val['email'] = user.email
+        r_val['email'] = email
         user = User(first_name=first_name, last_name=last_name, 
             email=email, password_hash=password_hash, profile_pic_id=profile_pic.id, 
             verified=False, major_id=dept.id)
