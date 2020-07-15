@@ -84,9 +84,11 @@ def send_confirm_email():
 
 @app.route('/api/confirm_email', methods=['POST'])
 def confirm_email():
-    token = request.get_json()['token']
+
     r_val = {'token': None, 'success': 0, 'error': None}
+
     try:
+        token = request.get_json()['token']
         email = s.loads(token, salt='confirm_email', max_age=3600)
         user = User.query.filter_by(email=email).first()
 
@@ -104,6 +106,9 @@ def confirm_email():
     except BadTimeSignature:
         r_val["success"] = -3
         r_val['error'] = "The confirmation code is invalid."
+    except KeyError:
+        r_val["success"] = -4
+        r_val['error'] = "No confirmation code found."
 
     return r_val
 
