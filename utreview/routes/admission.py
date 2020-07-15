@@ -161,7 +161,7 @@ def get_user_token(email):
             'last_name': user.last_name,
             'email': user.email,
             'major': user.major.name,
-            'profile_pic': user.pic
+            'profile_pic': user.pic.file_name
         })
     return access_token
 
