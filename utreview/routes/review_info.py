@@ -179,6 +179,7 @@ def review_error():
     prof_id = request.get_json()['prof_id']
     sem_id = request.get_json()['sem_id']
     user_email = request.get_json()['user_email']
+    print(prof_id)
 
     course = Course.query.filter_by(id=course_id).first()
     user = User.query.filter_by(email=user_email).first()
@@ -199,9 +200,9 @@ def review_error():
     duplicate = False
     for user_review in user_reviews:
         if(user_review.semester.semester == sem.semester and user_review.semester.year == sem.year):
-            if(user_review.course_review.course_id == course.id):
+            if(user_review.course_review[0].course_id == course.id):
                 duplicate = True
-        if(user_review.course_review.course_id == course.id):
+        if(user_review.course_review[0].course_id == course.id):
             num_duplicates += 1
 
     if duplicate:

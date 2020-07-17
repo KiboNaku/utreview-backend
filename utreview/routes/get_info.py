@@ -51,6 +51,9 @@ def get_courses():
     get_all = request.get_json()['all']
     course_ids = []
     courses = []
+    topics = []
+    prof_ids = []
+    profs = []
     if(get_all):
         courses_list = Course.query.all()
         for course in courses_list:
@@ -63,14 +66,18 @@ def get_courses():
                 'topicId': course.topic_id,
                 'topicNum': course.topic_num
             }   
-        courses.append(course_obj)
+            if(course.topic_num > 0):
+                topics.append(course_obj)
+            else:
+                courses.append(course_obj)
     else:
         semester = Semester.query.filter_by(id=sem_id).first()
         prof_course_sem = semester.prof_course_sem
         
         for listing in prof_course_sem:
             course = listing.prof_course.course
-            if(course.topic_num > 0 or course.id in course_ids):
+            prof = listing.prof_course.prof
+            if(course.id in course_ids):
                 continue
             dept = course.dept.abr
             course_ids.append(course.id)
@@ -82,16 +89,32 @@ def get_courses():
                 'topicId': course.topic_id,
                 'topicNum': course.topic_num
             }
-            courses.append(course_obj)
-
-    result = jsonify({"courses": courses})
+            if(course.topic_num > 0):
+                topics.append(course_obj)
+            elif(course.topic_num == 0):
+                topics.append(course_obj)
+                courses.append(course_obj)
+            else:
+                courses.append(course_obj)
+            
+            if(prof.id in prof_ids):
+                continue
+            prof_ids.append(prof.id)
+            prof_obj = {
+                'id': prof.id,
+                'firstName': prof.first_name,
+                'lastName': prof.last_name
+            }
+            profs.append(prof_obj)
+    result = jsonify({"courses": courses, "topics": topics, "profs": profs})
     return result
 
 
 @app.route('/api/get_topics', methods=['POST'])
 def get_topics():
     """
-    Gets list of all topics, filtered by a topic id
+    Gets list of all topics, filtered by a topic id and semester id, if semester id
+    is null, disregard the semester
 
     Args:
         topicId (int): topic id
@@ -107,17 +130,46 @@ def get_topics():
         }
     """
     topic_id = request.get_json()['topicId']
-    topic = Topic.query.filter_by(id=topic_id).first()
+    sem_id = request.get_json()['semesterId']
     topics = []
-    for course in topic.courses:
-        topic_obj = {
-            'id': course.id,
-            'topicTitle': course.title,
-            'topicNum': course.topic_num
-        }
-        topics.append(topic_obj)
+    topic_ids = []
+    profs = []
+    prof_ids = []
+    if(sem_id == None):
+        topic = Topic.query.filter_by(id=topic_id).first()
+        for course in topic.courses:
+            topic_obj = {
+                'id': course.id,
+                'topicTitle': course.title,
+                'topicNum': course.topic_num
+            }
+            topics.append(topic_obj)
+    else:
+        semester = Semester.query.filter_by(id=sem_id).first()
+        prof_course_sem = semester.prof_course_sem
+        for listing in prof_course_sem:
+            course = listing.prof_course.course
+            prof = listing.prof_course.prof
+            if(course.id in topic_ids or course.topic_id != topic_id):
+                continue
+            topic_ids.append(course.id)
+            topic_obj = {
+                'id': course.id,
+                'topicTitle': course.title,
+                'topicNum': course.topic_num
+            }
+            topics.append(topic_obj)
+            if(prof.id in prof_ids):
+                continue
+            prof_ids.append(prof.id)
+            prof_obj = {
+                'id': prof.id,
+                'firstName': prof.first_name,
+                'lastName': prof.last_name
+            }
+            profs.append(prof_obj)
 
-    result = jsonify({"topics": topics})
+    result = jsonify({"topics": topics, "profs": profs})
     return result
 
 
