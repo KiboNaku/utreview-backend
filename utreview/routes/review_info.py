@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
 from flask_jwt_extended import (create_access_token)
 from utreview.models import *
@@ -42,13 +43,13 @@ def new_review():
     prof_comments = request.get_json()['prof_comments']
     course_approval = request.get_json()['course_approval']
     prof_approval = request.get_json()['prof_approval']
-    course_usefulness = request.get_json()['course_usefulness']
-    course_difficulty = request.get_json()['course_difficulty']
-    course_workload = request.get_json()['course_workload']
+    course_usefulness = int(request.get_json()['course_usefulness'])
+    course_difficulty = int(request.get_json()['course_difficulty'])
+    course_workload = int(request.get_json()['course_workload'])
     grade = request.get_json()['grade']
-    prof_clear = request.get_json()['prof_clear']
-    prof_engaging = request.get_json()['prof_engaging']
-    prof_grading = request.get_json()['prof_grading']
+    prof_clear = int(request.get_json()['prof_clear'])
+    prof_engaging = int(request.get_json()['prof_engaging'])
+    prof_grading = int(request.get_json()['prof_grading'])
 
     course = Course.query.filter_by(id=course_id).first()
     user = User.query.filter_by(email=user_email).first()
@@ -178,6 +179,7 @@ def review_error():
     prof_id = request.get_json()['prof_id']
     sem_id = request.get_json()['sem_id']
     user_email = request.get_json()['user_email']
+    print(prof_id)
 
     course = Course.query.filter_by(id=course_id).first()
     user = User.query.filter_by(email=user_email).first()
@@ -198,9 +200,9 @@ def review_error():
     duplicate = False
     for user_review in user_reviews:
         if(user_review.semester.semester == sem.semester and user_review.semester.year == sem.year):
-            if(user_review.course_review.course_id == course.id):
+            if(user_review.course_review[0].course_id == course.id):
                 duplicate = True
-        if(user_review.course_review.course_id == course.id):
+        if(user_review.course_review[0].course_id == course.id):
             num_duplicates += 1
 
     if duplicate:
@@ -259,13 +261,13 @@ def edit_review():
     prof_comments = request.get_json()['prof_comments']
     course_approval = request.get_json()['course_approval']
     prof_approval = request.get_json()['prof_approval']
-    course_usefulness = request.get_json()['course_usefulness']
-    course_difficulty = request.get_json()['course_difficulty']
-    course_workload = request.get_json()['course_workload']
+    course_usefulness = int(request.get_json()['course_usefulness'])
+    course_difficulty = int(request.get_json()['course_difficulty'])
+    course_workload = int(request.get_json()['course_workload'])
     grade = request.get_json()['grade']
-    prof_clear = request.get_json()['prof_clear']
-    prof_engaging = request.get_json()['prof_engaging']
-    prof_grading = request.get_json()['prof_grading']
+    prof_clear = int(request.get_json()['prof_clear'])
+    prof_engaging = int(request.get_json()['prof_engaging'])
+    prof_grading = int(request.get_json()['prof_grading'])
 
     course = Course.query.filter_by(id=course_id).first()
     user = User.query.filter_by(email=user_email).first()
@@ -273,9 +275,10 @@ def edit_review():
 
     review = Review.query.filter_by(id=review_id).first()
     review.grade = grade
+    review.date_posted = datetime.utcnow
 
-    prev_course_review = CourseReview.query.filter_by(review_id=review.id)
-    prev_prof_review = ProfReview.query.filter_by(review_id=review.id)
+    prev_course_review = CourseReview.query.filter_by(review_id=review.id).first()
+    prev_prof_review = ProfReview.query.filter_by(review_id=review.id).first()
 
     update_course_stats(course, course_approval, course_difficulty, course_usefulness, course_workload, True, prev_course_review)
     update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, True, prev_prof_review)

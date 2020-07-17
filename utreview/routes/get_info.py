@@ -51,10 +51,13 @@ def get_courses():
     get_all = request.get_json()['all']
     course_ids = []
     courses = []
+    topics = []
+    prof_ids = []
+    profs = []
     if(get_all):
         courses_list = Course.query.all()
         for course in courses_list:
-            dept = course.dept.abr
+            dept = course.dept
             course_obj = {
                 'id': course.id,
                 'dept': dept.abr,
@@ -63,35 +66,55 @@ def get_courses():
                 'topicId': course.topic_id,
                 'topicNum': course.topic_num
             }   
-        courses.append(course_obj)
+            if(course.topic_num > 0):
+                topics.append(course_obj)
+            else:
+                courses.append(course_obj)
     else:
         semester = Semester.query.filter_by(id=sem_id).first()
         prof_course_sem = semester.prof_course_sem
         
         for listing in prof_course_sem:
             course = listing.prof_course.course
-            if(course.topic_num > 0 or course.id in course_ids):
+            prof = listing.prof_course.prof
+            if(course.id in course_ids):
                 continue
             dept = course.dept.abr
             course_ids.append(course.id)
             course_obj = {
                 'id': course.id,
-                'dept': dept.abr,
+                'dept': dept,
                 'num': course.num,
                 'title': course.title,
                 'topicId': course.topic_id,
                 'topicNum': course.topic_num
             }
-            courses.append(course_obj)
-
-    result = jsonify({"courses": courses})
+            if(course.topic_num > 0):
+                topics.append(course_obj)
+            elif(course.topic_num == 0):
+                topics.append(course_obj)
+                courses.append(course_obj)
+            else:
+                courses.append(course_obj)
+            
+            if(prof.id in prof_ids):
+                continue
+            prof_ids.append(prof.id)
+            prof_obj = {
+                'id': prof.id,
+                'firstName': prof.first_name,
+                'lastName': prof.last_name
+            }
+            profs.append(prof_obj)
+    result = jsonify({"courses": courses, "topics": topics, "profs": profs})
     return result
 
 
 @app.route('/api/get_topics', methods=['POST'])
 def get_topics():
     """
-    Gets list of all topics, filtered by a topic id
+    Gets list of all topics, filtered by a topic id and semester id, if semester id
+    is null, disregard the semester
 
     Args:
         topicId (int): topic id
@@ -107,17 +130,46 @@ def get_topics():
         }
     """
     topic_id = request.get_json()['topicId']
-    topic = Topic.query.filter_by(id=topic_id).first()
+    sem_id = request.get_json()['semesterId']
     topics = []
-    for course in topic.courses:
-        topic_obj = {
-            'id': course.id,
-            'topicTitle': course.title,
-            'topicNum': course.topic_num
-        }
-        topics.append(topic_obj)
+    topic_ids = []
+    profs = []
+    prof_ids = []
+    if(sem_id == None):
+        topic = Topic.query.filter_by(id=topic_id).first()
+        for course in topic.courses:
+            topic_obj = {
+                'id': course.id,
+                'topicTitle': course.title,
+                'topicNum': course.topic_num
+            }
+            topics.append(topic_obj)
+    else:
+        semester = Semester.query.filter_by(id=sem_id).first()
+        prof_course_sem = semester.prof_course_sem
+        for listing in prof_course_sem:
+            course = listing.prof_course.course
+            prof = listing.prof_course.prof
+            if(course.id in topic_ids or course.topic_id != topic_id):
+                continue
+            topic_ids.append(course.id)
+            topic_obj = {
+                'id': course.id,
+                'topicTitle': course.title,
+                'topicNum': course.topic_num
+            }
+            topics.append(topic_obj)
+            if(prof.id in prof_ids):
+                continue
+            prof_ids.append(prof.id)
+            prof_obj = {
+                'id': prof.id,
+                'firstName': prof.first_name,
+                'lastName': prof.last_name
+            }
+            profs.append(prof_obj)
 
-    result = jsonify({"topics": topics})
+    result = jsonify({"topics": topics, "profs": profs})
     return result
 
 
@@ -166,8 +218,8 @@ def get_profs():
         for prof in prof_list:
             prof_obj = {
                 'id': prof.id,
-                'firstName': prof.firstName,
-                'lastName': prof.lastName,
+                'firstName': prof.first_name,
+                'lastName': prof.last_name,
             }
             profs.append(prof_obj)
     else:
@@ -178,17 +230,17 @@ def get_profs():
         for listing in prof_course_sem:
             course = listing.prof_course.course
             if(course_id == course.id):
-                prof = listing.prof_course
+                prof = listing.prof_course.prof
                 if(course.topic_num > 0 or prof.id in prof_ids):
                     continue
                 prof_ids.append(prof.id)
                 prof_obj = {
                     'id': prof.id,
-                    'firstName': prof.firstName,
-                    'lastName': prof.lastName,
+                    'firstName': prof.first_name,
+                    'lastName': prof.last_name,
                 }
                 profs.append(prof_obj)
-
+    print(profs)
     result = jsonify({"profs": profs})
     return result
 
@@ -260,7 +312,7 @@ def review_list():
     results = [
         {
             'id': result.id,
-            'date': result.date_posted,
+            'date': result.date_posted.strftime("%Y-%m-%d"),
             'grade': result.grade,
 
             'user': {
@@ -277,38 +329,38 @@ def review_list():
             },
 
             'prof': {
-                'id': result.prof_review.prof.id,
-                'firstName': result.prof_review.prof.first_name,
-                'lastName': result.prof_review.prof.last_name
+                'id': result.prof_review[0].prof.id,
+                'firstName': result.prof_review[0].prof.first_name,
+                'lastName': result.prof_review[0].prof.last_name
             },
 
             'course': {
-                'id': result.course_review.course.id,
+                'id': result.course_review[0].course.id,
                 'dept': {
-                    'abr': result.course_review.course.dept.abr,
-                    'name': result.course_review.course.dept.name
+                    'abr': result.course_review[0].course.dept.abr,
+                    'name': result.course_review[0].course.dept.name
                 },
-                'num': result.course_review.course.num,
-                'title': result.course_review.course.title,
-                'topicNum': result.course_review.course.topic_num,
-                'topicId': result.course_review.course.topic_id,
-                'parentId': get_parent_id(result.course_review.topic_id)
+                'num': result.course_review[0].course.num,
+                'title': result.course_review[0].course.title,
+                'topicNum': result.course_review[0].course.topic_num,
+                'topicId': result.course_review[0].course.topic_id,
+                'parentId': get_parent_id(result.course_review[0].course.topic_id)
             },
 
             'courseRating': {
-                'approval': result.course_review.approval,
-                'usefulness': result.course_review.usefulness,
-                'difficulty': result.course_review.difficulty,
-                'workload': result.course_review.workload,
-                'comments': result.course_review.comments
+                'approval': result.course_review[0].approval,
+                'usefulness': result.course_review[0].usefulness,
+                'difficulty': result.course_review[0].difficulty,
+                'workload': result.course_review[0].workload,
+                'comments': result.course_review[0].comments
             },
 
             'profRating': {
-                'approval': result.prof_review.approval,
-                'clear': result.prof_review.clear,
-                'engaging': result.prof_review.engaging,
-                'grading': result.prof_review.grading,
-                'comments': result.prof_review.comments
+                'approval': result.prof_review[0].approval,
+                'clear': result.prof_review[0].clear,
+                'engaging': result.prof_review[0].engaging,
+                'grading': result.prof_review[0].grading,
+                'comments': result.prof_review[0].comments
             },
         }
         
@@ -329,6 +381,8 @@ def semester_string(semester_num):
         return ""
 
 def get_parent_id(topic_id):
+    if(topic_id == None): 
+        return None
     topic = Topic.query.filter_by(id=topic_id).first()
     for course in topic.courses:
         if(course.topic_num == 0):
