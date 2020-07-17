@@ -275,7 +275,7 @@ def edit_review():
 
     review = Review.query.filter_by(id=review_id).first()
     review.grade = grade
-    review.date_posted = datetime.utcnow
+    review.date_posted = datetime.utcnow()
 
     prev_course_review = CourseReview.query.filter_by(review_id=review.id).first()
     prev_prof_review = ProfReview.query.filter_by(review_id=review.id).first()
@@ -327,9 +327,11 @@ def review_feedback():
     review_id = request.get_json()['reviewId']
 
     user = User.query.filter_by(email=user_email).first()
+    print(review_id)
+    print(user)
     
     if(is_course):
-        course_review = CourseReview.query.filter_by(review_id=review_id).first()
+        course_review = CourseReview.query.filter_by(id=review_id).first()
         if(is_like):
             review_dislike = CourseReviewDisliked.query.filter_by(user_id=user.id, course_review_id=course_review.id).first()
             if(review_dislike):
