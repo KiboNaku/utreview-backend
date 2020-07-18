@@ -77,35 +77,33 @@ def get_courses():
         for listing in prof_course_sem:
             course = listing.prof_course.course
             prof = listing.prof_course.prof
-            if(course.id in course_ids):
-                continue
-            dept = course.dept.abr
-            course_ids.append(course.id)
-            course_obj = {
-                'id': course.id,
-                'dept': dept,
-                'num': course.num,
-                'title': course.title,
-                'topicId': course.topic_id,
-                'topicNum': course.topic_num
-            }
-            if(course.topic_num > 0):
-                topics.append(course_obj)
-            elif(course.topic_num == 0):
-                topics.append(course_obj)
-                courses.append(course_obj)
-            else:
-                courses.append(course_obj)
+            if(course.id not in course_ids):
+                dept = course.dept.abr
+                course_ids.append(course.id)
+                course_obj = {
+                    'id': course.id,
+                    'dept': dept,
+                    'num': course.num,
+                    'title': course.title,
+                    'topicId': course.topic_id,
+                    'topicNum': course.topic_num
+                }
+                if(course.topic_num > 0):
+                    topics.append(course_obj)
+                elif(course.topic_num == 0):
+                    topics.append(course_obj)
+                    courses.append(course_obj)
+                else:
+                    courses.append(course_obj)
             
-            if(prof.id in prof_ids):
-                continue
-            prof_ids.append(prof.id)
-            prof_obj = {
-                'id': prof.id,
-                'firstName': prof.first_name,
-                'lastName': prof.last_name
-            }
-            profs.append(prof_obj)
+            if(prof.id not in prof_ids):
+                prof_ids.append(prof.id)
+                prof_obj = {
+                    'id': prof.id,
+                    'firstName': prof.first_name,
+                    'lastName': prof.last_name
+                }
+                profs.append(prof_obj)
     result = jsonify({"courses": courses, "topics": topics, "profs": profs})
     return result
 
@@ -150,24 +148,22 @@ def get_topics():
         for listing in prof_course_sem:
             course = listing.prof_course.course
             prof = listing.prof_course.prof
-            if(course.id in topic_ids or course.topic_id != topic_id):
-                continue
-            topic_ids.append(course.id)
-            topic_obj = {
-                'id': course.id,
-                'topicTitle': course.title,
-                'topicNum': course.topic_num
-            }
-            topics.append(topic_obj)
-            if(prof.id in prof_ids):
-                continue
-            prof_ids.append(prof.id)
-            prof_obj = {
-                'id': prof.id,
-                'firstName': prof.first_name,
-                'lastName': prof.last_name
-            }
-            profs.append(prof_obj)
+            if(course.id not in topic_ids and course.topic_id == topic_id):        
+                topic_ids.append(course.id)
+                topic_obj = {
+                    'id': course.id,
+                    'topicTitle': course.title,
+                    'topicNum': course.topic_num
+                }
+                topics.append(topic_obj)
+            if(prof.id not in prof_ids):
+                prof_ids.append(prof.id)
+                prof_obj = {
+                    'id': prof.id,
+                    'firstName': prof.first_name,
+                    'lastName': prof.last_name
+                }
+                profs.append(prof_obj)
 
     result = jsonify({"topics": topics, "profs": profs})
     return result
@@ -231,7 +227,7 @@ def get_profs():
             course = listing.prof_course.course
             if(course_id == course.id):
                 prof = listing.prof_course.prof
-                if(course.topic_num > 0 or prof.id in prof_ids):
+                if(prof.id in prof_ids):
                     continue
                 prof_ids.append(prof.id)
                 prof_obj = {

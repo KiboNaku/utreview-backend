@@ -275,7 +275,7 @@ def edit_review():
 
     review = Review.query.filter_by(id=review_id).first()
     review.grade = grade
-    review.date_posted = datetime.utcnow
+    review.date_posted = datetime.utcnow()
 
     prev_course_review = CourseReview.query.filter_by(review_id=review.id).first()
     prev_prof_review = ProfReview.query.filter_by(review_id=review.id).first()
@@ -307,6 +307,77 @@ def edit_review():
 
     return result
 
+@app.route('/api/delete_review', methods=['POST'])
+def delete_review():
+    """
+    Given a review id, delete the review from the database
+    Also update prof and course metrics to reflect review deletion
+
+    Args (sent from front end):
+        review_id (int): review id
+
+    Returns:
+
+    """
+    review_id = request.get_json()['reviewId']
+
+    review = Review.query.filter_by(id=review_id).first()
+    prev_course_review = CourseReview.query.filter_by(review_id=review.id).first()
+    prev_prof_review = ProfReview.query.filter_by(review_id=review.id).first()
+    for liked in prev_course_review.users_liked:
+        db.session.delete(liked)
+    for disliked in prev_course_review.users_disliked:
+        db.session.delete(disliked)
+    for liked in prev_prof_review.users_liked:
+        db.session.delete(liked)
+    for disliked in prev_prof_review.users_disliked:
+        db.session.delete(disliked)
+    db.session.commit()
+    course = prev_course_review.course
+    prof = prev_prof_review.prof
+
+    if(course.num_ratings <= 1):
+        course.num_ratings = 0
+        course.approval = None
+        course.usefulness = None
+        course.difficulty = None
+        course.workload = None
+    else:
+        num_liked = course.approval * course.num_ratings
+        if(prev_course_review.course_approval): 
+            course.approval = (num_liked - 1)/(course.num_ratings - 1)
+        else:
+            course.approval = (num_liked)/(course.num_ratings - 1)
+        course.usefulness = (course.usefulness * course.num_ratings - prev_course_review.usefulness)/(course.num_ratings - 1)
+        course.difficulty = (course.difficulty * course.num_ratings - prev_course_review.difficulty)/(course.num_ratings - 1)
+        course.workload = (course.workload * course.num_ratings - prev_course_review.workload )/(course.num_ratings - 1)
+        course.num_ratings = course.num_ratings - 1
+    db.session.commit()
+
+    if(prof.num_ratings <= 1):
+        prof.num_ratings = 0
+        prof.approval = None
+        prof.clear = None
+        prof.engaging = None
+        prof.grading = None
+    else:
+        num_liked = prof.approval * prof.num_ratings
+        if(prev_prof_review.prof_approval):
+            prof.approval = (num_liked - 1)/(prof.num_ratings - 1)
+        else:
+            prof.approval = (num_liked)/(prof.num_ratings - 1)
+        prof.clear = (prof.clear * prof.num_ratings - prev_prof_review.clear)/(prof.num_ratings - 1)
+        prof.engaging = (prof.engaging * prof.num_ratings - prev_prof_review.engaging)/(prof.num_ratings - 1)
+        prof.grading = (prof.grading * prof.num_ratings - prev_prof_review.grading)/(prof.num_ratings - 1)
+        prof.num_ratings = prof.num_ratings - 1
+
+    db.session.delete(prev_course_review)
+    db.session.delete(prev_prof_review)
+    db.session.delete(review)
+    db.session.commit()
+
+    return "success"
+
 @app.route('/api/review_feedback', methods=['POST'])
 def review_feedback():
     """
@@ -327,9 +398,11 @@ def review_feedback():
     review_id = request.get_json()['reviewId']
 
     user = User.query.filter_by(email=user_email).first()
+    print(review_id)
+    print(user)
     
     if(is_course):
-        course_review = CourseReview.query.filter_by(review_id=review_id).first()
+        course_review = CourseReview.query.filter_by(id=review_id).first()
         if(is_like):
             review_dislike = CourseReviewDisliked.query.filter_by(user_id=user.id, course_review_id=course_review.id).first()
             if(review_dislike):
