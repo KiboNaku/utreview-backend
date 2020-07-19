@@ -1,3 +1,4 @@
+import timeago, datetime
 from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
 from flask_jwt_extended import (create_access_token)
 from utreview.models import *
@@ -308,7 +309,7 @@ def review_list():
     results = [
         {
             'id': result.id,
-            'date': result.date_posted.strftime("%Y-%m-%d"),
+            'date': timeago.format(result.date_posted, datetime.datetime.utcnow()),
             'grade': result.grade,
 
             'user': {
