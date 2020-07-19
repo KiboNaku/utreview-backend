@@ -250,7 +250,7 @@ def review_list():
     reviews = []
 
     if rtype == 'user':
-        reviews = User.query.filter_by(email=name[0]).first().reviews
+        reviews = User.query.filter_by(email=name).first().reviews_posted
     elif rtype == 'prof':
         reviews = Prof.query.filter_by(first_name=name[0], last_name=name[1]).first().reviews
     elif rtype == 'course':
