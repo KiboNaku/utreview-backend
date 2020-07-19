@@ -54,6 +54,7 @@ def register():
             r_val['success'] = -1
             r_val['error'] = "An account already exists for this email."
         else:
+            r_val['email'] = email
             user.first_name = first_name
             user.last_name = last_name
             user.password_hash = password_hash
@@ -85,7 +86,7 @@ def send_confirm_email():
 @app.route('/api/confirm_email', methods=['POST'])
 def confirm_email():
 
-    r_val = {'token': None, 'success': 0, 'error': None}
+    r_val = {'success': 0, 'error': None}
 
     try:
         token = request.get_json()['token']
@@ -99,7 +100,6 @@ def confirm_email():
             user.verified = True
             db.session.commit()
             r_val['success'] = 1
-            r_val['token'] = get_user_token(email)
     except SignatureExpired:
         r_val["success"] = -2
         r_val['error'] = "The confirmation code has expired."
