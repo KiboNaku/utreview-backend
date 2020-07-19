@@ -86,7 +86,7 @@ def send_confirm_email():
 @app.route('/api/confirm_email', methods=['POST'])
 def confirm_email():
 
-    r_val = {'token': None, 'success': 0, 'error': None}
+    r_val = {'success': 0, 'error': None}
 
     try:
         token = request.get_json()['token']
@@ -100,7 +100,6 @@ def confirm_email():
             user.verified = True
             db.session.commit()
             r_val['success'] = 1
-            r_val['token'] = get_user_token(email)
     except SignatureExpired:
         r_val["success"] = -2
         r_val['error'] = "The confirmation code has expired."
@@ -162,7 +161,7 @@ def get_user_token(email):
             'last_name': user.last_name,
             'email': user.email,
             'major': user.major.name,
-            'profile_pic': user.pic
+            'profile_pic': user.pic.file_name
         })
     return access_token
 
