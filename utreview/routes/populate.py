@@ -110,6 +110,16 @@ def populate_search(courses_query, profs_query, search):
                 prof = Prof.query.filter_by(id=prof_id).first()
                 append_prof(prof, profs_list, courses_list, course_ids)
 
+    for prof in profs_query:
+        prof_str = prof.first_name + prof.last_name
+        prof_str = prof_str.lower().replace(" ", "")
+        if search.replace(" ", "") in prof_str:
+            if(prof.id in prof_ids):
+                continue
+            else:
+                prof_ids.append(prof.id)
+                append_prof(prof, profs_list, courses_list, course_ids)
+
     if(len(courses_list) < 1):
         courses_list = "empty"
     if(len(profs_list) < 1):
