@@ -1,3 +1,4 @@
+import timeago, datetime
 from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
 from flask_jwt_extended import (create_access_token)
 from utreview.models import *
@@ -484,6 +485,7 @@ def get_review_info(review, logged_in, curr_user):
         'numDisliked': num_disliked,
         'likePressed': like_pressed,
         'dislikePressed': dislike_pressed,
+        'dateString': timeago.format(review.date_posted, datetime.datetime.utcnow()),
         'date': review.date_posted.strftime("%Y-%m-%d"),
         'year': review.semester.year,
         'semester': semester
