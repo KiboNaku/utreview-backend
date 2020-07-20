@@ -115,7 +115,7 @@ def update_course_stats(course, course_approval, course_difficulty, course_usefu
             course.usefulness = (course.usefulness * course.num_ratings + course_usefulness)/(course.num_ratings + 1)
             course.difficulty = (course.difficulty * course.num_ratings + course_difficulty)/(course.num_ratings + 1)
             course.workload = (course.workload * course.num_ratings + course_workload)/(course.num_ratings + 1)
-            couse.num_ratings = course.num_ratings + 1
+            course.num_ratings = course.num_ratings + 1
     
     db.session.commit()
 
