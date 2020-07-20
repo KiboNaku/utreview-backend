@@ -59,7 +59,7 @@ def new_review():
     update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, False, None)
 
     sem = Semester.query.filter_by(id=sem_id).first()
-    review = Review(user_id=user.id, sem_id=sem.id, grade=grade)
+    review = Review(user_id=user.id, sem_id=sem.id, grade=grade, date_posted=datetime.utcnow())
     db.session.add(review)
     db.session.commit()
 
@@ -344,7 +344,7 @@ def delete_review():
         course.workload = None
     else:
         num_liked = course.approval * course.num_ratings
-        if(prev_course_review.course_approval): 
+        if(prev_course_review.approval): 
             course.approval = (num_liked - 1)/(course.num_ratings - 1)
         else:
             course.approval = (num_liked)/(course.num_ratings - 1)
@@ -362,7 +362,7 @@ def delete_review():
         prof.grading = None
     else:
         num_liked = prof.approval * prof.num_ratings
-        if(prev_prof_review.prof_approval):
+        if(prev_prof_review.approval):
             prof.approval = (num_liked - 1)/(prof.num_ratings - 1)
         else:
             prof.approval = (num_liked)/(prof.num_ratings - 1)
