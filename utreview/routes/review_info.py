@@ -59,7 +59,7 @@ def new_review():
     update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, False, None)
 
     sem = Semester.query.filter_by(id=sem_id).first()
-    review = Review(user_id=user.id, sem_id=sem.id, grade=grade)
+    review = Review(user_id=user.id, sem_id=sem.id, grade=grade, date_posted=datetime.utcnow())
     db.session.add(review)
     db.session.commit()
 
