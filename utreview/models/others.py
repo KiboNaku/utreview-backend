@@ -37,6 +37,12 @@ class Dept(db.Model):
 
 class ScheduledCourse(db.Model):
 
+    """WARNING: Do not use directly
+
+    Returns:
+        [type]: [description]
+    """
+
     id = db.Column(db.Integer, primary_key=True)
 
     unique_no = db.Column(db.Integer, nullable=False)
