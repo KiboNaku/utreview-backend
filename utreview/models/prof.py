@@ -17,6 +17,10 @@ class Prof(db.Model):
     engaging = db.Column(db.Float, nullable=True)
     grading = db.Column(db.Float, nullable=True)
 
+    current_sem = db.Column(db.Boolean, nullable=False, default=False)
+    next_sem = db.Column(db.Boolean, nullable=False, default=False)
+    future_sem = db.Column(db.Boolean, nullable=False, default=False)
+
     ecis = db.relationship("EcisScore", backref="prof", lazy=True)
     reviews = db.relationship('ProfReview', backref='prof', lazy=True)
     scheduled = db.relationship('ScheduledCourse', backref='prof', lazy=True)

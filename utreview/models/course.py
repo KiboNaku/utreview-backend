@@ -41,6 +41,10 @@ class Course(db.Model):
     usefulness = db.Column(db.Float, nullable=True)
     workload = db.Column(db.Float, nullable=True)
 
+    current_sem = db.Column(db.Boolean, nullable=False, default=False)
+    next_sem = db.Column(db.Boolean, nullable=False, default=False)
+    future_sem = db.Column(db.Boolean, nullable=False, default=False)
+
     ecis = db.relationship("EcisScore", backref="course", lazy=True)
     reviews = db.relationship('CourseReview', backref='course', lazy=True)
     scheduled = db.relationship('ScheduledCourse', backref='course', lazy=True)
