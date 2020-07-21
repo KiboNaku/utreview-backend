@@ -386,24 +386,22 @@ def get_parent_id(topic_id):
             return course.id
 
 
-@app.route('/api/update_info', methods=['POST'])
-def update_info():
+@app.route('/api/update_user_info', methods=['POST'])
+def update_user_info():
     first_name = request.get_json()['first_name']
     last_name = request.get_json()['last_name']
     email = request.get_json()['email']
     major = request.get_json()['major']
-    password_hash = bcrypt.generate_password_hash(
-        request.get_json()['password']).decode('utf-8')
+    password = request.get_json()['password']
     dept = Dept.query.filter_by(name=major).first()
-    profile_name = request.get_json()['profile_pic']
-    profile_pic = ProfilePic.query.filter_by(file_name=profile_name).first()
 
     user = User.query.filter_by(email=email).first()
-    user.first_name = first_name
-    user.last_name = last_name
-    user.password_hash = password_hash
-    user.profile_pic_id = profile_pic.id
-    user.major_id = dept.id
+    if (first_name != None and first_name != ""):
+        user.first_name = first_name
+    if(last_name != None and last_name != ""):
+        user.last_name = last_name
+    user.password_hash = bcrypt.generate_password_hash(password).decode('utf-8') if password != None and password != "" else user.password_hash
+    user.major_id = dept.id if major != None and major != "" else user.major_id
 
     db.session.commit()
 
@@ -411,7 +409,29 @@ def update_info():
         'first_name': user.first_name,
         'last_name': user.last_name,
         'email': user.email,
-        'major': dept.name,
+        'major': user.major.name,
+        'profile_pic': user.pic.file_name
+    })
+    result = access_token
+
+    return result
+
+@app.route('/api/update_profile_pic', methods=['POST'])
+def update_profile_pic():
+    email = request.get_json()['email']
+    profile_name = request.get_json()['profile_pic']
+    profile_pic = ProfilePic.query.filter_by(file_name=profile_name).first()
+
+    user = User.query.filter_by(email=email).first()
+    user.profile_pic_id = profile_pic.id
+
+    db.session.commit()
+
+    access_token = create_access_token(identity={
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'email': user.email,
+        'major': user.major.name,
         'profile_pic': profile_pic.file_name
     })
     result = access_token
