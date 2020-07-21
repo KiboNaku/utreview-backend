@@ -11,7 +11,12 @@ from whoosh.index import create_in
 from whoosh import scoring
 from whoosh.fields import *
 from whoosh.qparser import QueryParser
+import json
+from utreview.services.fetch_ftp import key_current, key_next, key_future
 
+sem_current = None
+sem_next = None
+sem_future = None
 
 def create_app():
 
@@ -59,6 +64,21 @@ def create_ix():
     prof_writer.commit()
 
     return course_ix, prof_ix
+
+
+def update_sem_vals(sem_path):
+
+    print("Updating global semester values")
+
+    global sem_current
+    global sem_next
+    global sem_future
+
+    with open(sem_path, 'r') as f:
+        sem_dict = json.load(f) 
+        sem_current = sem_dict[key_current]
+        sem_next = sem_dict[key_next]
+        sem_future = sem_dict[key_future]
 
 
 app, db = create_app()

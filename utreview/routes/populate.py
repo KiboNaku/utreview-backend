@@ -1,7 +1,7 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
 from flask_jwt_extended import (create_access_token)
 from utreview.models import *
-from utreview import app, db, bcrypt, jwt, course_ix, prof_ix
+from utreview import app, db, bcrypt, jwt, course_ix, prof_ix, sem_current, sem_next
 from whoosh.index import create_in
 from whoosh import scoring
 from whoosh.fields import *
@@ -131,10 +131,12 @@ def populate_search(courses_query, profs_query, search):
 def populate_all(courses_query, profs_query):
 
     s_time = time.time()
+
     courses_list = []
     profs_list = []
 
     for course in courses_query:
+
         dept = course.dept
         course_object = {
             'id': course.id,
@@ -144,11 +146,12 @@ def populate_all(courses_query, profs_query):
             'courseTopic': course.topic_num,
             'approval': round(course.approval, 2) * 100 if course.approval != None else None,
             'eCIS': round(course.ecis_avg, 1) if course.ecis_avg != None else None,
-            'numRatings': course.num_ratings
+            'numRatings': course.num_ratings,
         }
         courses_list.append(course_object)
-    print(time.time()-s_time)
     
+    print("course", time.time() - s_time)
+
     for prof in profs_query:
         prof_object = {
             'id': prof.id,
@@ -159,7 +162,8 @@ def populate_all(courses_query, profs_query):
             'numRatings': prof.num_ratings
         }
         profs_list.append(prof_object)
-    print(time.time()-s_time)
+
+    print("prof", time.time() - s_time)
 
     return courses_list, profs_list
 
