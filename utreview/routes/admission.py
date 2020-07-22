@@ -192,3 +192,95 @@ def send_confirm_email(email, name=None):
     mail.send(msg)
     return r_val
 
+
+@app.route('/api/forgot_password', methods=['POST'])
+def forgot_password():
+    r_val = {'email': None, 'success': 0, 'error': None}
+
+    email = request.get_json()['email']
+
+    user = User.query.filter_by(email=email).first()
+    if user == None:
+        r_val['success'] = -1
+        r_val['error'] = "An account does not exist for this email."
+    else:
+        r_val['email'] = email
+        # sending confirmation email
+        send_reset_password(user.email, user.first_name)
+
+    db.session.commit()
+    return r_val
+
+def send_reset_password(email, name=None):
+
+    r_val = {'success': 0}
+
+    if name is None:
+        
+        user = User.query.filter_by(email=email).first()
+        if user is None:
+            r_val['success'] = -1
+            return r_val
+        name = user.first_name
+
+    r_val['success'] = 1
+    msg = Message(
+            'UT Review Password Reset',
+            sender=("UT Review", "utexas.review@gmail.com"), 
+            recipients=[email])
+
+    # TODO: update link as needed
+    e_token = s.dumps(email, salt="reset_password")
+    link = "http://localhost:3000/reset_password?token=" + e_token
+
+    msg.html = render_template('reset_password.html', name=name, link=link, email=email)
+    mail.send(msg)
+    return r_val
+
+@app.route('/api/send_reset_password', methods=['POST'])
+def send_reset_email():
+
+    email = request.get_json()['email']
+    user = User.query.filter_by(email=email).first()
+
+    if user is None:
+        return {'success': -3}
+
+    return send_reset_password(email, user.first_name)
+
+
+@app.route('/api/reset_password_link', methods=['POST'])
+def reset_password_link():
+
+    r_val = {'success': 0, 'error': None}
+
+    try:
+        token = request.get_json()['token']
+        email = s.loads(token, salt='reset_password', max_age=3600)
+        user = User.query.filter_by(email=email).first()
+
+        r_val['success'] = 1
+    except SignatureExpired:
+        r_val["success"] = -2
+        r_val['error'] = "The password reset link has expired."
+    except BadTimeSignature:
+        r_val["success"] = -3
+        r_val['error'] = "The password reset link is invalid."
+    except KeyError:
+        r_val["success"] = -4
+        r_val['error'] = "No password reset link found."
+
+    return r_val
+
+@app.route('/api/reset_password', methods=['POST'])
+def reset_password():
+    r_val = {'success': 0, 'error': None}
+
+    email = request.get_json()['email']
+    password_hash = bcrypt.generate_password_hash(request.get_json()['password']).decode('utf-8')
+    
+    user = User.query.filter_by(email=email).first()
+    user.password_hash = password_hash
+    db.session.commit()
+
+    return r_val
