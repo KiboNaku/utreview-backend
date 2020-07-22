@@ -13,10 +13,7 @@ from whoosh.fields import *
 from whoosh.qparser import QueryParser
 import json
 from utreview.services.fetch_ftp import key_current, key_next, key_future
-
-sem_current = None
-sem_next = None
-sem_future = None
+from utreview.database.scheduled_course import int_or_none
 
 def create_app():
 
@@ -74,13 +71,17 @@ def update_sem_vals(sem_path):
     global sem_next
     global sem_future
 
+    sem_dict = None
+
     with open(sem_path, 'r') as f:
         sem_dict = json.load(f) 
-        sem_current = sem_dict[key_current]
-        sem_next = sem_dict[key_next]
-        sem_future = sem_dict[key_future]
+    
+    if sem_dict is None:
+        return None, None, None
+    return int_or_none(sem_dict[key_current]), int_or_none(sem_dict[key_next]), int_or_none(sem_dict[key_future])
 
-
+    
+sem_current, sem_next, sem_future = update_sem_vals('semester.txt')
 app, db = create_app()
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
