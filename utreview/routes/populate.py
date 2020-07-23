@@ -147,6 +147,7 @@ def populate_all(courses_query, profs_query):
             'approval': round(course.approval, 2) * 100 if course.approval != None else None,
             'eCIS': round(course.ecis_avg, 1) if course.ecis_avg != None else None,
             'numRatings': course.num_ratings,
+            'semesters': (course.current_sem, course.next_sem, course.future_sem)
         }
         courses_list.append(course_object)
     
@@ -159,7 +160,8 @@ def populate_all(courses_query, profs_query):
             'lastName': prof.last_name,
             'approval': round(prof.approval, 2) * 100 if prof.approval != None else None,
             'eCIS': round(prof.ecis_avg, 1) if prof.ecis_avg != None else None,
-            'numRatings': prof.num_ratings
+            'numRatings': prof.num_ratings,
+            'semesters': (prof.current_sem, prof.next_sem, prof.future_sem)
         }
         profs_list.append(prof_object)
 
@@ -190,7 +192,8 @@ def append_course(course, courses_list, profs_list, prof_ids):
             'lastName': prof.last_name,
             'approval': round(prof.approval, 2) * 100 if prof.approval != None else None,
             'eCIS': round(prof.ecis_avg, 1) if prof.ecis_avg != None else None,
-            'numRatings': prof.num_ratings
+            'numRatings': prof.num_ratings,
+            'semesters': (prof.current_sem, prof.next_sem, prof.future_sem)
         }
         profs_list.append(prof_object)
 
@@ -202,7 +205,8 @@ def append_course(course, courses_list, profs_list, prof_ids):
         'courseTopic': course.topic_num,
         'approval': round(course.approval, 2) * 100 if course.approval != None else None,
         'eCIS': round(course.ecis_avg, 1) if course.ecis_avg != None else None,
-        'numRatings': course.num_ratings
+        'numRatings': course.num_ratings,
+        'semesters': (course.current_sem, course.next_sem, course.future_sem)
     }
     courses_list.append(course_object)
 
@@ -232,7 +236,8 @@ def append_prof(prof, profs_list, courses_list, course_ids):
             'courseTopic': course.topic_num,
             'approval': round(course.approval, 2) * 100 if course.approval != None else None,
             'eCIS': round(course.ecis_avg, 1) if course.ecis_avg != None else None,
-            'numRatings': course.num_ratings
+            'numRatings': course.num_ratings,
+            'semesters': (course.current_sem, course.next_sem, course.future_sem)
         }
         courses_list.append(course_object)
     prof_object = {
@@ -241,6 +246,7 @@ def append_prof(prof, profs_list, courses_list, course_ids):
         'lastName': prof.last_name,
         'approval': round(prof.approval, 2) * 100 if prof.approval != None else None,
         'eCIS': round(prof.ecis_avg, 1) if prof.ecis_avg != None else None,
-        'numRatings': prof.num_ratings
+        'numRatings': prof.num_ratings,
+        'semesters': (prof.current_sem, prof.next_sem, prof.future_sem)
     }
     profs_list.append(prof_object)

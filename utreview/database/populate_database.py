@@ -2,17 +2,15 @@
 import re
 import time
 from titlecase import titlecase
-from utreview import db
+from utreview import db, sem_current, sem_next, sem_future
 from utreview.services.fetch_course_info import *
 from utreview.models import *
 from utreview.services.fetch_prof import fetch_prof
 from string import ascii_lowercase
-
+from .scheduled_course import ScheduledCourseInfo
 
 def populate_dept(dept_info, override=False):
 
-	print('Populating departments')
-	
 	for abr, name in dept_info:
 
 		cur_dept = Dept.query.filter_by(abr=abr).first()
@@ -56,104 +54,97 @@ def populate_dept_info(dept_info):
 		db.session.commit()
 
 
+def reset_courses():
+
+	courses = Course.query.all()
+
+	for course in courses:
+		course.current_sem = False
+		course.next_sem = False
+		course.future_sem = False
+	db.session.commit()
+
+
+def reset_profs():
+
+	profs = Prof.query.all()
+
+	for prof in profs:
+		prof.current_sem = False
+		prof.next_sem = False
+		prof.future_sem = False
+	db.session.commit()
+
+
 def populate_scheduled_course(course_info):
 
+	# print("Populate scheduled course: resetting professor and course semesters")
+	# reset_courses()
+	# reset_profs()
+	# print("Populate scheduled course: finished resetting professor and course semesters")
 	count = 0
 	
 	for s_course in course_info:
 
-		if count >= 20:
+		if count >= 25:
 			break
-		
-		# extract variable info 
-		# sem info                                                                                                                                                                                                                                                                              
-		yr = int(s_course["Year"].strip())
-		sem = int(s_course["Semester"].strip())
-
-		# course info
-		dept = s_course["Dept-Abbr"].strip().upper()
-		c_num_raw = s_course["Course Nbr"].strip().upper()
-		topic = s_course["Topic"].strip()
 
 		try:
-			topic = int(topic)
-		except ValueError:
-			topic = -1
-
-		title = s_course["Title"].strip()
-
-		if not c_num_raw:
-			print("Populate scheduled course: no course number. Skipping...")
-			continue
-		
-		c_num = c_num_raw[1:] if c_num_raw[0].isalpha() else c_num_raw
-
-		# prof info
-		prof_eid = s_course["Instructor EID"].strip().lower()
-
-		# scheduled info
-		session = c_num_raw[0] if c_num_raw[0].isalpha() else None
-		unique_no = s_course["Unique"].strip()
-		try:
-			unique_no = int(unique_no)
-		except ValueError:
-			print("Populate scheduled course: no unique number. Skipping...")
+			scheduled = ScheduledCourseInfo(s_course)
+		except ValueError as err:
+			print(f"Populate scheduled course error: {err}. Skipping...")
 			continue
 
-		days = s_course["Days"].strip().upper()
-		time_from = int_or_none(s_course["From"].strip())
 
-		time_to = int_or_none(s_course["To"].strip())
-		building = s_course["Building"].strip().upper()
-		room = s_course["Room"].strip().upper()
-		max_enrollment = int_or_none(s_course["Max Enrollment"].strip())
-		seats_taken = int_or_none(s_course["Seats Taken"].strip())
-		x_listings = [listing.strip() for listing in s_course["X-Listings"].strip().split(",")]
+		# check to see if dept exists
+		dept_obj = Dept.query.filter_by(abr=scheduled.dept).first()
+		if dept_obj is None:
+			print(f"Populate scheduled course: cannot find department {scheduled.dept}. Skipping...")
+			continue
 
 		# check to see if course exists
-		dept_obj = Dept.query.filter_by(abr=dept).first()
-		if dept_obj is None:
-			print(f"Populate scheduled course: cannot find department {dept}. Skipping...")
-			continue
-
-		cur_courses = Course.query.filter_by(dept_id=dept_obj.id, num=c_num)
+		cur_courses = Course.query.filter_by(dept_id=dept_obj.id, num=scheduled.c_num)
 		if len(cur_courses.all()) > 1:
-			cur_courses = cur_courses.filter_by(topic_num=topic)
+			cur_courses = cur_courses.filter_by(topic_num=scheduled.topic)
 		cur_course = cur_courses.first()
 
 		if cur_course is None:
-			print(f"Populate scheduled course: cannot find course {dept} {c_num} w/ topic num {topic}. Skipping...")
+			print(f"Populate scheduled course: cannot find course {scheduled.dept} {scheduled.c_num} w/ topic num {scheduled.topic}. Skipping...")
 			continue
 
 		# check to see if prof exists --> if not then add prof
-		cur_prof = Prof.query.filter_by(eid=prof_eid).first()
+		cur_prof = Prof.query.filter_by(eid=scheduled.prof_eid).first()
 		
-		if cur_prof is None and prof_eid:
-			populate_prof(fetch_prof(prof_eid))
-			cur_prof = Prof.query.filter_by(eid=prof_eid).first()
+		if cur_prof is None and scheduled.prof_eid:
+			break
+			count += 1
+			populate_prof(fetch_prof(scheduled.prof_eid))
+			cur_prof = Prof.query.filter_by(eid=scheduled.prof_eid).first()
 			if cur_prof is None:
 				print("Failed to add professor, Skipping")
 				continue
 
 		# check to see if semester exists else add semester
-		semester = Semester.query.filter_by(year=yr, semester=sem).first()
+		semester = Semester.query.filter_by(year=scheduled.yr, semester=scheduled.sem).first()
 		if semester is None:
-			semester = Semester(year=yr, semester=sem)
+			semester = Semester(year=scheduled.yr, semester=scheduled.sem)
 			db.session.add(semester)
 			db.session.commit()
 
 		# check to see if scheduled course exists else create new
-		cur_schedule = ScheduledCourse.query.filter_by(unique_no=unique_no, sem_id=semester.id).first()
-		location = __parse_location(title, building, room)
+		cur_schedule = ScheduledCourse.query.filter_by(unique_no=scheduled.unique_no, sem_id=semester.id).first()
+		
 		if cur_schedule is None:
 			
-			print(f"Adding new scheduled course ({yr}{sem}): {dept} {c_num} ", end="")
+			print(f"Adding new scheduled course ({scheduled.yr}{scheduled.sem}): {scheduled.dept} {scheduled.c_num} ", end="")
 			if cur_prof is not None:
 				print(f"by {cur_prof.first_name} {cur_prof.last_name}")
+			else:
+				print()
 
 			# check to see if cross_listings exist else create new
 			x_list = None
-			for x_list_str in x_listings:
+			for x_list_str in scheduled.x_listings:
 				x_course = ScheduledCourse.query.filter_by(unique_no=x_list_str, sem_id=semester.id).first()
 				if x_course is not None and x_course.xlist is not None:
 					x_list = x_course.xlist
@@ -162,34 +153,31 @@ def populate_scheduled_course(course_info):
 				x_list = CrossListed()
 
 			cur_schedule = ScheduledCourse(
-				unique_no=unique_no, session=session, 
-				days=days, time_from=time_from, time_to=time_to, 
-				location=location, 
-				max_enrollement=max_enrollment, seats_taken=seats_taken,
+				unique_no=scheduled.unique_no, session=scheduled.session, 
+				days=scheduled.days, time_from=scheduled.time_from, time_to=scheduled.time_to, 
+				location=scheduled.location, 
+				max_enrollement=scheduled.max_enrollment, seats_taken=scheduled.seats_taken,
 				sem_id=semester.id, 
 				course_id=cur_course.id, 
 				prof_id=cur_prof.id if cur_prof else None, 
 				cross_listed=x_list.id)
-				
-			count += 1
+			db.session.add(cur_schedule)
 		else:
-			continue
-			print(f"Updating scheduled course ({yr}{sem}): {dept} {c_num} ", end="")
+			print(f"Updating scheduled course ({scheduled.yr}{scheduled.sem}): {scheduled.dept} {scheduled.c_num} ", end="")
 			if cur_prof is not None:
 				print(f"by {cur_prof.first_name} {cur_prof.last_name}")
+			else:
+				print()
 			
-			cur_schedule.session = session
-			cur_schedule.days = days
-			cur_schedule.time_from = time_from
-			cur_schedule.time_to = time_to
-			cur_schedule.location = location
-			cur_schedule.max_enrollment = max_enrollment
-			cur_schedule.seats_taken = seats_taken
+			cur_schedule.session = scheduled.session
+			cur_schedule.days = scheduled.days
+			cur_schedule.time_from = scheduled.time_from
+			cur_schedule.time_to = scheduled.time_to
+			cur_schedule.location = scheduled.location
+			cur_schedule.max_enrollment = scheduled.max_enrollment
+			cur_schedule.seats_taken = scheduled.seats_taken
 			cur_schedule.course_id = cur_course.id
 			if cur_prof is not None: cur_schedule.prof_id = cur_prof.id
-
-		db.session.add(cur_schedule)
-		db.session.commit()
 
 		# add prof course relationship if doesnt exist
 		if cur_prof:
@@ -198,15 +186,30 @@ def populate_scheduled_course(course_info):
 			if prof_course is None:
 				prof_course = ProfCourse(prof_id=cur_prof.id, course_id=cur_course.id)
 				db.session.add(prof_course)
-				db.session.commit()
 
 			prof_course_semester = ProfCourseSemester.query.filter_by(prof_course_id=prof_course.id, sem_id=semester.id).first()
 			if prof_course_semester is None:
 				prof_course_semester = ProfCourseSemester(prof_course_id=prof_course.id, sem_id=semester.id)
 				db.session.add(prof_course_semester)
-				db.session.commit()
-	
-		time.sleep(60)
+
+		full_semester = int(str(semester.year) + str(semester.semester))
+
+		if full_semester == sem_current:
+			if cur_course:
+				cur_course.current_sem = True
+			if cur_prof:
+				cur_prof.current_sem = True
+		elif full_semester == sem_next:
+			if cur_course:
+				cur_course.next_sem = True
+			if cur_prof:
+				cur_prof.next_sem = True
+		elif full_semester == sem_future:
+			if cur_course:
+				cur_course.future_sem = True
+			if cur_prof:
+				cur_prof.future_sem = True
+		db.session.commit()
 
 
 def populate_prof(prof_info):
@@ -227,13 +230,6 @@ def populate_prof(prof_info):
 
 	else:
 		print("Invalid input to populate_prof")
-
-
-def int_or_none(string):
-	try:
-		return int(string)
-	except ValueError:
-		return None
 
 
 def populate_course(course_info, cur_sem=None):
@@ -350,17 +346,6 @@ def __is_all_one_letter(word):
 		if word == c * len(word):
 			return True
 	return False
-
-
-def __parse_location(title, building, room):
-
-	__default = "N/A"
-	__web_tag = "-W"
-
-	if not building or not room:
-		return 'WEB' if __web_tag in title else 'N/A'
-	
-	return f'{building} {room}'
 
 
 def __populate_child_topics(parent_topic, child_topics, inherit_str):
