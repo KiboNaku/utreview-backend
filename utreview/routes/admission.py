@@ -42,8 +42,13 @@ def register():
     last_name = request.get_json()['last_name']
     email = request.get_json()['email']
     major = request.get_json()['major']
+    other_major = request.get_json()['other_major']
     password_hash = bcrypt.generate_password_hash(request.get_json()['password']).decode('utf-8')
-    dept = Dept.query.filter_by(name=major).first()
+
+    major_id = None
+    if(major != None and major != ""):
+        dept = Dept.query.filter_by(name=major).first()
+        major_id = dept.id
 
     profile_pics = ProfilePic.query.all()
     profile_pic = random.choice(profile_pics)
@@ -62,7 +67,7 @@ def register():
         r_val['email'] = email
         user = User(first_name=first_name, last_name=last_name, 
             email=email, password_hash=password_hash, profile_pic_id=profile_pic.id, 
-            verified=False, major_id=dept.id)
+            verified=False, major_id=major_id, other_major=other_major)
         db.session.add(user)
         # sending confirmation email
         send_confirm_email(user.email, user.first_name)
@@ -160,8 +165,9 @@ def get_user_token(email):
             'first_name': user.first_name,
             'last_name': user.last_name,
             'email': user.email,
-            'major': user.major.name,
-            'profile_pic': user.pic.file_name
+            'major': user.major.name if user.major_id != None else None,
+            'profile_pic': user.pic.file_name,
+            'other_major': user.other_major
         })
     return access_token
 
