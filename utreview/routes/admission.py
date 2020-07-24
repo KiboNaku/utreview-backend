@@ -150,10 +150,14 @@ def login():
             r_val['token'] = get_user_token(email)
         else:
             r_val["success"] = -101
-            r_val['error'] = "Account not verified."
+            r_val['error'] = "The account associated with this email address has not been verified."
     else:
-        r_val["success"] = -1
-        r_val['error'] = "Invalid username and password combination."
+        if user:
+            r_val["success"] = -1
+            r_val['error'] = "Invalid email and password combination. Please check your email/password and try again."
+        else:
+            r_val["success"] = -2
+            r_val['error'] = "An account does not exist for this email."
 
     return r_val
 
