@@ -314,8 +314,8 @@ def review_list():
 
             'user': {
                 'major': {
-                    'abr': result.author.major.abr,
-                    'name': result.author.major.name
+                    'abr': result.author.major.abr if result.author.major_id != None else None,
+                    'name': result.author.major.name if result.author.major_id != None else result.author.other_major
                 }
             },
 
@@ -392,6 +392,7 @@ def update_user_info():
     last_name = request.get_json()['last_name']
     email = request.get_json()['email']
     major = request.get_json()['major']
+    other_major = request.get_json()['other_major']
     password = request.get_json()['password']
     dept = Dept.query.filter_by(name=major).first()
 
@@ -401,7 +402,12 @@ def update_user_info():
     if(last_name != None and last_name != ""):
         user.last_name = last_name
     user.password_hash = bcrypt.generate_password_hash(password).decode('utf-8') if password != None and password != "" else user.password_hash
-    user.major_id = dept.id if major != None and major != "" else user.major_id
+    if(major != None and major != ""):
+        user.major_id = dept.id
+        user.other_major = None
+    if(other_major != None and other_major != ""):
+        user.other_major = other_major 
+        user.major_id = None
 
     db.session.commit()
 
@@ -409,8 +415,9 @@ def update_user_info():
         'first_name': user.first_name,
         'last_name': user.last_name,
         'email': user.email,
-        'major': user.major.name,
-        'profile_pic': user.pic.file_name
+        'major': user.major.name if user.major_id != None else None,
+        'profile_pic': user.pic.file_name,
+        'other_major': user.other_major
     })
     result = access_token
 

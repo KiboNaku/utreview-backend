@@ -475,7 +475,7 @@ def get_review_info(review, logged_in, curr_user):
         'usefulness': course_review.usefulness,
         'difficulty': course_review.difficulty,
         'workload': course_review.workload,
-        'userMajor': user_major.name,
+        'userMajor': user_major.name if user_major != None else user.other_major,
         'profilePic': profile_pic.file_name,
         'profId': prof.id,
         'profFirst': prof.first_name,

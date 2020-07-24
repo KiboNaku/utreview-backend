@@ -281,7 +281,7 @@ def get_review_info(review, logged_in, curr_user):
         'clear': prof_review.clear,
         'engaging': prof_review.engaging,
         'grading': prof_review.grading,
-        'userMajor': user_major.name,
+        'userMajor': user_major.name if user_major != None else user.other_major,
         'profilePic': profile_pic.file_name,
         'courseId': course.id,
         'courseDept': course.dept.abr,
