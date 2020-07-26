@@ -63,6 +63,7 @@ def register():
             user.first_name = first_name
             user.last_name = last_name
             user.password_hash = password_hash
+            send_confirmation_email(user.email, user.first_name)
     else:
         r_val['email'] = email
         user = User(first_name=first_name, last_name=last_name, 
@@ -70,9 +71,20 @@ def register():
             verified=False, major_id=major_id, other_major=other_major)
         db.session.add(user)
         # sending confirmation email
-        send_confirm_email(user.email, user.first_name)
+        send_confirmation_email(user.email, user.first_name)
 
     db.session.commit()
+    return r_val
+
+@app.route('/api/check_email', methods=['POST'])
+def check_email():
+    email = request.get_json()['email']
+    user = User.query.filter_by(email=email).first()
+    error = None
+    if user and user.verified:
+        error = "An account already exists for this email."
+        
+    r_val = {'email': email, 'error': error}
     return r_val
 
 
@@ -85,7 +97,7 @@ def send_confirm_email():
     if user is None:
         return {'success': -3}
 
-    return send_confirm_email(email, user.first_name)
+    return send_confirmation_email(email, user.first_name)
 
 
 @app.route('/api/confirm_email', methods=['POST'])
@@ -176,7 +188,7 @@ def get_user_token(email):
     return access_token
 
 
-def send_confirm_email(email, name=None):
+def send_confirmation_email(email, name=None):
 
     r_val = {'success': 0}
 
