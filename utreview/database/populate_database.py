@@ -82,12 +82,8 @@ def populate_scheduled_course(course_info):
 	# reset_courses()
 	# reset_profs()
 	# print("Populate scheduled course: finished resetting professor and course semesters")
-	count = 0
 	
 	for s_course in course_info:
-
-		if count >= 25:
-			break
 
 		try:
 			scheduled = ScheduledCourseInfo(s_course)
@@ -116,8 +112,6 @@ def populate_scheduled_course(course_info):
 		cur_prof = Prof.query.filter_by(eid=scheduled.prof_eid).first()
 		
 		if cur_prof is None and scheduled.prof_eid:
-			break
-			count += 1
 			populate_prof(fetch_prof(scheduled.prof_eid))
 			cur_prof = Prof.query.filter_by(eid=scheduled.prof_eid).first()
 			if cur_prof is None:
