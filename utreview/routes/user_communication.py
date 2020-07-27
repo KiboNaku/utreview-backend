@@ -24,8 +24,8 @@ def contact_us_message():
         sender=("UT Review", "utexas.review@gmail.com"),
         recipients=("UT Review", "utexas.review@gmail.com"))
 
-    msg.html = render_template(
-        'confirm_email.html', name=name, link=link, email=email)
-    mail.send(msg)
+    # msg.html = render_template(
+    #     'confirm_email.html', name=name, link=link, email=email)
+    # mail.send(msg)
 
-    return r_val
+    return 'Feedback Received'
