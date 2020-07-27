@@ -37,6 +37,7 @@ def register():
     """
 
     r_val = {'email': None, 'success': 0, 'error': None}
+    print('request', request.get_json())
 
     first_name = request.get_json()['first_name']
     last_name = request.get_json()['last_name']
@@ -45,6 +46,7 @@ def register():
     other_major = request.get_json()['other_major']
     password_hash = bcrypt.generate_password_hash(request.get_json()['password']).decode('utf-8')
 
+    print(f"'{major}'")
     major_id = None
     if(major != None and major != ""):
         dept = Dept.query.filter_by(name=major).first()
@@ -255,7 +257,7 @@ def send_reset_password(email, name=None):
     e_token = s.dumps(email, salt="reset_password")
     link = "http://localhost:3000/reset_password?token=" + e_token
 
-    msg.html = render_template('reset_password.html', name=name, link=link, email=email)
+    msg.html = render_template('reset_password.html', name=name, link=link)
     mail.send(msg)
     return r_val
 
