@@ -10,3 +10,8 @@ from utreview import app
 @app.route("/confirm_email")
 def home():
     return render_template('confirm_email.html', name='Andy', link='https://www.google.com')
+
+
+@app.route("/reset_password")
+def password():
+    return render_template('reset_password.html', name='Andy', link='https://www.google.com')

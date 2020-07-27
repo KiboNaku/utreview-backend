@@ -255,7 +255,7 @@ def send_reset_password(email, name=None):
     e_token = s.dumps(email, salt="reset_password")
     link = "http://localhost:3000/reset_password?token=" + e_token
 
-    msg.html = render_template('reset_password.html', name=name, link=link, email=email)
+    msg.html = render_template('reset_password.html', name=name, link=link)
     mail.send(msg)
     return r_val
 
