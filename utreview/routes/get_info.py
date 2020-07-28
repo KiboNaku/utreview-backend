@@ -404,6 +404,7 @@ def update_personal_info():
         dept = Dept.query.filter_by(name=major).first()
         major_id = dept.id
 
+    user.major_id = major_id
     user.other_major = other_major 
 
     db.session.commit()
