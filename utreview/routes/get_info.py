@@ -386,28 +386,25 @@ def get_parent_id(topic_id):
             return course.id
 
 
-@app.route('/api/update_user_info', methods=['POST'])
-def update_user_info():
+@app.route('/api/update_personal_info', methods=['POST'])
+def update_personal_info():
     first_name = request.get_json()['first_name']
     last_name = request.get_json()['last_name']
     email = request.get_json()['email']
     major = request.get_json()['major']
     other_major = request.get_json()['other_major']
-    password = request.get_json()['password']
     dept = Dept.query.filter_by(name=major).first()
 
     user = User.query.filter_by(email=email).first()
-    if (first_name != None and first_name != ""):
-        user.first_name = first_name
-    if(last_name != None and last_name != ""):
-        user.last_name = last_name
-    user.password_hash = bcrypt.generate_password_hash(password).decode('utf-8') if password != None and password != "" else user.password_hash
+    user.first_name = first_name
+    user.last_name = last_name
+
+    major_id = None
     if(major != None and major != ""):
-        user.major_id = dept.id
-        user.other_major = None
-    if(other_major != None and other_major != ""):
-        user.other_major = other_major 
-        user.major_id = None
+        dept = Dept.query.filter_by(name=major).first()
+        major_id = dept.id
+
+    user.other_major = other_major 
 
     db.session.commit()
 
