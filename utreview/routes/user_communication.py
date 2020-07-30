@@ -22,10 +22,10 @@ def contact_us_message():
     msg = Message(
         'User Feedback',
         sender=("UT Review", "utexas.review@gmail.com"),
-        recipients=("UT Review", "utexas.review@gmail.com"))
+        recipients=["utexas.review@gmail.com"])
 
-    # msg.html = render_template(
-    #     'confirm_email.html', name=name, link=link, email=email)
-    # mail.send(msg)
+    msg.html = render_template(
+        'user_feedback.html', first_name = first_name, last_name = last_name, email = email, message = message)
+    mail.send(msg)
 
     return 'Feedback Received'
