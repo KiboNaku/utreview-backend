@@ -467,6 +467,9 @@ def get_review_info(review, logged_in, curr_user):
         if(logged_in):
             if(curr_user.id == dislike.user_id):
                 dislike_pressed = True
+    
+    if(course_review.comments == ""):
+        return None
 
     review_object = {
         'id': course_review.id,
@@ -532,7 +535,8 @@ def get_course_reviews(course, logged_in, curr_user, is_parent):
     for course_review in course_reviews:
         review = course_review.review
         review_object = get_review_info(review, logged_in, curr_user)
-        review_list.append(review_object)
+        if review_object:
+            review_list.append(review_object)
     course_rating = {
         'eCIS': round(course.ecis_avg, 1) if course.ecis_avg != None else None,
         'percentLiked': round(course.approval, 2) * 100 if course.approval != None else None,

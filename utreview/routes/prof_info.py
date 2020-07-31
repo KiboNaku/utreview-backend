@@ -273,6 +273,9 @@ def get_review_info(review, logged_in, curr_user):
         if(logged_in):
             if(curr_user.id == dislike.user_id):
                 dislike_pressed = True
+    
+    if(prof_review.comments == ""):
+        return None
 
     review_object = {
         'id': prof_review.id,
@@ -325,7 +328,8 @@ def get_prof_reviews(prof, logged_in, curr_user):
     for prof_review in prof_reviews:
         review = prof_review.review
         review_object = get_review_info(review, logged_in, curr_user)
-        review_list.append(review_object)
+        if review_object:
+            review_list.append(review_object)
     prof_rating = {
         'eCIS': round(prof.ecis_avg, 1) if prof.ecis_avg != None else None,
         'percentLiked': round(prof.approval, 2) * 100 if prof.approval != None else None,
