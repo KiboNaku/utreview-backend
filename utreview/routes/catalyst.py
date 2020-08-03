@@ -27,6 +27,160 @@ def grade_distributions():
     
     return jsonify(grades)
 
+def course_median_grade(course_dept, course_num, topic_num, course_title):
+    # receive = requests.get('https://rawgit.com/shishirjessu/db/master/grades.db')
+    # with open(r'C:\\Users\\zhang\\OneDrive\\Projects\\UTFlow-Backend\\utflow-backend\\grades.db', 'wb') as f:
+    #     f.write(receive.content)
+
+    database = r'C:\\Users\\zhang\\OneDrive\\Projects\\UTFlow-Backend\\utflow-backend\\grades.db'
+    conn = create_connection(database)
+    with conn:
+        cur = conn.cursor()
+        query = "SELECT * from agg WHERE sem like '%Aggregate%'"
+        query += " and dept like '%" + course_dept + "%'"
+        query += " and course_nbr like '%" + course_num + "%'"
+        if(topic_num > 0):
+            query += " and course_name like '%" + course_title + "%'"
+        cur.execute(query)
+
+        rows = cur.fetchall()
+        if len(rows) == 0:
+            return None
+
+        A = A_minus = B_plus = B = B_minus = C_plus = C = C_minus = D_plus = D = D_minus = F = 0   
+
+        for row in rows:
+            A += row[6]
+            A_minus += row[7]
+            B_plus += row[8]
+            B += row[9]
+            B_minus += row[10]
+            C_plus += row[11]
+            C += row[12]
+            C_minus += row[13]
+            D_plus += row[14]
+            D += row[15]
+            D_minus += row[16]
+            F += row[17]
+        
+        num_grades = A + A_minus + B_plus + B + B_minus + C_plus + C + C_minus + D_plus + D + D_minus + F
+        median_index = num_grades//2
+
+        count = 0
+        count += A
+        if(count > median_index):
+            return 'A'
+        count += A_minus
+        if(count > median_index):
+            return 'A-'
+        count += B_plus
+        if(count > median_index):
+            return 'B+'
+        count += B
+        if(count > median_index):
+            return 'B'
+        count += B_minus
+        if(count > median_index):
+            return 'B-'
+        count += C_plus
+        if(count > median_index):
+            return 'C+'
+        count += C
+        if(count > median_index):
+            return 'C'
+        count += C_minus
+        if(count > median_index):
+            return 'C-'
+        count += D_plus
+        if(count > median_index):
+            return 'D+'
+        count += D
+        if(count > median_index):
+            return 'D'
+        count += D_minus
+        if(count > median_index):
+            return 'D-'
+        count += F
+        if(count > median_index):
+            return 'F'
+
+def prof_median_grade(prof_first, prof_last):
+    # receive = requests.get('https://rawgit.com/shishirjessu/db/master/grades.db')
+    # with open(r'C:\\Users\\zhang\\OneDrive\\Projects\\UTFlow-Backend\\utflow-backend\\grades.db', 'wb') as f:
+    #     f.write(receive.content)
+
+    database = r'C:\\Users\\zhang\\OneDrive\\Projects\\UTFlow-Backend\\utflow-backend\\grades.db'
+    conn = create_connection(database)
+    prof_last = prof_last.split()
+    prof_name = prof_last[len(prof_last) - 1] + ", " + prof_first
+    with conn:
+        cur = conn.cursor()
+        query = "SELECT * from agg WHERE sem like '%Aggregate%'"
+        query += " and prof like '%" + prof_name + "%'"
+        cur.execute(query)
+
+        rows = cur.fetchall()
+        if len(rows) == 0:
+            return None
+
+        A = A_minus = B_plus = B = B_minus = C_plus = C = C_minus = D_plus = D = D_minus = F = 0   
+
+        for row in rows:
+            A += row[6]
+            A_minus += row[7]
+            B_plus += row[8]
+            B += row[9]
+            B_minus += row[10]
+            C_plus += row[11]
+            C += row[12]
+            C_minus += row[13]
+            D_plus += row[14]
+            D += row[15]
+            D_minus += row[16]
+            F += row[17]
+        
+        num_grades = A + A_minus + B_plus + B + B_minus + C_plus + C + C_minus + D_plus + D + D_minus + F
+        median_index = num_grades//2
+
+        count = 0
+        count += A
+        if(count > median_index):
+            return 'A'
+        count += A_minus
+        if(count > median_index):
+            return 'A-'
+        count += B_plus
+        if(count > median_index):
+            return 'B+'
+        count += B
+        if(count > median_index):
+            return 'B'
+        count += B_minus
+        if(count > median_index):
+            return 'B-'
+        count += C_plus
+        if(count > median_index):
+            return 'C+'
+        count += C
+        if(count > median_index):
+            return 'C'
+        count += C_minus
+        if(count > median_index):
+            return 'C-'
+        count += D_plus
+        if(count > median_index):
+            return 'D+'
+        count += D
+        if(count > median_index):
+            return 'D'
+        count += D_minus
+        if(count > median_index):
+            return 'D-'
+        count += F
+        if(count > median_index):
+            return 'F'
+        
+
 def create_connection(db_file):
     conn = None
     try:

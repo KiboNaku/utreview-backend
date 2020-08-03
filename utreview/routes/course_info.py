@@ -3,6 +3,7 @@ from flask import Flask, render_template, url_for, flash, redirect, request, jso
 from flask_jwt_extended import (create_access_token)
 from utreview.models import *
 from utreview import app, db, bcrypt, jwt, course_ix, prof_ix
+from .catalyst import course_median_grade
 from whoosh.index import create_in
 from whoosh import scoring
 from whoosh.fields import *
@@ -177,6 +178,8 @@ def get_course_info(course_id):
             if course_topic.topic_num == 0:
                 parent_title = course_topic.title
                 parent_id = course_topic.id
+    
+    median_grade = course_median_grade(course_dept.abr, course.num, topic_num, course.title)
 
     course_info = {
         'id': course.id,
@@ -188,7 +191,8 @@ def get_course_info(course_id):
         'topicNum': topic_num,
         'parentId': parent_id,
         'parentTitle': parent_title,
-        'topicsList': topics_list
+        'topicsList': topics_list,
+        'medianGrade': median_grade
     }
 
     return course_info, course, is_parent
