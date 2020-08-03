@@ -137,6 +137,14 @@ def get_scheduled_prof(scheduled_prof):
     """
     course = scheduled_prof.course
 
+    semester_name = ""
+    if(scheduled_prof.semester.semester == 2):
+        semester_name = "Spring"
+    elif(scheduled_prof.semester.semester == 6):
+        semester_name = "Summer"
+    elif(scheduled_prof.semester.semester == 9):
+        semester_name = "Fall"
+
     x_listed = []
     if(scheduled_prof.cross_listed is not None):
         for x_course in scheduled_prof.cross_listed.courses:
@@ -144,9 +152,10 @@ def get_scheduled_prof(scheduled_prof):
                 'id': x_course.id,
                 'dept': x_course.dept.abr,
                 'num': x_course.num,
-                'title': x_course.title
+                'title': x_course.title,
+                'topicNum': x_course.topic_num
             }
-            x_listed.append(x_course.dept.abr + " " + x_course.num)
+            x_listed.append(x_listed_obj)
 
     scheduled_obj = {
         "id": scheduled_prof.id,
@@ -161,7 +170,9 @@ def get_scheduled_prof(scheduled_prof):
         'courseDept': course.dept.abr,
         'courseNum': course.num,
         'topicNum': course.topic_num,
-        'crossListed': x_listed
+        'crossListed': x_listed,
+        'semester': semester_name,
+        'year': scheduled_prof.semester.year
     }
     return scheduled_obj
 
