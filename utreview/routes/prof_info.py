@@ -3,6 +3,7 @@ from flask import Flask, render_template, url_for, flash, redirect, request, jso
 from flask_jwt_extended import (create_access_token)
 from utreview.models import *
 from .course_info import get_ecis, time_to_string
+from .catalyst import prof_median_grade
 from utreview import app, db, bcrypt, jwt, course_ix, prof_ix
 from whoosh.index import create_in
 from whoosh import scoring
@@ -82,10 +83,12 @@ def prof_details():
         curr_user = None
 
     prof = Prof.query.filter_by(id=prof_id).first()
+    median_grade = prof_median_grade(prof.first_name, prof.last_name)
     prof_info = {
         "id": prof.id,
         "firstName": prof.first_name,
-        "lastName": prof.last_name
+        "lastName": prof.last_name,
+        "medianGrade": median_grade
     }
 
     prof_rating, review_list = get_prof_reviews(prof, logged_in, curr_user)
