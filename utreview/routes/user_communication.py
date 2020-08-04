@@ -11,8 +11,8 @@ mail = Mail(app)
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 
-@app.route('/api/contact_us_message', methods=['POST'])
-def contact_us_message():
+@app.route('/api/user_feedback', methods=['POST'])
+def user_feedback():
 
     first_name = request.get_json()['first_name']
     last_name = request.get_json()['last_name']
@@ -25,10 +25,11 @@ def contact_us_message():
         recipients=["utexas.review@gmail.com"])
 
     msg.html = render_template(
-        'user_feedback.html', first_name = first_name, last_name = last_name, email = email, message = message)
+        'user_feedback.html', first_name=first_name, last_name=last_name, email=email, message=message)
     mail.send(msg)
 
     return 'Feedback Received'
+
 
 @app.route('/api/report_comment', methods=['POST'])
 def report_comment():
@@ -61,8 +62,27 @@ def report_comment():
         recipients=["utexas.review@gmail.com"])
 
     msg.html = render_template(
-        'report_comment.html', options_selected=selected_options, other_selected=other_selected, other_option=other_option, review_topic=review_topic, 
+        'report_comment.html', options_selected=selected_options, other_selected=other_selected, other_option=other_option, review_topic=review_topic,
         author_email=author_email, review_topic_name=review_topic_name, review_comments=review_comments, review_id=review_id)
+    mail.send(msg)
+
+    return 'Feedback Received'
+
+
+@app.route('/api/report_bug', methods=['POST'])
+def report_bug():
+
+    page = request.get_json()['page']
+    bug_type = request.get_json()['bug_type']
+    description = request.get_json()['description']
+
+    msg = Message(
+        'Report Bug',
+        sender=("UT Review", "utexas.review@gmail.com"),
+        recipients=["utexas.review@gmail.com"])
+
+    msg.html = render_template(
+        'report_bug.html', page=page, bug_type=bug_type, description=description)
     mail.send(msg)
 
     return 'Feedback Received'
