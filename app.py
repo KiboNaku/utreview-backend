@@ -33,5 +33,10 @@ if __name__ == '__main__':
 
     # x = threading.Thread(target=thread_function, args=(1,))
     # x.start()
-    app.run(debug=True)
+    # app.run(debug=True)
     # x.join()
+
+    # finished fetch for sem 0
+    # from utreview.services.fetch_web import fetch_profcourse_info, fetch_profcourse_semdepts
+    # sems, depts = fetch_profcourse_semdepts()
+    # fetch_profcourse_info("input_data/prof_course.txt", sems[0:1], depts)
