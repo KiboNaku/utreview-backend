@@ -16,10 +16,10 @@ def grade_distributions():
     prof_name = prof_last[len(prof_last) - 1] + ", " + prof_first
 
     receive = requests.get('https://rawgit.com/shishirjessu/db/master/grades.db')
-    with open(r'C:\\Users\\zhang\\OneDrive\\Projects\\UTFlow-Backend\\utflow-backend\\grades.db', 'wb') as f:
+    with open(r'grades.db', 'wb') as f:
         f.write(receive.content)
 
-    database = r'C:\\Users\\zhang\\OneDrive\\Projects\\UTFlow-Backend\\utflow-backend\\grades.db'
+    database = r'grades.db'
     conn = create_connection(database)
     with conn:
         grades = select_row(conn, course_dept, prof_name, course_num)
@@ -32,7 +32,7 @@ def course_median_grade(course_dept, course_num, topic_num, course_title):
     # with open(r'C:\\Users\\zhang\\OneDrive\\Projects\\UTFlow-Backend\\utflow-backend\\grades.db', 'wb') as f:
     #     f.write(receive.content)
 
-    database = r'C:\\Users\\zhang\\OneDrive\\Projects\\UTFlow-Backend\\utflow-backend\\grades.db'
+    database = r'grades.db'
     conn = create_connection(database)
     with conn:
         cur = conn.cursor()
@@ -109,7 +109,7 @@ def prof_median_grade(prof_first, prof_last):
     # with open(r'C:\\Users\\zhang\\OneDrive\\Projects\\UTFlow-Backend\\utflow-backend\\grades.db', 'wb') as f:
     #     f.write(receive.content)
 
-    database = r'C:\\Users\\zhang\\OneDrive\\Projects\\UTFlow-Backend\\utflow-backend\\grades.db'
+    database = r'grades.db'
     conn = create_connection(database)
     prof_last = prof_last.split()
     prof_name = prof_last[len(prof_last) - 1] + ", " + prof_first
