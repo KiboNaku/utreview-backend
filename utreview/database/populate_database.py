@@ -1,5 +1,6 @@
 
 import re
+import sys
 import json
 import time
 from titlecase import titlecase
@@ -9,6 +10,7 @@ from utreview.models import *
 from utreview.services.fetch_prof import fetch_prof
 from string import ascii_lowercase
 from .scheduled_course import ScheduledCourseInfo
+from utreview.services.printer import Printer
 
 
 
@@ -23,12 +25,16 @@ def populate_sem(start_yr=2010, end_yr=2020):
 	db.session.commit()
 
 
-def populate_profcourse(in_file):
+def populate_profcourse(in_file, err_file="err.txt"):
 
 	from utreview.services.fetch_web import KEY_SEM, KEY_DEPT, KEY_CNUM, KEY_UNIQUE, KEY_PROF
 	__sem_fall = "Fall"
 	__sem_spring = "Spring"
 	__sem_summer = "Summer"
+
+	printer = Printer(sys.stdout, err_file)
+	sys_std_original = sys.stdout
+	sys.stdout = printer
 
 	prof_courses = []
 	with open(in_file, 'r') as f:
@@ -101,6 +107,8 @@ def populate_profcourse(in_file):
 			)
 			db.session.add(prof_course_sem_obj)
 			db.session.commit()
+	
+	sys.stdout = sys_std_original
 
 
 def populate_dept(dept_info, override=False):
