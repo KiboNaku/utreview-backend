@@ -309,7 +309,8 @@ def review_list():
     results = [
         {
             'id': result.id,
-            'date': timeago.format(result.date_posted, datetime.datetime.utcnow()),
+            'timeAgo': timeago.format(result.date_posted, datetime.datetime.utcnow()),
+            'date': result.date_posted.strftime("%Y-%m-%d"),
             'grade': result.grade,
 
             'user': {
@@ -322,7 +323,8 @@ def review_list():
             'semester': {
                 'id': result.semester.id,
                 'year': result.semester.year,
-                'semester': semester_string(result.semester.semester)
+                'semester': semester_string(result.semester.semester),
+                'num': result.semester.year * 10 + result.semester.semester
             },
 
             'prof': {
