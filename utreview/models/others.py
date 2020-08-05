@@ -90,5 +90,6 @@ class ProfCourse(db.Model):
 class ProfCourseSemester(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
+    unique_num = db.Column(db.Integer)
     prof_course_id = db.Column(db.Integer, db.ForeignKey('prof_course.id'), nullable=False)
     sem_id = db.Column(db.Integer, db.ForeignKey('semester.id'), nullable=False)

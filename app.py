@@ -31,6 +31,9 @@ def thread_function(name):
 
 if __name__ == '__main__':    
 
+    # from utreview.database.populate_database import populate_sem
+    # populate_sem()
+
     # x = threading.Thread(target=thread_function, args=(1,))
     # x.start()
     # app.run(debug=True)
@@ -39,4 +42,6 @@ if __name__ == '__main__':
     # finished fetch for sem 0
     # from utreview.services.fetch_web import fetch_profcourse_info, fetch_profcourse_semdepts
     # sems, depts = fetch_profcourse_semdepts()
-    # fetch_profcourse_info("input_data/prof_course.txt", sems[0:1], depts)
+    # fetch_profcourse_info("prof_course.txt", sems[2:], depts)
+    from utreview.database.populate_database import populate_profcourse
+    populate_profcourse("prof_course.txt")

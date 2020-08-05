@@ -7,7 +7,7 @@ class Prof(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
-    eid = db.Column(db.String(10), unique=True)
+    eid = db.Column(db.String(10), unique=True, nullable=True)
 
     # update on review submission/ecis update
     ecis_avg = db.Column(db.Float, nullable=True)
