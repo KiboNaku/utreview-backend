@@ -50,6 +50,7 @@ def course_id():
                 course_id = course.id
                 result_dept = course.dept.abr
                 result_num = course.num
+                result_title = course.title
                 if(topic_num >= 0):
                     topic_id = course.topic_id
                     for topic in course.topic.courses:
@@ -59,7 +60,7 @@ def course_id():
                     topic_id = -1
 
     if(course_found):
-        result = jsonify({"courseId": course_id, "courseDept": result_dept, "courseNum": result_num, "topicId": topic_id, "parentId": parent_id})
+        result = jsonify({"courseId": course_id, "courseDept": result_dept, "courseNum": result_num, "courseTitle": result_title, "topicId": topic_id, "parentId": parent_id, "topicNum": topic_num})
     else:
         result = jsonify({"error": "No course was found"})
     return result
