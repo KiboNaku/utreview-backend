@@ -56,9 +56,9 @@ def int_or_none(obj):
 def parse_location(title, building, room):
 
 	__default = "N/A"
-	__web_tag = "-W"
+	__web_tag = "-w"
 
 	if not building or not room:
-		return 'WEB' if __web_tag in title else 'N/A'
+		return 'WEB' if __web_tag in title.lower() else 'N/A'
 	
 	return f'{building} {room}'

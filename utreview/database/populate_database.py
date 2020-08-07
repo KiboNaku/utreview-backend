@@ -25,16 +25,12 @@ def populate_sem(start_yr=2010, end_yr=2020):
 	db.session.commit()
 
 
-def populate_profcourse(in_file, err_file="err.txt"):
+def populate_profcourse(in_file):
 
-	from utreview.services.fetch_web import KEY_SEM, KEY_DEPT, KEY_CNUM, KEY_UNIQUE, KEY_PROF
+	from utreview.services.fetch_web import KEY_SEM, KEY_DEPT, KEY_CNUM, KEY_TITLE, KEY_UNIQUE, KEY_PROF
 	__sem_fall = "Fall"
 	__sem_spring = "Spring"
 	__sem_summer = "Summer"
-
-	printer = Printer(sys.stdout, err_file)
-	sys_std_original = sys.stdout
-	sys.stdout = printer
 
 	prof_courses = []
 	with open(in_file, 'r') as f:
@@ -61,9 +57,11 @@ def populate_profcourse(in_file, err_file="err.txt"):
 		# TODO: choosing topic 0 by default. Update when topic info available.
 		course = Course.query.filter_by(dept_id=dept.id, num=prof_course[KEY_CNUM])
 		if len(course.all()) < 1:
-			print("Cannot find course:", abr, prof_course[KEY_CNUM], ". Skipping...")
-			continue
-		if len(course.all()) > 1:
+			print('Adding new course:', abr, prof_course[KEY_CNUM], prof_course[KEY_TITLE])
+			course = Course(dept_id=dept.id, num=prof_course[KEY_CNUM], title=prof_course[KEY_TITLE])
+			db.session.add(course)
+			db.session.commit()
+		elif len(course.all()) > 1:
 			for c in course:
 				if c.topic_num <= 0:
 					course = c
@@ -108,7 +106,6 @@ def populate_profcourse(in_file, err_file="err.txt"):
 			db.session.add(prof_course_sem_obj)
 			db.session.commit()
 	
-	sys.stdout = sys_std_original
 
 
 def populate_dept(dept_info, override=False):
@@ -180,10 +177,10 @@ def reset_profs():
 
 def populate_scheduled_course(course_info):
 
-	# print("Populate scheduled course: resetting professor and course semesters")
-	# reset_courses()
-	# reset_profs()
-	# print("Populate scheduled course: finished resetting professor and course semesters")
+	print("Populate scheduled course: resetting professor and course semesters")
+	reset_courses()
+	reset_profs()
+	print("Populate scheduled course: finished resetting professor and course semesters")
 	
 	for s_course in course_info:
 
@@ -214,11 +211,10 @@ def populate_scheduled_course(course_info):
 		cur_prof = Prof.query.filter_by(eid=scheduled.prof_eid).first()
 		
 		if cur_prof is None and scheduled.prof_eid:
-			populate_prof(fetch_prof(scheduled.prof_eid))
+			# populate_prof(fetch_prof(scheduled.prof_eid))
 			cur_prof = Prof.query.filter_by(eid=scheduled.prof_eid).first()
 			if cur_prof is None:
-				print("Failed to add professor, Skipping")
-				continue
+				print("Failed to add professor. Leaving empty...")
 
 		# check to see if semester exists else add semester
 		semester = Semester.query.filter_by(year=scheduled.yr, semester=scheduled.sem).first()

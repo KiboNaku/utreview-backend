@@ -8,6 +8,7 @@ from titlecase import titlecase
 # ProfCourse dictionary keys
 KEY_SEM = 'sem'
 KEY_DEPT = 'dept'
+KEY_TITLE = 'title'
 KEY_CNUM = 'cnum'
 KEY_UNIQUE = 'unique'
 KEY_PROF = 'prof'
@@ -68,6 +69,7 @@ def fetch_profcourse_info(out_file, sems, depts):
 
     __sem_header = 'SEMESTER'
     __dept_header = 'DEPT'
+    __title_header = 'TITLE'
     __course_num_header = 'COURSENUMBER'
     __unique_header = 'UNIQUE'
     __instr_header = 'INSTRUCTOR(S)*'
@@ -87,7 +89,9 @@ def fetch_profcourse_info(out_file, sems, depts):
             headers = [header.text.replace("\n", "").strip() for header in headers.findAll("th")]
             print("Fetched headers from profcourse site:", headers)
 
-            sem_index, dept_index, cnum_index, unique_index, instr_index = get_header_indices(headers, __sem_header, __dept_header, __course_num_header, __unique_header, __instr_header)
+            sem_index, dept_index, title_index, cnum_index, unique_index, instr_index = get_header_indices(
+                headers, __sem_header, __dept_header, __title_header, __course_num_header, __unique_header, __instr_header
+                )
 
             rows = html_soup.findAll("tr", {"class": ["tboff", "tbon"]})
             for row in rows:
@@ -97,10 +101,10 @@ def fetch_profcourse_info(out_file, sems, depts):
                 for i in range(len(cols)):
                     if 'CV' in cols[i]:
                         cols[i] = cols[i].split('CV')[0].strip()
-                
                 prof_course = {
                     KEY_SEM: cols[sem_index] if sem_index is not None else None,
                     KEY_DEPT: cols[dept_index] if dept_index is not None else None,
+                    KEY_TITLE: cols[title_index].strip()[:-1] if title_index is not None else None,
                     KEY_CNUM: cols[cnum_index] if cnum_index is not None else None,
                     KEY_UNIQUE: cols[unique_index] if unique_index is not None else None,
                     KEY_PROF: cols[instr_index] if instr_index is not None else None
