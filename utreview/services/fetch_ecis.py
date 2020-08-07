@@ -90,6 +90,6 @@ def parse_ecis_excel(file_path, sheet_lst):
 
 			ecis_lst.append(ecis)
 
-		print(f'Finished parsing {sheet} sheet: num_rows_skipped={rows_skipped}')	
+		# print(f'Finished parsing {sheet} sheet: num_rows_skipped={rows_skipped}')	
 
 	return ecis_lst

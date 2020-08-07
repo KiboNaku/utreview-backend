@@ -48,7 +48,7 @@ def fetch_sem_values(ftp_dir, out_dir):
 					m = re.search('[A-Za-z ]+(\d{5}) (.*)?', line)
 					sem = m.group(1)
 		else:
-			print(f"Fetch Sem: cannot find file: {m_file} in {ftp_dir}")
+			# print(f"Fetch Sem: cannot find file: {m_file} in {ftp_dir}")
 
 		sem_dict[keys[i]] = sem
 
@@ -75,7 +75,7 @@ def fetch_ftp_files(out_dir):
 	chdir(out_dir)
 	for filename in (filename_current, filename_next, filename_future):
 
-		print(f'FTP: downloading {filename}')
+		# print(f'FTP: downloading {filename}')
 		localfile = open(filename, 'wb')
 		ftp.retrbinary('RETR ' + filename, localfile.write, 1024)
 		localfile.close()
@@ -100,7 +100,7 @@ def parse_ftp(in_dir):
 
 		if isfile(filepath):
 
-			print(f'FTP: parsing {filename}')
+			# print(f'FTP: parsing {filename}')
 			with open(filepath) as f:
 
 				lines = f.readlines()
@@ -118,8 +118,8 @@ def parse_ftp(in_dir):
 
 							course = {categories[i]: data[i] for i in range(len(categories))}
 							courses.append(course)
-		else:
-			print(f'FTP: {filename} does not exist in {in_dir}')
+		# else:
+		# 	print(f'FTP: {filename} does not exist in {in_dir}')
 
 	return courses
 

@@ -94,15 +94,10 @@ def course_details():
     else:
         curr_user = None
 
-    print("get course info")
     course_info, course, is_parent = get_course_info(course_id)
-    print("get course requisites")
     course_requisites = get_course_requisites(course)
-    print("get course reviews")
     course_rating, review_list = get_course_reviews(course, logged_in, curr_user, is_parent)
-    print("get course schedule")
     course_schedule = get_course_schedule(course, is_parent)
-    print("get course profs")
     prof_list = get_course_profs(course, is_parent)
 
     result = jsonify({"course_info": course_info,
@@ -174,7 +169,6 @@ def get_course_info(course_id):
         topics_list = None
 
         for course_topic in topic.courses:
-            print(course_topic)
             if course_topic.topic_num == 0:
                 parent_title = course_topic.title
                 parent_id = course_topic.id

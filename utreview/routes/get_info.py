@@ -237,7 +237,6 @@ def get_profs():
                     'lastName': prof.last_name,
                 }
                 profs.append(prof_obj)
-    print(profs)
     result = jsonify({"profs": profs})
     return result
 

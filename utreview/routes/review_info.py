@@ -179,7 +179,6 @@ def review_error():
     prof_id = request.get_json()['prof_id']
     sem_id = request.get_json()['sem_id']
     user_email = request.get_json()['user_email']
-    print(prof_id)
 
     course = Course.query.filter_by(id=course_id).first()
     user = User.query.filter_by(email=user_email).first()
@@ -398,8 +397,6 @@ def review_feedback():
     review_id = request.get_json()['reviewId']
 
     user = User.query.filter_by(email=user_email).first()
-    print(review_id)
-    print(user)
     
     if(is_course):
         course_review = CourseReview.query.filter_by(id=review_id).first()

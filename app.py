@@ -74,7 +74,6 @@ def parse_academic_summary(pdf_path):
 
                 break
 
-    print("----------------------printing courses------------------------------------------")
     depts = [dept.abr for dept in Dept.query.all()]
     depts_str = '|'.join(depts)
 
@@ -113,7 +112,7 @@ def parse_academic_summary(pdf_path):
                             num_part = courses[i]['course']
                             num_m = re.search(r'([0-9][a-zA-Z0-9]+).*', str(num_part))
                             if num_m is None:
-                                print("Failed to parse course")
+                                # failed to parse course
                                 course_num = None
                             else:
                                 course_num = dept_m.group(1) + " " + num_m.group(1)
@@ -135,7 +134,6 @@ def parse_academic_summary(pdf_path):
 
 def refresh_ecis():
     
-    print("Refreshing current ecis values")
     # update current ecis values
     for course in Course.query.all():
         course_ecis = 0
@@ -165,8 +163,6 @@ def refresh_ecis():
         prof.ecis_students = prof_students
         db.session.commit()
 
-    print("Finished refresh")
-
 
 def populate_ecis():
     from utreview.services.fetch_ecis import parse_ecis_excel, KEY_UNIQUE_NUM, KEY_COURSE_AVG, KEY_PROF_AVG, KEY_NUM_STUDENTS, KEY_YR, KEY_SEM
@@ -180,12 +176,12 @@ def populate_ecis():
 
         sem_obj = Semester.query.filter_by(year=yr, semester=sem).first()
         if sem_obj is None:
-            print("Cannot find semester for:", yr, sem, "Skipping...")
+            # print("Cannot find semester for:", yr, sem, "Skipping...")
             continue
     
         pcs_obj = ProfCourseSemester.query.filter_by(unique_num=unique, sem_id=sem_obj.id).first()
         if pcs_obj is None:
-            print("Failed to find ProfCourseSemester for: unique=", unique, "semester=", yr, sem, "Skipping...")
+            # print("Failed to find ProfCourseSemester for: unique=", unique, "semester=", yr, sem, "Skipping...")
             continue
         
         # assumption: only one ecis score per prof_course_semester instance
