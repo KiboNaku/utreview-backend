@@ -133,6 +133,88 @@ def parse_academic_summary(pdf_path):
     return parsed_sem
 
 
+def refresh_ecis():
+    
+    print("Refreshing current ecis values")
+    # update current ecis values
+    for course in Course.query.all():
+        course_ecis = 0
+        course_students = 0
+        for prof_course in course.prof_course:
+            for prof_course_sem in prof_course.prof_course_sem:
+                for ecis_child in prof_course_sem.ecis:
+                    course_ecis += ecis_child.course_avg * ecis_child.num_students
+                    course_students += ecis_child.num_students
+        
+        if course_students > 0:
+            course.ecis_avg = course_ecis/course_students
+        course.ecis_students = course_students
+        db.session.commit()
+
+    for prof in Prof.query.all():
+        prof_ecis = 0
+        prof_students = 0
+        for prof_course in prof.prof_course:
+            for prof_course_sem in prof_course.prof_course_sem:
+                for ecis_child in prof_course_sem.ecis:
+                    prof_ecis += ecis_child.prof_avg * ecis_child.num_students
+                    prof_students += ecis_child.num_students
+
+        if prof_students > 0:
+            prof.ecis_avg = prof_ecis/prof_students
+        prof.ecis_students = prof_students
+        db.session.commit()
+
+    print("Finished refresh")
+
+
+def populate_ecis():
+    from utreview.services.fetch_ecis import parse_ecis_excel, KEY_UNIQUE_NUM, KEY_COURSE_AVG, KEY_PROF_AVG, KEY_NUM_STUDENTS, KEY_YR, KEY_SEM
+    ecis_lst = parse_ecis_excel('input_data/IRRIS#931_output.xlsx', [1, 2, 3, 4])
+
+    # remember to update Course and Prof objects when inputting new ECIS scores
+
+    for ecis in ecis_lst:
+        
+        unique, c_avg, p_avg, students, yr, sem = ecis[KEY_UNIQUE_NUM], ecis[KEY_COURSE_AVG], ecis[KEY_PROF_AVG], ecis[KEY_NUM_STUDENTS], ecis[KEY_YR], ecis[KEY_SEM]
+
+        sem_obj = Semester.query.filter_by(year=yr, semester=sem).first()
+        if sem_obj is None:
+            print("Cannot find semester for:", yr, sem, "Skipping...")
+            continue
+    
+        pcs_obj = ProfCourseSemester.query.filter_by(unique_num=unique, sem_id=sem_obj.id).first()
+        if pcs_obj is None:
+            print("Failed to find ProfCourseSemester for: unique=", unique, "semester=", yr, sem, "Skipping...")
+            continue
+        
+        # assumption: only one ecis score per prof_course_semester instance
+        ecis_lst = pcs_obj.ecis
+        if len(ecis_lst) >= 1:
+            continue
+        
+        ecis_obj = EcisScore(course_avg=c_avg, prof_avg=p_avg, num_students=students, prof_course_sem_id=pcs_obj.id)
+        db.session.add(ecis_obj)
+        db.session.commit()
+
+        # updating prof and course ecis avgs
+        pc_obj = pcs_obj.prof_course
+        prof_obj = pc_obj.prof
+        course_obj = pc_obj.course
+
+        total_students = prof_obj.ecis_students + students
+        total_avg = ((prof_obj.ecis_avg * prof_obj.ecis_students) if prof_obj.ecis_avg is not None else 0) + ((p_avg * students) if p_avg is not None else 0)
+        prof_obj.ecis_avg = (total_avg / total_students) if total_students > 0 else None
+        prof_obj.ecis_students = total_students
+
+        total_students = course_obj.ecis_students + students
+        total_avg = ((course_obj.ecis_avg * course_obj.ecis_students) if course_obj.ecis_avg is not None else 0) + ((c_avg * students) if c_avg is not None else 0)
+        course_obj.ecis_avg = (total_avg / total_students) if total_students > 0 else None
+        course_obj.ecis_students = total_students
+
+        db.session.commit()
+
+
 def thread_function(name):
     
     from utreview.services.fetch_ftp import fetch_ftp_files, fetch_sem_values, parse_ftp
@@ -173,69 +255,7 @@ if __name__ == '__main__':
 
     # x = threading.Thread(target=thread_function, args=(1,))
     # x.start()
-    # app.run(debug=True)
+    app.run(debug=True)
     # x.join()
 
-    from utreview.services.fetch_ecis import parse_ecis_excel, KEY_UNIQUE_NUM, KEY_COURSE_AVG, KEY_PROF_AVG, KEY_NUM_STUDENTS, KEY_YR, KEY_SEM
-    ecis_lst = parse_ecis_excel('input_data/IRRIS#931_output.xlsx', [1, 2, 3, 4])
-    # remember to update Course and Prof objects when inputting new ECIS scores
-
-    # update current ecis values
-    for course in Course.query.all():
-        course_ecis = 0
-        course_students = 0
-        for prof_course in course.prof_course:
-            for prof_course_sem in prof_course.prof_course_sem:
-                for ecis_child in prof_course_sem.ecis:
-                    course_ecis += ecis_child.course_avg * ecis_child.num_students
-                    course_students += ecis_child.num_students
-
-
-    for ecis in ecis_lst:
-        
-        unique, c_avg, p_avg, students, yr, sem = ecis[KEY_UNIQUE_NUM], ecis[KEY_COURSE_AVG], ecis[KEY_PROF_AVG], ecis[KEY_NUM_STUDENTS], ecis[KEY_YR], ecis[KEY_SEM]
-
-        sem_obj = Semester.query.filter_by(year=yr, semester=sem).first()
-        if sem_obj is None:
-            print("Cannot find semester for:", yr, sem, "Skipping...")
-            continue
     
-        pcs_obj = ProfCourseSemester.query.filter_by(unique_num=unique, sem_id=sem_obj.id).first()
-        if pcs_obj is None:
-            print("Failed to find ProfCourseSemester for: unique=", unique, "semester=", yr, sem, "Skipping...")
-            continue
-        
-        # assumption: only one ecis score per prof_course_semester instance
-        ecis_lst = pcs_obj.ecis
-        if len(ecis_lst) >= 1:
-            continue
-        
-        ecis_obj = EcisScore(course_avg=c_avg, prof_avg=p_avg, num_students=students, prof_course_sem_id=pcs_obj.id)
-        db.session.add(ecis_obj)
-        db.session.commit()
-
-        # updating prof and course ecis avgs
-        pc_obj = pcs_obj.prof_course
-        prof_obj = pc_obj.prof
-        course_obj = pc_obj.course
-
-        prof_ecis = 0
-        prof_students = 0
-        for prof_course in prof_obj.prof_course:
-            for prof_course_sem in prof_course.prof_course_sem:
-                for ecis_child in prof_course_sem.ecis:
-                    prof_ecis += ecis_child.prof_avg
-                    prof_students += ecis_child.num_students
-        
-        prof_obj.ecis_avg = prof_ecis/prof_students
-
-        course_ecis = 0
-        course_students = 0
-        for prof_course in course_obj.prof_course:
-            for prof_course_sem in prof_course.prof_course_sem:
-                for ecis_child in prof_course_sem.ecis:
-                    course_ecis += ecis_child.course_avg
-                    course_students += ecis_child.num_students
-
-        course_obj.ecis_avg = course_ecis/course_students
-        db.session.commit()

@@ -229,11 +229,18 @@ def get_ecis(course, prof):
         course_ecis (float): Average course ecis score
         prof_ecis (float): Average prof ecis score
     """
-    ecis_scores = EcisScore.query.all()
+    
+    prof_course = ProfCourse.query.filter_by(course_id=course.id, prof_id=prof.id).first()
+
+    if prof_course is None:
+        return None, None
+
     scores = []
-    for ecis_score in ecis_scores:
-        if(ecis_score.course_id == course.id and ecis_score.prof_id == prof.id):
-            scores.append(ecis_score)
+
+    for pcs in prof_course.prof_course_sem:
+        for ecis in pcs.ecis:
+            scores.append(ecis)
+
     if len(scores) == 0:
         course_ecis = None
         prof_ecis = None
