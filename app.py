@@ -162,6 +162,8 @@ if __name__ == '__main__':
     # populate_profcourse("prof_course.txt")
     # from utreview.services.fetch_ftp import fetch_ftp_files, fetch_sem_values, parse_ftp
     # from utreview.database.populate_database import populate_scheduled_course
+    # fetch_ftp_files('input_data') 
+    # fetch_sem_values("input_data", "")
     # ftp_info = parse_ftp("input_data")
     # populate_scheduled_course(ftp_info)
     # -----------------------------------------
@@ -171,56 +173,6 @@ if __name__ == '__main__':
 
     # x = threading.Thread(target=thread_function, args=(1,))
     # x.start()
-    # app.run(debug=True)
+    app.run(debug=True)
     # x.join()
-
-    # finished fetch for sem 0
-    # import io
-    # import pdfminer
-    # from pdfminer.converter import TextConverter
-    # from pdfminer.pdfinterp import PDFPageInterpreter
-    # from pdfminer.pdfinterp import PDFResourceManager
-    # from pdfminer.pdfpage import PDFPage
-
     
-    # laparams = pdfminer.layout.LAParams()
-    # setattr(laparams, 'all_texts', True)
-
-    # def extract_text_from_pdf(pdf_path):
-
-    #     resource_manager = PDFResourceManager()
-    #     fake_file_handle = io.StringIO()
-    #     converter = TextConverter(resource_manager, fake_file_handle, laparams=laparams)
-    #     page_interpreter = PDFPageInterpreter(resource_manager, converter)
-        
-    #     with open(pdf_path, 'rb') as fh:
-    #         for page in PDFPage.get_pages(fh, 
-    #                                     caching=True,
-    #                                     check_extractable=True):
-    #             page_interpreter.process_page(page)
-    #             text = fake_file_handle.getvalue()
-                
-    #         text = fake_file_handle.getvalue()
-        
-    #     # close open handles
-    #     converter.close()
-    #     fake_file_handle.close()
-        
-    #     if text:
-    #         return text
-
-    # text = extract_text_from_pdf('University_of_Texas_Academic_Summary (1).pdf')
-
-    # for line in text:
-    #     depts = [dept.abr for dept in Dept.query.all()]
-    #     depts_str = '|'.join(depts)
-    #     dept_m = re.search(r'^((' + depts_str + r') [0-9][a-zA-Z0-9]+).*', line, re.DOTALL)
-    #     # if dept_m is not None:
-    #         # print(dept_m.group(1))
-    # print(repr(text))
-    
-    
-
-    
-
-
