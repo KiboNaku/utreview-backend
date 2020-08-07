@@ -10,9 +10,7 @@ class EcisScore(db.Model):
     prof_avg = db.Column(db.Float, nullable=False)
     num_students = db.Column(db.Integer, nullable=False)
 
-    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
-    prof_id = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=False)
-    sem_id = db.Column(db.Integer, db.ForeignKey('semester.id'), nullable=False)
+    prof_course_sem_id = db.Column(db.Integer, db.ForeignKey('prof_course_semester.id'), nullable=False)
 
     def __repr__(self):
         return f"""EcisScore(

@@ -35,6 +35,7 @@ class Course(db.Model):
     
     # update on review submission/ecis update
     ecis_avg = db.Column(db.Float, nullable=True)
+    ecis_students = db.Column(db.Integer, nullable=False, default=0)
     num_ratings = db.Column(db.Integer, default=0)
     approval = db.Column(db.Float, nullable=True)
     difficulty = db.Column(db.Float, nullable=True)
@@ -45,7 +46,6 @@ class Course(db.Model):
     next_sem = db.Column(db.Boolean, nullable=False, default=False)
     future_sem = db.Column(db.Boolean, nullable=False, default=False)
 
-    ecis = db.relationship("EcisScore", backref="course", lazy=True)
     reviews = db.relationship('CourseReview', backref='course', lazy=True)
     scheduled = db.relationship('ScheduledCourse', backref='course', lazy=True)
     prof_course = db.relationship('ProfCourse', backref="course", lazy=True)

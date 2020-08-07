@@ -22,8 +22,8 @@ def parse_ecis_excel(file_path, sheet_lst):
 			Structure: [
 				{
 					KEY_UNIQUE_NUM: int,
-					KEY_COURSE_AVG: int,
-					KEY_PROF_AVG: int,
+					KEY_COURSE_AVG: float,
+					KEY_PROF_AVG: float,
 					KEY_NUM_STUDENTS: int,
 					KEY_YR: int,
 					KEY_SEM: int,
@@ -31,6 +31,7 @@ def parse_ecis_excel(file_path, sheet_lst):
 			]
 	"""
 
+	__unique_num_digits = 5
 	__sem_key = 'SEMESTER_CCYYS'
 	__unique_key = 'UNIQUE'
 	__num_students_key = 'NBR_SURVEY_FORMS_RETURNED'
@@ -42,7 +43,6 @@ def parse_ecis_excel(file_path, sheet_lst):
 	for sheet in sheet_lst:
 
 		rows_skipped = 0
-
 		ecis_df = pd.read_excel(file_path, sheet_name=sheet)
 		for index, row in ecis_df.iterrows():
 			
@@ -51,23 +51,30 @@ def parse_ecis_excel(file_path, sheet_lst):
 				rows_skipped += 1
 				continue
 
-			yr = yr_sem[0:4]
-			sem = yr_sem[5]
+			yr_sem = yr_sem[0:5]
+			yr = yr_sem[0:-1]
+			sem = yr_sem[-1]
 
 			unique_num = 0
 			num_students = 0
 			course_avg = 0
 			prof_avg = 0
-			
-			# convert everything to int --> if N/A then fail and skip
+			# convert everything to int or float--> if N/A then fail and skip
 			try:
+
+				unique_str = str(row[__unique_key])
+				unique_str = unique_str.split('.')[0] if '.' in unique_str else unique_str
+
+				num_students_str = str(row[__num_students_key])
+				num_students_str = num_students_str.split('.')[0] if '.' in num_students_str else num_students_str
+		
 				yr = int(yr)
 				sem = int(sem)
-				unique_num = int(row[__unique_key])
-				num_students = int(row[__num_students_key])
-				course_avg = int(row[__course_avg_key])
-				prof_avg = int(row[__prof_avg_key])
-			except ValueError:
+				unique_num = int(unique_str)
+				num_students = int(num_students_str)
+				course_avg = float(row[__course_avg_key])
+				prof_avg = float(row[__prof_avg_key])
+			except (ValueError, IndexError) as e:
 				rows_skipped += 1
 				continue
 
