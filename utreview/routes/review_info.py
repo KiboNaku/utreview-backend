@@ -37,7 +37,8 @@ def new_review():
     """
     course_id = request.get_json()['course_id']
     prof_id = request.get_json()['prof_id']
-    sem_id = request.get_json()['sem_id']
+    season = request.get_json()['semester']
+    year = request.get_json()['year']
     user_email = request.get_json()['user_email']
     course_comments = request.get_json()['course_comments']
     prof_comments = request.get_json()['prof_comments']
@@ -51,15 +52,27 @@ def new_review():
     prof_engaging = int(request.get_json()['prof_engaging'])
     prof_grading = int(request.get_json()['prof_grading'])
 
+    sem = None
+    if(season == "Fall"):
+        sem = 9
+    elif(season == "Summer"):
+        sem = 6
+    elif(season == "Spring"):
+        sem = 2
+
     course = Course.query.filter_by(id=course_id).first()
     user = User.query.filter_by(email=user_email).first()
     prof = Prof.query.filter_by(id=prof_id).first()
+    semester = Semester.query.filter_by(semester=sem, year=year).first()
+    if(semester == None):
+        semester = Semester(semester=sem, year=year)
+        db.session.add(semester)
+        db.session.commit()
 
     update_course_stats(course, course_approval, course_difficulty, course_usefulness, course_workload, False, None)
     update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, False, None)
 
-    sem = Semester.query.filter_by(id=sem_id).first()
-    review = Review(user_id=user.id, sem_id=sem.id, grade=grade, date_posted=datetime.utcnow())
+    review = Review(user_id=user.id, sem_id=semester.id, grade=grade, date_posted=datetime.utcnow())
     db.session.add(review)
     db.session.commit()
 
@@ -177,39 +190,55 @@ def review_error():
     """    
     course_id = request.get_json()['course_id']
     prof_id = request.get_json()['prof_id']
-    sem_id = request.get_json()['sem_id']
+    season = request.get_json()['semester']
+    year = request.get_json()['year']
     user_email = request.get_json()['user_email']
-    print(prof_id)
+    
+    sem = None
+    if(season == "Fall"):
+        sem = 9
+    elif(season == "Summer"):
+        sem = 6
+    elif(season == "Spring"):
+        sem = 2
 
     course = Course.query.filter_by(id=course_id).first()
     user = User.query.filter_by(email=user_email).first()
     prof = Prof.query.filter_by(id=prof_id).first()
-    sem = Semester.query.filter_by(id=sem_id).first()
-    semester = ""
-    if(sem.semester == 9):
-        semester = "Fall"
-    elif(sem.semester == 6):
-        semester = "Summer"
-    elif(sem.semester == 2):
-        semester = "Spring"
+    sem = Semester.query.filter_by(semester=sem, year=year).first()
+    if(sem == None):
+        result_review = {
+            'user_email': user_email,
+            'profId': prof.id,
+            'courseId': course.id
+        }
+        result = jsonify({'result': result_review})
+        return result
     
     course_name = course.dept.abr + " " + course.num
+    prof_name = prof.first_name + " " + prof.last_name
 
     user_reviews = user.reviews_posted
     num_duplicates = 0
-    duplicate = False
+    duplicate_course_sem = False
+    duplicate_course_prof = False
     for user_review in user_reviews:
+        if(user_review.course_review[0].course_id == course.id and user_review.prof_review[0].prof_id == prof_id):
+            duplicate_course_prof = True
         if(user_review.semester.semester == sem.semester and user_review.semester.year == sem.year):
             if(user_review.course_review[0].course_id == course.id):
-                duplicate = True
+                duplicate_course_sem = True
         if(user_review.course_review[0].course_id == course.id):
             num_duplicates += 1
 
-    if duplicate:
-        result = jsonify({'error': f"""You have already submitted a review for {course_name} for the {semester} {sem.year} semester. 
+    if duplicate_course_sem:
+        result = jsonify({'error': f"""You have already submitted a review for {course_name} for the {season} {year} semester. 
         If you would like to edit an existing review, please visit your profile for a list of your exisitng reviews."""})
     elif num_duplicates >= 5:
         result = jsonify({'error': f"""You have exceeded the maximum amount of review submissions for {course_name}. 
+        If you would like to edit an existing review, please visit your profile for a list of your exisitng reviews."""})
+    elif duplicate_course_prof:
+        result = jsonify({'error': f"""You have already submitted a review for {course_name} taught by {prof_name}. 
         If you would like to edit an existing review, please visit your profile for a list of your exisitng reviews."""})
     else:
         result_review = {
