@@ -15,6 +15,7 @@ class Review(db.Model):
 
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())
     grade = db.Column(db.String(2))
+    submitted = db.Column(db.Boolean, nullable=True, default=None)
 
     course_review = db.relationship('CourseReview', backref='review', lazy=True)
     prof_review = db.relationship('ProfReview', backref='review', lazy=True)
