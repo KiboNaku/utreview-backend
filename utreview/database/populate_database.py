@@ -43,7 +43,7 @@ def populate_profcourse(in_file):
 		prof = Prof.query.filter_by(first_name=prof_name[1], last_name=prof_name[0]).first()
 
 		if prof is None:
-			print("Adding new prof:", prof_course[KEY_PROF])
+			# print("Adding new prof:", prof_course[KEY_PROF])
 			prof = Prof(first_name=prof_name[1], last_name=prof_name[0])
 			db.session.add(prof)
 			db.session.commit()
@@ -51,13 +51,13 @@ def populate_profcourse(in_file):
 		abr = prof_course[KEY_DEPT].strip().upper()
 		dept = Dept.query.filter_by(abr=abr).first()
 		if dept is None:
-			print("Cannot find dept:", abr, ". Skipping...")
+			# print("Cannot find dept:", abr, ". Skipping...")
 			continue
 
 		# TODO: choosing topic 0 by default. Update when topic info available.
 		course = Course.query.filter_by(dept_id=dept.id, num=prof_course[KEY_CNUM])
 		if len(course.all()) < 1:
-			print('Adding new course:', abr, prof_course[KEY_CNUM], prof_course[KEY_TITLE])
+			# print('Adding new course:', abr, prof_course[KEY_CNUM], prof_course[KEY_TITLE])
 			course = Course(dept_id=dept.id, num=prof_course[KEY_CNUM], title=prof_course[KEY_TITLE])
 			db.session.add(course)
 			db.session.commit()
@@ -82,7 +82,7 @@ def populate_profcourse(in_file):
 		elif sem_lst[1] == __sem_fall:
 			sem = 9
 		else:
-			print("Invalid semester:", sem_lst[1], ". Skipping...")
+			# print("Invalid semester:", sem_lst[1], ". Skipping...")
 			continue
 		
 		yr = int(sem_lst[0].strip())
@@ -118,35 +118,35 @@ def populate_dept(dept_info, override=False):
 			abr = abr.strip()
 			name = name.strip()
 			
-			print(f"Adding dept {name} ({abr}) to database")
+			# print(f"Adding dept {name} ({abr}) to database")
 			dept = Dept(abr=abr, name=name)
 			db.session.add(dept)
 
 		elif override:
-			print(f"Overriding dept {name} ({abr}) to database")
+			# print(f"Overriding dept {name} ({abr}) to database")
 			cur_dept.abr = abr
 			cur_dept.name = name
 
-		else:
-			print(f"Already exists: dept {name} ({abr})")
+		# else:
+			# print(f"Already exists: dept {name} ({abr})")
 		
 		db.session.commit()
 
 
 def populate_dept_info(dept_info):
 	
-	print('Populating departments with additional info')
+	# print('Populating departments with additional info')
 	
 	for abr, dept, college in dept_info:
 
 		cur_dept = Dept.query.filter_by(abr=abr).first()
 		if cur_dept is None:
-			print(f"Cannot find dept {abr} --> adding as non-major")
+			# print(f"Cannot find dept {abr} --> adding as non-major")
 			cur_dept = Dept(abr=abr, dept=dept, college=college, name='')
 			db.session.add(cur_dept)
 
 		else:
-			print(f"Updating dept: {abr}")
+			# print(f"Updating dept: {abr}")
 			cur_dept.dept = dept
 			cur_dept.college = college
 		
@@ -177,24 +177,24 @@ def reset_profs():
 
 def populate_scheduled_course(course_info):
 
-	print("Populate scheduled course: resetting professor and course semesters")
+	# print("Populate scheduled course: resetting professor and course semesters")
 	reset_courses()
 	reset_profs()
-	print("Populate scheduled course: finished resetting professor and course semesters")
+	# print("Populate scheduled course: finished resetting professor and course semesters")
 	
 	for s_course in course_info:
 
 		try:
 			scheduled = ScheduledCourseInfo(s_course)
 		except ValueError as err:
-			print(f"Populate scheduled course error: {err}. Skipping...")
+			# print(f"Populate scheduled course error: {err}. Skipping...")
 			continue
 
 
 		# check to see if dept exists
 		dept_obj = Dept.query.filter_by(abr=scheduled.dept).first()
 		if dept_obj is None:
-			print(f"Populate scheduled course: cannot find department {scheduled.dept}. Skipping...")
+			# print(f"Populate scheduled course: cannot find department {scheduled.dept}. Skipping...")
 			continue
 
 		# check to see if course exists
@@ -204,7 +204,7 @@ def populate_scheduled_course(course_info):
 		cur_course = cur_courses.first()
 
 		if cur_course is None:
-			print(f"Populate scheduled course: cannot find course {scheduled.dept} {scheduled.c_num} w/ topic num {scheduled.topic}. Skipping...")
+			# print(f"Populate scheduled course: cannot find course {scheduled.dept} {scheduled.c_num} w/ topic num {scheduled.topic}. Skipping...")
 			continue
 
 		# check to see if prof exists --> if not then add prof
@@ -213,8 +213,8 @@ def populate_scheduled_course(course_info):
 		if cur_prof is None and scheduled.prof_eid:
 			# populate_prof(fetch_prof(scheduled.prof_eid))
 			cur_prof = Prof.query.filter_by(eid=scheduled.prof_eid).first()
-			if cur_prof is None:
-				print("Failed to add professor. Leaving empty...")
+			# if cur_prof is None:
+				# print("Failed to add professor. Leaving empty...")
 
 		# check to see if semester exists else add semester
 		semester = Semester.query.filter_by(year=scheduled.yr, semester=scheduled.sem).first()
@@ -228,11 +228,11 @@ def populate_scheduled_course(course_info):
 		
 		if cur_schedule is None:
 			
-			print(f"Adding new scheduled course ({scheduled.yr}{scheduled.sem}): {scheduled.dept} {scheduled.c_num} ", end="")
-			if cur_prof is not None:
-				print(f"by {cur_prof.first_name} {cur_prof.last_name}")
-			else:
-				print()
+			# print(f"Adding new scheduled course ({scheduled.yr}{scheduled.sem}): {scheduled.dept} {scheduled.c_num} ", end="")
+			# if cur_prof is not None:
+			# 	print(f"by {cur_prof.first_name} {cur_prof.last_name}")
+			# else:
+			# 	print()
 
 			# check to see if cross_listings exist else create new
 			x_list = None
@@ -255,11 +255,11 @@ def populate_scheduled_course(course_info):
 				cross_listed=x_list.id)
 			db.session.add(cur_schedule)
 		else:
-			print(f"Updating scheduled course ({scheduled.yr}{scheduled.sem}): {scheduled.dept} {scheduled.c_num} ", end="")
-			if cur_prof is not None:
-				print(f"by {cur_prof.first_name} {cur_prof.last_name}")
-			else:
-				print()
+			# print(f"Updating scheduled course ({scheduled.yr}{scheduled.sem}): {scheduled.dept} {scheduled.c_num} ", end="")
+			# if cur_prof is not None:
+			# 	print(f"by {cur_prof.first_name} {cur_prof.last_name}")
+			# else:
+			# 	print()
 			
 			cur_schedule.session = scheduled.session
 			cur_schedule.days = scheduled.days
@@ -313,15 +313,15 @@ def populate_prof(prof_info):
 
 		cur_prof = Prof.query.filter_by(first_name=first_name, last_name=last_name, eid=eid).first()
 		if cur_prof is None:
-			print(f"Adding professor {first_name} {last_name}")
+			# print(f"Adding professor {first_name} {last_name}")
 			prof = Prof(first_name=first_name, last_name=last_name, eid=eid)
 			db.session.add(prof)
 			db.session.commit()
-		else:
-			print(f"Professor {first_name} {last_name} already exists")
+		# else:
+		# 	print(f"Professor {first_name} {last_name} already exists")
 
-	else:
-		print("Invalid input to populate_prof")
+	# else:
+		# print("Invalid input to populate_prof")
 
 
 def populate_course(course_info, cur_sem=None):
@@ -403,22 +403,22 @@ def populate_course(course_info, cur_sem=None):
 		# create new or replace old
 		if old_course is None:
 			# new course
-			print("Creating new course", dept_obj.abr, new_course.num)
+			# print("Creating new course", dept_obj.abr, new_course.num)
 			db.session.add(new_course)
 		elif cur_sem is None or semester==cur_sem:
 			# course existed but replacing
-			print("Replacing previous", old_course.dept.abr, old_course.num)
+			# print("Replacing previous", old_course.dept.abr, old_course.num)
 			__replace_course(old_course, new_course)
-		else:
+		# else:
 			# course existed and skipping
-			print("Already existed:", old_course.dept.abr, old_course.num)
+			# print("Already existed:", old_course.dept.abr, old_course.num)
 
 		db.session.commit()
 
 	null_depts = list(null_depts)
 	null_depts.sort()
-	for dept in null_depts:
-		print("Unexpected Error: department", dept, "cannot be found in the database")
+	# for dept in null_depts:
+	# 	print("Unexpected Error: department", dept, "cannot be found in the database")
 
 
 def __parse_title(cs_title):

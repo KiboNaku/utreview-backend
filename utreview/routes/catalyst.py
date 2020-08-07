@@ -23,7 +23,6 @@ def grade_distributions():
     conn = create_connection(database)
     with conn:
         grades = select_row(conn, course_dept, prof_name, course_num)
-        print(grades)
     
     return jsonify(grades)
 
@@ -186,6 +185,7 @@ def create_connection(db_file):
     try:
         conn = sqlite3.connect(db_file)
     except Error as e:
+        # log later 
         print(e)
 
     return conn

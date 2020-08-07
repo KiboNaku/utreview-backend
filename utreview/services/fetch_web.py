@@ -17,7 +17,7 @@ failed_requests = []
 
 def fetch_html(url, attempt=1):
 
-    print("fetching: ", url)
+    # print("fetching: ", url)
 
     MAX_ATTEMPTS = 10
 
@@ -27,7 +27,7 @@ def fetch_html(url, attempt=1):
         client.close()
     except http.client.HTTPException as e:
 
-        print("URL Failed:", url, "Attempt:", attempt)
+        # print("URL Failed:", url, "Attempt:", attempt)
         return fetch_html(url, attempt+1)
 
         if attempt >= MAX_ATTEMPTS:
@@ -84,10 +84,10 @@ def fetch_profcourse_info(out_file, sems, depts):
 
             headers = html_soup.find("tr", {"class": "tbh header"})
             if headers is None:
-                print("Cannot find headers for profcourse search. Skipping...")
+                # print("Cannot find headers for profcourse search. Skipping...")
                 continue
             headers = [header.text.replace("\n", "").strip() for header in headers.findAll("th")]
-            print("Fetched headers from profcourse site:", headers)
+            # print("Fetched headers from profcourse site:", headers)
 
             sem_index, dept_index, title_index, cnum_index, unique_index, instr_index = get_header_indices(
                 headers, __sem_header, __dept_header, __title_header, __course_num_header, __unique_header, __instr_header
@@ -119,7 +119,7 @@ def fetch_profcourse_semdepts():
     
     base_html = fetch_html("https://utdirect.utexas.edu/apps/student/coursedocs/nlogon/")
     if base_html is None:
-        print("Failed to fetch profcourse info")
+        # print("Failed to fetch profcourse info")
         return prof_courses
     
     base_soup = BSoup(base_html, "html.parser")
@@ -137,7 +137,7 @@ def get_header_indices(headers, *header_vals):
             index = headers.index(header)
             indices.append(index)
         except ValueError:
-            print("Cannot find index for:", header)
+            # print("Cannot find index for:", header)
             indices.append(None)
     return tuple(indices)
 
@@ -169,7 +169,7 @@ def fetch_depts():
     dept_names = [titlecase(name) for name in dept_names]
 
     if len(dept_abrs) != len(dept_names):
-        print("Unexpected Error for Dept: number of abr does not equal number of names. Failed fetch")
+        # print("Unexpected Error for Dept: number of abr does not equal number of names. Failed fetch")
         return None
     
     depts = [(dept_abrs[i], dept_names[i]) for i in range(len(dept_abrs))]
