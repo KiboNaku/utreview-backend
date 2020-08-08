@@ -1,10 +1,8 @@
-from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
-from flask_jwt_extended import (create_access_token)
+from flask import render_template, request
 from utreview.models import *
-from utreview import app, db, bcrypt, jwt
+from utreview import app
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
 from flask_mail import Mail, Message
-import random
 
 mail = Mail(app)
 
