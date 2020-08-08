@@ -65,8 +65,6 @@ def create_ix():
 
 def update_sem_vals(sem_path):
 
-    print("Updating global semester values")
-
     global sem_current
     global sem_next
     global sem_future

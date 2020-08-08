@@ -9,7 +9,6 @@ class Semester(db.Model):
     year = db.Column(db.Integer, nullable=False)
     semester = db.Column(db.Integer, nullable=False)
 
-    ecis_scores = db.relationship("EcisScore", backref="semester", lazy=True)
     reviews = db.relationship("Review", backref="semester", lazy=True)
     scheduled_courses = db.relationship("ScheduledCourse", backref="semester", lazy=True)
     prof_course_sem = db.relationship('ProfCourseSemester', backref="semester", lazy=True)
@@ -90,5 +89,7 @@ class ProfCourse(db.Model):
 class ProfCourseSemester(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
+    unique_num = db.Column(db.Integer)
     prof_course_id = db.Column(db.Integer, db.ForeignKey('prof_course.id'), nullable=False)
     sem_id = db.Column(db.Integer, db.ForeignKey('semester.id'), nullable=False)
+    ecis = db.relationship("EcisScore", backref="profcoursesemester", lazy=True)

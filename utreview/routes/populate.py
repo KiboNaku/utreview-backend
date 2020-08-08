@@ -63,7 +63,6 @@ def populate_results():
     
     result = jsonify({"courses": courses_list, "profs": profs_list})
 
-    print("final:", time.time()-s_time)
     return result
 
 
@@ -150,8 +149,6 @@ def populate_all(courses_query, profs_query):
             'semesters': (course.current_sem, course.next_sem, course.future_sem)
         }
         courses_list.append(course_object)
-    
-    print("course", time.time() - s_time)
 
     for prof in profs_query:
         prof_object = {
@@ -164,8 +161,6 @@ def populate_all(courses_query, profs_query):
             'semesters': (prof.current_sem, prof.next_sem, prof.future_sem)
         }
         profs_list.append(prof_object)
-
-    print("prof", time.time() - s_time)
 
     return courses_list, profs_list
 

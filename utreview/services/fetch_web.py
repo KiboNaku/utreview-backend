@@ -1,13 +1,23 @@
 import os
+import json
 from urllib.request import urlopen, http
 from bs4 import BeautifulSoup as BSoup
 from titlecase import titlecase
+
+
+# ProfCourse dictionary keys
+KEY_SEM = 'sem'
+KEY_DEPT = 'dept'
+KEY_TITLE = 'title'
+KEY_CNUM = 'cnum'
+KEY_UNIQUE = 'unique'
+KEY_PROF = 'prof'
 
 failed_requests = []
 
 def fetch_html(url, attempt=1):
 
-    print("fetching: ", url)
+    # print("fetching: ", url)
 
     MAX_ATTEMPTS = 10
 
@@ -17,7 +27,7 @@ def fetch_html(url, attempt=1):
         client.close()
     except http.client.HTTPException as e:
 
-        print("URL Failed:", url, "Attempt:", attempt)
+        # print("URL Failed:", url, "Attempt:", attempt)
         return fetch_html(url, attempt+1)
 
         if attempt >= MAX_ATTEMPTS:
@@ -46,6 +56,100 @@ def get_course_url(sem="spring", year=2020, dept="", c_num="", c_title="", u_num
             '&course_type=In+Residence&search=Search')
 
 
+
+def get_profcourse_url(semester="20202", department="E E"):
+
+    department = department.replace(" ", "+")
+    return ("https://utdirect.utexas.edu/apps/student/coursedocs/nlogon/?"
+            f"semester={semester}&department={department}&course_number=&course_title=&"
+            "unique=&instructor_first=&instructor_last=&course_type=In+Residence&course_type=Extension&search=Search")
+
+
+def fetch_profcourse_info(out_file, sems, depts):
+
+    __sem_header = 'SEMESTER'
+    __dept_header = 'DEPT'
+    __title_header = 'TITLE'
+    __course_num_header = 'COURSENUMBER'
+    __unique_header = 'UNIQUE'
+    __instr_header = 'INSTRUCTOR(S)*'
+
+    prof_courses = []
+
+    for sem in sems:
+        for dept in depts:
+            
+            html = fetch_html(get_profcourse_url(sem, dept))
+            html_soup = BSoup(html, "html.parser")
+
+            headers = html_soup.find("tr", {"class": "tbh header"})
+            if headers is None:
+                # print("Cannot find headers for profcourse search. Skipping...")
+                continue
+            headers = [header.text.replace("\n", "").strip() for header in headers.findAll("th")]
+            # print("Fetched headers from profcourse site:", headers)
+
+            sem_index, dept_index, title_index, cnum_index, unique_index, instr_index = get_header_indices(
+                headers, __sem_header, __dept_header, __title_header, __course_num_header, __unique_header, __instr_header
+                )
+
+            rows = html_soup.findAll("tr", {"class": ["tboff", "tbon"]})
+            for row in rows:
+                cols = row.findAll("td")
+                cols = [col.text.replace("\n", "").strip() for col in cols]
+
+                for i in range(len(cols)):
+                    if 'CV' in cols[i]:
+                        cols[i] = cols[i].split('CV')[0].strip()
+                prof_course = {
+                    KEY_SEM: cols[sem_index] if sem_index is not None else None,
+                    KEY_DEPT: cols[dept_index] if dept_index is not None else None,
+                    KEY_TITLE: cols[title_index].strip()[:-1] if title_index is not None else None,
+                    KEY_CNUM: cols[cnum_index] if cnum_index is not None else None,
+                    KEY_UNIQUE: cols[unique_index] if unique_index is not None else None,
+                    KEY_PROF: cols[instr_index] if instr_index is not None else None
+                }
+
+                with open(out_file, "a") as f:
+                    json.dump(prof_course, f)
+                    f.write("\n")
+    
+
+def fetch_profcourse_semdepts():
+    
+    base_html = fetch_html("https://utdirect.utexas.edu/apps/student/coursedocs/nlogon/")
+    if base_html is None:
+        # print("Failed to fetch profcourse info")
+        return prof_courses
+    
+    base_soup = BSoup(base_html, "html.parser")
+    sems = parse_profcourse_sems(base_soup)[1:]
+    depts = parse_profcourse_depts(base_soup)[1:]
+
+    return sems, depts
+
+
+def get_header_indices(headers, *header_vals):
+
+    indices = []
+    for header in header_vals:
+        try:
+            index = headers.index(header)
+            indices.append(index)
+        except ValueError:
+            # print("Cannot find index for:", header)
+            indices.append(None)
+    return tuple(indices)
+
+
+def parse_profcourse_depts(base_soup):
+    return [option['value'] for option in base_soup.find("select", {"id": "id_department"}).findAll("option", value=True)]
+
+
+def parse_profcourse_sems(base_soup):
+    return [option['value'] for option in base_soup.find("select", {"id": "id_semester"}).findAll("option", value=True)]
+
+
 def fetch_depts():
 
     c_html = fetch_html('https://registrar.utexas.edu/staff/fos')
@@ -65,7 +169,7 @@ def fetch_depts():
     dept_names = [titlecase(name) for name in dept_names]
 
     if len(dept_abrs) != len(dept_names):
-        print("Unexpected Error for Dept: number of abr does not equal number of names. Failed fetch")
+        # print("Unexpected Error for Dept: number of abr does not equal number of names. Failed fetch")
         return None
     
     depts = [(dept_abrs[i], dept_names[i]) for i in range(len(dept_abrs))]

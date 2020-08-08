@@ -95,15 +95,10 @@ def course_details():
     else:
         curr_user = None
 
-    print("get course info")
     course_info, course, is_parent = get_course_info(course_id)
-    print("get course requisites")
     course_requisites = get_course_requisites(course)
-    print("get course reviews")
     course_rating, review_list = get_course_reviews(course, logged_in, curr_user, is_parent)
-    print("get course schedule")
     course_schedule = get_course_schedule(course, is_parent)
-    print("get course profs")
     prof_list = get_course_profs(course, is_parent)
 
     result = jsonify({"course_info": course_info,
@@ -175,7 +170,6 @@ def get_course_info(course_id):
         topics_list = None
 
         for course_topic in topic.courses:
-            print(course_topic)
             if course_topic.topic_num == 0:
                 parent_title = course_topic.title
                 parent_id = course_topic.id
@@ -230,11 +224,18 @@ def get_ecis(course, prof):
         course_ecis (float): Average course ecis score
         prof_ecis (float): Average prof ecis score
     """
-    ecis_scores = EcisScore.query.all()
+    
+    prof_course = ProfCourse.query.filter_by(course_id=course.id, prof_id=prof.id).first()
+
+    if prof_course is None:
+        return None, None
+
     scores = []
-    for ecis_score in ecis_scores:
-        if(ecis_score.course_id == course.id and ecis_score.prof_id == prof.id):
-            scores.append(ecis_score)
+
+    for pcs in prof_course.prof_course_sem:
+        for ecis in pcs.ecis:
+            scores.append(ecis)
+
     if len(scores) == 0:
         course_ecis = None
         prof_ecis = None
