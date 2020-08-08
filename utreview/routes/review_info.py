@@ -72,7 +72,7 @@ def new_review():
     update_course_stats(course, course_approval, course_difficulty, course_usefulness, course_workload, False, None)
     update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, False, None)
 
-    review = Review(user_id=user.id, sem_id=semester.id, grade=grade, date_posted=datetime.utcnow())
+    review = Review(user_id=user.id, sem_id=semester.id, grade=grade, date_posted=datetime.utcnow(), submitted=True)
     db.session.add(review)
     db.session.commit()
 
