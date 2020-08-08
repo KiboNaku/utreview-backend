@@ -18,7 +18,12 @@ import logging
 import sys
 import os
 from logging.handlers import TimedRotatingFileHandler
-from datetime import datetime
+import datetime
+
+
+DEFAULT_LOG_FOLDER = 'log'
+DEFAULT_LOG_FILE_NAME = "daily_backend_flask_app.log"
+
 
 def create_app():
 
@@ -86,20 +91,21 @@ def update_sem_vals(sem_path):
 
 def init_log():
 
-    # create logging file
-    __log_folder_name = 'log'
+    # create log folder if doesn't exist
+    if not os.path.isdir(DEFAULT_LOG_FOLDER):
+        os.mkdir(DEFAULT_LOG_FOLDER)
 
-    if not os.path.isdir(__log_folder_name):
-        os.mkdir(__log_folder_name)
+    log_path = os.path.join(DEFAULT_LOG_FOLDER, DEFAULT_LOG_FILE_NAME)
 
     # customize logger
     logger = logging.getLogger() 
 
-    time_rotating_handler = TimedRotatingFileHandler(get_log_file_name(), when="midnight", interval=1)
+    time_rotating_handler = TimedRotatingFileHandler(__default_log_name, when="midnight", interval=1)
+    time_rotating_handler.suffix = "%Y%m%d"
     logger.addHandler(time_rotating_handler)
     
     log_formatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
-    file_handler = logging.FileHandler("{0}/{1}.log".format('log', 'error'))
+    file_handler = logging.FileHandler(get_log_file_name(), mode='a')
     file_handler.setFormatter(log_formatter)
     logger.addHandler(file_handler)
 
@@ -109,11 +115,6 @@ def init_log():
 
     return logger
 
-    
-def get_log_file_name():
-    date = datetime.date(datetime.now())
-    return f'daily_log_{date}'
-
 
 sem_current, sem_next, sem_future = update_sem_vals('semester.txt')
 app, db = create_app()
@@ -121,4 +122,4 @@ bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 CORS(app)
 course_ix, prof_ix = create_ix()
-# logger = init_log()
+logger = init_log()
