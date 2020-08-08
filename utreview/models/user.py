@@ -16,6 +16,7 @@ class User(db.Model):
     major_id = db.Column(db.Integer, db.ForeignKey('dept.id'))
     profile_pic_id = db.Column(db.Integer, db.ForeignKey('profile_pic.id'), nullable=False)
 
+    user_courses = db.relationship('UserCourse', backref='user', lazy=True)
     reviews_posted = db.relationship('Review', backref='author', lazy=True)
     course_reviews_liked = db.relationship('CourseReviewLiked', backref='user', lazy=True)
     course_reviews_disliked = db.relationship('CourseReviewDisliked', backref='user', lazy=True)

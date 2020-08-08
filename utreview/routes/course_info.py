@@ -340,9 +340,9 @@ def get_scheduled_course(scheduled_course):
         'location': scheduled_course.location,
         'maxEnrollment': scheduled_course.max_enrollement,
         'seatsTaken': scheduled_course.seats_taken,
-        'profId': prof.id if prof != None else None,
-        'profFirst': prof.first_name if prof != None else None,
-        'profLast': prof.last_name if prof != None else None,
+        'profId': prof.id if prof is not None else None,
+        'profFirst': prof.first_name if prof is not None else None,
+        'profLast': prof.last_name if prof is not None else None,
         'crossListed': x_listed,
         'semester': semester_name,
         'year': scheduled_course.semester.year

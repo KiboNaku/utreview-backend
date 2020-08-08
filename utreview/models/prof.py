@@ -22,6 +22,7 @@ class Prof(db.Model):
     next_sem = db.Column(db.Boolean, nullable=False, default=False)
     future_sem = db.Column(db.Boolean, nullable=False, default=False)
 
+    user_courses = db.relationship('UserCourse', backref='prof', lazy=True)
     reviews = db.relationship('ProfReview', backref='prof', lazy=True)
     scheduled = db.relationship('ScheduledCourse', backref='prof', lazy=True)
     prof_course = db.relationship('ProfCourse', backref="prof", lazy=True)

@@ -9,6 +9,7 @@ class Semester(db.Model):
     year = db.Column(db.Integer, nullable=False)
     semester = db.Column(db.Integer, nullable=False)
 
+    user_courses = db.relationship('UserCourse', backref='semester', lazy=True)
     reviews = db.relationship("Review", backref="semester", lazy=True)
     scheduled_courses = db.relationship("ScheduledCourse", backref="semester", lazy=True)
     prof_course_sem = db.relationship('ProfCourseSemester', backref="semester", lazy=True)
