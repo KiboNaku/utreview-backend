@@ -114,9 +114,10 @@ def init_log():
 
 
 sem_current, sem_next, sem_future = update_sem_vals('semester.txt')
+logger = init_log()
+
 app, db = create_app()
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 CORS(app)
 course_ix, prof_ix = create_ix()
-logger = init_log()

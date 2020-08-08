@@ -1,5 +1,5 @@
 
-from utreview import db, app, update_sem_vals
+from utreview import db, app, update_sem_vals, logger
 from utreview.models import *
 from utreview.routes import *
 from utreview.services import *
