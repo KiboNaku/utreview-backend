@@ -1,4 +1,4 @@
-from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
+from flask import render_template, request
 from flask_jwt_extended import (create_access_token)
 from utreview.models import *
 from utreview import app, db, bcrypt, jwt
@@ -244,7 +244,10 @@ def send_confirmation_email(email, name=None):
 
     # TODO: update link as needed
     e_token = s.dumps(email, salt="confirm_email")
-    link = "http://localhost:3000/confirm_email?token=" + e_token
+    website = 'https://utexasreview.com/'
+    # website = 'http://localhost:3000/'
+
+    link = website + "confirm_email?token=" + e_token
 
     msg.html = render_template('confirm_email.html', name=name, link=link, email=email)
     mail.send(msg)
@@ -288,8 +291,11 @@ def send_reset_password(email, name=None):
             recipients=[email])
 
     # TODO: update link as needed
-    e_token = s.dumps(email, salt="reset_password")
-    link = "http://localhost:3000/reset_password?token=" + e_token
+    e_token = s.dumps(email, salt="reset_password") 
+    
+    website = 'https://utexasreview.com/'
+    # website = 'http://localhost:3000/'
+    link = website + "reset_password?token=" + e_token
 
     msg.html = render_template('reset_password.html', name=name, link=link)
     mail.send(msg)
