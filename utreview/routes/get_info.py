@@ -236,7 +236,7 @@ def review_list():
         {
             'id': result.id,
             'timeAgo': timeago.format(result.date_posted, datetime.datetime.utcnow()),
-            'date': result.date_posted.strftime("%Y-%m-%d"),
+            'date': str(result.date_posted),
             'grade': result.grade,
 
             'user': {
