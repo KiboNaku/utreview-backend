@@ -100,14 +100,11 @@ def init_log():
     # customize logger
     logger = logging.getLogger() 
 
-    time_rotating_handler = TimedRotatingFileHandler(__default_log_name, when="midnight", interval=1)
-    time_rotating_handler.suffix = "%Y%m%d"
-    logger.addHandler(time_rotating_handler)
-    
     log_formatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
-    file_handler = logging.FileHandler(get_log_file_name(), mode='a')
-    file_handler.setFormatter(log_formatter)
-    logger.addHandler(file_handler)
+    time_rotating_handler = TimedRotatingFileHandler(log_path, when="midnight", interval=1)
+    time_rotating_handler.suffix = "%Y%m%d"
+    time_rotating_handler.setFormatter(log_formatter)
+    logger.addHandler(time_rotating_handler)
 
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(log_formatter)
