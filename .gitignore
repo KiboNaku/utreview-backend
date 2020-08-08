@@ -27,4 +27,5 @@ cloud_sql_proxy.exe
 *.cfg
 *.xlsx
 input_data
-*.db
+site.db
+.idea

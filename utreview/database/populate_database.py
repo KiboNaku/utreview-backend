@@ -1,17 +1,12 @@
 
 import re
-import sys
 import json
-import time
 from titlecase import titlecase
-from utreview import db, sem_current, sem_next, sem_future
+from utreview import sem_current, sem_next, sem_future
 from utreview.services.fetch_course_info import *
 from utreview.models import *
-from utreview.services.fetch_prof import fetch_prof
 from string import ascii_lowercase
 from .scheduled_course import ScheduledCourseInfo
-from utreview.services.printer import Printer
-
 
 
 def populate_sem(start_yr=2010, end_yr=2020):

@@ -1,9 +1,6 @@
-from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
-from flask_jwt_extended import (create_access_token)
+from flask import request, jsonify
 from utreview.models import *
-from utreview import app, db, bcrypt, jwt, course_ix, prof_ix, sem_current, sem_next
-from whoosh.index import create_in
-from whoosh import scoring
+from utreview import app, course_ix, prof_ix
 from whoosh.fields import *
 from whoosh.qparser import QueryParser
 import time

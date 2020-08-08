@@ -233,6 +233,34 @@ def thread_function(name):
     populate_scheduled_course(ftp_info)
 
 
+def organize_log_files():
+    pass
+
+
+def get_log_file_path():
+
+    from utreview import DEFAULT_LOG_FOLDER
+
+    today = datetime.date.today()
+    year, month = today.year, today.month
+    date = today.strftime("%b_%d_%Y")
+
+    start = today - datetime.timedelta(days=today.weekday())
+    start = start if start.month == month else datetime.datetime(year, month, 1)
+    end = today + datetime.timedelta(days=-today.weekday()-1, weeks=1)
+    end = end if end.month == month else datetime.datetime(year, month, 31)
+
+    month_str = ('0' + str(month))[-2:]
+    start_day_str = ('0' + str(start.day))[-2:]
+    end_day_str = ('0' + str(end.day))[-2:]
+
+    yr_dir = f'year_{year}'
+    month_dir = f'month_{month_str}'
+    week_dir = f'week_{start_day_str}_to_{end_day_str}'
+
+    return os.path.join(DEFAULT_LOG_FOLDER, yr_dir, month_dir, week_dir, file_name)
+
+
 if __name__ == '__main__':    
     
     

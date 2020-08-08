@@ -1,14 +1,8 @@
 import timeago, datetime
-from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
-from flask_jwt_extended import (create_access_token)
+from flask import request, jsonify
 from utreview.models import *
-from utreview import app, db, bcrypt, jwt, course_ix, prof_ix
+from utreview import app
 from .catalyst import course_median_grade
-from whoosh.index import create_in
-from whoosh import scoring
-from whoosh.fields import *
-from whoosh.qparser import QueryParser
-import time
 
 @app.route('/api/course_id', methods=['POST'])
 def course_id():

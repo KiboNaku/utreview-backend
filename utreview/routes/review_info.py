@@ -1,6 +1,4 @@
-from datetime import datetime
-from flask import Flask, render_template, url_for, flash, redirect, request, jsonify, json
-from flask_jwt_extended import (create_access_token)
+from flask import request, jsonify
 from utreview.models import *
 from utreview import app, db, bcrypt, jwt
 
