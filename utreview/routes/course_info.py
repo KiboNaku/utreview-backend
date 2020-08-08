@@ -44,6 +44,7 @@ def course_id():
                 course_id = course.id
                 result_dept = course.dept.abr
                 result_num = course.num
+                result_title = course.title
                 if(topic_num >= 0):
                     topic_id = course.topic_id
                     for topic in course.topic.courses:
@@ -53,7 +54,7 @@ def course_id():
                     topic_id = -1
 
     if(course_found):
-        result = jsonify({"courseId": course_id, "courseDept": result_dept, "courseNum": result_num, "topicId": topic_id, "parentId": parent_id})
+        result = jsonify({"courseId": course_id, "courseDept": result_dept, "courseNum": result_num, "courseTitle": result_title, "topicId": topic_id, "parentId": parent_id, "topicNum": topic_num})
     else:
         result = jsonify({"error": "No course was found"})
     return result
@@ -258,7 +259,7 @@ def time_to_string(time_to_string):
         time_string += " AM"
     elif(time_num <= 0 and time_num < 100):
         time_string = "12" + ":" + time_to_string[1:3] + " AM"
-    elif(time_num <= 1200 and time_num < 1300):
+    elif(time_num >= 1200 and time_num < 1300):
         time_string = "12" + ":" + time_to_string[2:4] + " PM"
     else:
         time_num = time_num - 1200

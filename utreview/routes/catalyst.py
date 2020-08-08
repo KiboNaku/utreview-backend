@@ -15,9 +15,9 @@ def grade_distributions():
     prof_last = prof_last.split()
     prof_name = prof_last[len(prof_last) - 1] + ", " + prof_first
 
-    receive = requests.get('https://rawgit.com/shishirjessu/db/master/grades.db')
-    with open(r'grades.db', 'wb') as f:
-        f.write(receive.content)
+    # receive = requests.get('https://rawgit.com/shishirjessu/db/master/grades.db')
+    # with open(r'grades.db', 'wb') as f:
+    #     f.write(receive.content)
 
     database = r'grades.db'
     conn = create_connection(database)
