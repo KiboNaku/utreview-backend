@@ -1,0 +1,65 @@
+2020-08-07 17:55:06,742 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 17:55:15,861 [MainThread  ] [WARNI]   * Debugger is active!
+2020-08-07 17:55:15,877 [MainThread  ] [INFO ]   * Debugger PIN: 222-112-567
+2020-08-07 17:55:15,882 [Thread-1    ] [INFO ]   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+2020-08-07 17:59:33,305 [Thread-2    ] [INFO ]  127.0.0.1 - - [07/Aug/2020 17:59:33] "[37mGET /api/get_major HTTP/1.1[0m" 200 -
+2020-08-07 17:59:33,329 [Thread-4    ] [INFO ]  127.0.0.1 - - [07/Aug/2020 17:59:33] "[37mGET /api/get_major HTTP/1.1[0m" 200 -
+2020-08-07 17:59:35,184 [Thread-3    ] [INFO ]  127.0.0.1 - - [07/Aug/2020 17:59:35] "[37mPOST /api/populate_results HTTP/1.1[0m" 200 -
+2020-08-07 18:00:42,169 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:00:51,885 [MainThread  ] [WARNI]   * Debugger is active!
+2020-08-07 18:00:51,908 [MainThread  ] [INFO ]   * Debugger PIN: 222-112-567
+2020-08-07 18:00:51,925 [Thread-1    ] [INFO ]   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+2020-08-07 18:01:20,764 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:01:29,997 [MainThread  ] [WARNI]   * Debugger is active!
+2020-08-07 18:01:30,013 [MainThread  ] [INFO ]   * Debugger PIN: 222-112-567
+2020-08-07 18:01:30,019 [Thread-1    ] [INFO ]   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+2020-08-07 18:02:31,206 [MainThread  ] [INFO ]   * Detected change in 'C:\\Users\\nakuk\\MyProjects\\UTFlow\\utflow-backend\\app.py', reloading
+2020-08-07 18:02:31,384 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:02:58,122 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:03:07,471 [MainThread  ] [WARNI]   * Debugger is active!
+2020-08-07 18:03:07,487 [MainThread  ] [INFO ]   * Debugger PIN: 222-112-567
+2020-08-07 18:03:07,495 [Thread-1    ] [INFO ]   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+2020-08-07 18:15:25,184 [MainThread  ] [INFO ]   * Detected change in 'C:\\Users\\nakuk\\MyProjects\\UTFlow\\utflow-backend\\app.py', reloading
+2020-08-07 18:15:25,346 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:15:35,904 [MainThread  ] [WARNI]   * Debugger is active!
+2020-08-07 18:15:35,919 [MainThread  ] [INFO ]   * Debugger PIN: 222-112-567
+2020-08-07 18:15:35,925 [Thread-1    ] [INFO ]   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+2020-08-07 18:15:37,104 [MainThread  ] [INFO ]   * Detected change in 'C:\\Users\\nakuk\\MyProjects\\UTFlow\\utflow-backend\\app.py', reloading
+2020-08-07 18:15:37,246 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:15:47,474 [MainThread  ] [WARNI]   * Debugger is active!
+2020-08-07 18:15:47,490 [MainThread  ] [INFO ]   * Debugger PIN: 222-112-567
+2020-08-07 18:15:47,523 [Thread-1    ] [INFO ]   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+2020-08-07 18:15:52,400 [MainThread  ] [INFO ]   * Detected change in 'C:\\Users\\nakuk\\MyProjects\\UTFlow\\utflow-backend\\app.py', reloading
+2020-08-07 18:15:52,638 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:30:34,766 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:30:45,180 [MainThread  ] [WARNI]   * Debugger is active!
+2020-08-07 18:30:45,518 [MainThread  ] [INFO ]   * Debugger PIN: 222-112-567
+2020-08-07 18:30:45,560 [Thread-1    ] [INFO ]   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+2020-08-07 18:31:16,233 [MainThread  ] [INFO ]   * Detected change in 'C:\\Users\\nakuk\\MyProjects\\UTFlow\\utflow-backend\\app.py', reloading
+2020-08-07 18:31:16,511 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:31:28,002 [MainThread  ] [WARNI]   * Debugger is active!
+2020-08-07 18:31:28,022 [MainThread  ] [INFO ]   * Debugger PIN: 222-112-567
+2020-08-07 18:31:28,034 [Thread-1    ] [INFO ]   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+2020-08-07 18:31:30,482 [MainThread  ] [INFO ]   * Detected change in 'C:\\Users\\nakuk\\MyProjects\\UTFlow\\utflow-backend\\app.py', reloading
+2020-08-07 18:31:30,671 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:31:42,528 [MainThread  ] [WARNI]   * Debugger is active!
+2020-08-07 18:31:42,543 [MainThread  ] [INFO ]   * Debugger PIN: 222-112-567
+2020-08-07 18:31:42,551 [Thread-1    ] [INFO ]   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+2020-08-07 18:32:51,146 [MainThread  ] [INFO ]   * Detected change in 'C:\\Users\\nakuk\\MyProjects\\UTFlow\\utflow-backend\\app.py', reloading
+2020-08-07 18:32:51,290 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:33:01,630 [MainThread  ] [WARNI]   * Debugger is active!
+2020-08-07 18:33:01,647 [MainThread  ] [INFO ]   * Debugger PIN: 222-112-567
+2020-08-07 18:33:01,653 [Thread-1    ] [INFO ]   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+2020-08-07 18:33:30,072 [MainThread  ] [INFO ]   * Detected change in 'C:\\Users\\nakuk\\MyProjects\\UTFlow\\utflow-backend\\app.py', reloading
+2020-08-07 18:33:30,248 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:33:40,968 [MainThread  ] [WARNI]  hello warning root
+2020-08-07 18:33:40,984 [MainThread  ] [WARNI]   * Debugger is active!
+2020-08-07 18:33:41,020 [MainThread  ] [INFO ]   * Debugger PIN: 222-112-567
+2020-08-07 18:33:41,041 [Thread-1    ] [INFO ]   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+2020-08-07 18:34:12,015 [MainThread  ] [INFO ]   * Detected change in 'C:\\Users\\nakuk\\MyProjects\\UTFlow\\utflow-backend\\app.py', reloading
+2020-08-07 18:34:12,163 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:35:33,501 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:35:45,192 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:36:34,062 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:36:50,582 [MainThread  ] [INFO ]   * Restarting with stat
+2020-08-07 18:37:14,395 [MainThread  ] [INFO ]   * Restarting with stat

@@ -14,6 +14,11 @@ from whoosh.qparser import QueryParser
 import json
 from utreview.services.fetch_ftp import key_current, key_next, key_future
 from utreview.database.scheduled_course import int_or_none
+import logging
+import sys
+import os
+from logging.handlers import TimedRotatingFileHandler
+from datetime import datetime
 
 def create_app():
 
@@ -78,10 +83,42 @@ def update_sem_vals(sem_path):
         return None, None, None
     return int_or_none(sem_dict[key_current]), int_or_none(sem_dict[key_next]), int_or_none(sem_dict[key_future])
 
+
+def init_log():
+
+    # create logging file
+    __log_folder_name = 'log'
+
+    if not os.path.isdir(__log_folder_name):
+        os.mkdir(__log_folder_name)
+
+    # customize logger
+    logger = logging.getLogger() 
+
+    time_rotating_handler = TimedRotatingFileHandler(get_log_file_name(), when="midnight", interval=1)
+    logger.addHandler(time_rotating_handler)
     
+    log_formatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+    file_handler = logging.FileHandler("{0}/{1}.log".format('log', 'error'))
+    file_handler.setFormatter(log_formatter)
+    logger.addHandler(file_handler)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(log_formatter)
+    logger.addHandler(console_handler)
+
+    return logger
+
+    
+def get_log_file_name():
+    date = datetime.date(datetime.now())
+    return f'daily_log_{date}'
+
+
 sem_current, sem_next, sem_future = update_sem_vals('semester.txt')
 app, db = create_app()
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 CORS(app)
 course_ix, prof_ix = create_ix()
+# logger = init_log()

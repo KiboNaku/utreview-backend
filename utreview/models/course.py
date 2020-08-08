@@ -16,6 +16,17 @@ class Topic(db.Model):
         return f"Topic('{parent_topic}')"
 
 
+class UserCourse(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    unique_num = db.Column(db.Integer, nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=True)
+    prof_id = db.Column(db.Integer, db.ForeignKey('prof.id'), nullable=True)
+    semester_id = db.Column(db.Integer, db.ForeignKey('semester.id'), nullable=True)
+
+
 class Course(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
@@ -46,6 +57,7 @@ class Course(db.Model):
     next_sem = db.Column(db.Boolean, nullable=False, default=False)
     future_sem = db.Column(db.Boolean, nullable=False, default=False)
 
+    user_courses = db.relationship('UserCourse', backref='course', lazy=True)
     reviews = db.relationship('CourseReview', backref='course', lazy=True)
     scheduled = db.relationship('ScheduledCourse', backref='course', lazy=True)
     prof_course = db.relationship('ProfCourse', backref="course", lazy=True)

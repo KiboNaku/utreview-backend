@@ -5,6 +5,8 @@ from utreview.routes import *
 from utreview.services import *
 from utreview.database.populate_database import *
 import logging
+import sys
+import os
 import threading
 import time
 
@@ -232,7 +234,8 @@ def thread_function(name):
 
 
 if __name__ == '__main__':    
-
+    
+    
     # from utreview.services.fetch_web import fetch_profcourse_info, fetch_profcourse_semdepts
     # sems, depts = fetch_profcourse_semdepts()
     # fetch_profcourse_info("prof_course.txt", sems, depts)
