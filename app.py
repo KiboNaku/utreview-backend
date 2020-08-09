@@ -9,6 +9,7 @@ import sys
 import os
 import threading
 import time
+import datetime
 
 
 def is_residence_or_extension(course):
@@ -166,9 +167,9 @@ def refresh_ecis():
         db.session.commit()
 
 
-def populate_ecis():
+def populate_ecis(file_path, pages):
     from utreview.services.fetch_ecis import parse_ecis_excel, KEY_UNIQUE_NUM, KEY_COURSE_AVG, KEY_PROF_AVG, KEY_NUM_STUDENTS, KEY_YR, KEY_SEM
-    ecis_lst = parse_ecis_excel('input_data/IRRIS#931_output.xlsx', [1, 2, 3, 4])
+    ecis_lst = parse_ecis_excel(file_path, pages)
 
     # remember to update Course and Prof objects when inputting new ECIS scores
 
@@ -213,27 +214,77 @@ def populate_ecis():
         db.session.commit()
 
 
-def thread_function(name):
+def automate_backend(name):
     
     from utreview.services.fetch_ftp import fetch_ftp_files, fetch_sem_values, parse_ftp
     from utreview.database.populate_database import populate_scheduled_course
+    from utreview.services.fetch_web import fetch_profcourse_info, fetch_profcourse_semdepts
+    from utreview.database.populate_database import populate_profcourse
+    import pytz
+
+    __maintenance_txt_file = "maintenance.txt"
     
-    fetch_ftp_files('input_data') 
-    fetch_sem_values("input_data", "")
+    while True:
+        
+        dt_today = datetime.datetime.now(pytz.timezone('America/Chicago'))
+        dt_tmr = dt_today + datetime.timedelta(days=1)
+        dt_tmr = dt_tmr.replace(hour=1, minute=0)
+        
+        until_start = (dt_today-dt_tmr).total_seconds()
+        logger.info(f"Waiting {until_start} seconds until start time")
+        time.sleep(until_start)
 
-    # depts = fetch_depts()
-    # populate_dept(depts, override=True) 
-    # dept_info = fetch_dept_info('input_data/Data_Requests.xlsx', [0, 1, 2])
-    # populate_dept_info(dept_info)
+        # task 1: fetch ftp files and update scheduled course info
+        logger.info("Fetching new ftp files")
+        fetch_ftp_files('input_data') 
+        fetch_sem_values("input_data", "")
 
-    # courses = fetch_courses('input_data/Data_Requests.xlsx', [0, 1, 2])
-    # populate_course(courses, cur_sem = int(sem_current))
+        logger.info("Updating scheduled course database info")
+        ftp_info = parse_ftp("input_data")
+        populate_scheduled_course(ftp_info)
 
-    ftp_info = parse_ftp("input_data")
-    populate_scheduled_course(ftp_info)
+        # task 2: read maintenance.txt and perform task as necessary
+        logger.info("Initiating maintenance.txt")
+        if os.path.isfile(__maintenance_txt_file):
+            with open(__maintenance_txt_file, 'r') as f:
 
+                commands = f.readlines()
+                for command in commands:
+                    command_parts = command.split(' ')
 
+                    if len(command_parts) >= 2:
+                        cmd, path = command_parts[0], command_parts[1]
+                        logger.info(f"Executing {cmd} {path}")
+
+                        if len(command_parts) >= 3:
+                            pages = [int(page) for page in command_parts[2].split(',')]
+                            
+                            if cmd == 'course':
+                                logger.info("Updating department info")
+                                depts = fetch_depts()
+                                populate_dept(depts, override=True)
+
+                                dept_info = fetch_dept_info(path, pages)
+                                populate_dept_info(dept_info)
+
+                                courses = fetch_courses(path, pages)
+                                populate_course(courses, cur_sem = int(sem_current))
+                            elif cmd == 'ecis':
+                                populate_ecis(path, pages)
+                        else:
+                            if cmd == 'prof_course':
+                                sems, depts = fetch_profcourse_semdepts()
+                                fetch_profcourse_info(path, sems, depts)
+                                populate_profcourse(path)
+
+        # task 3: organize log files
+        organize_log_files()
+
+       
 def organize_log_files():
+
+    # from utreview import DEFAULT_LOG_FOLDER
+
     pass
 
 
@@ -261,28 +312,10 @@ def get_log_file_path():
     return os.path.join(DEFAULT_LOG_FOLDER, yr_dir, month_dir, week_dir, file_name)
 
 
-if __name__ == '__main__':    
-    
-    
-    # from utreview.services.fetch_web import fetch_profcourse_info, fetch_profcourse_semdepts
-    # sems, depts = fetch_profcourse_semdepts()
-    # fetch_profcourse_info("prof_course.txt", sems, depts)
-    # from utreview.database.populate_database import populate_profcourse
-    # populate_profcourse("prof_course.txt")
-    # from utreview.services.fetch_ftp import fetch_ftp_files, fetch_sem_values, parse_ftp
-    # from utreview.database.populate_database import populate_scheduled_course
-    # fetch_ftp_files('input_data') 
-    # fetch_sem_values("input_data", "")
-    # ftp_info = parse_ftp("input_data")
-    # populate_scheduled_course(ftp_info)
-    # -----------------------------------------
+automate_thread = threading.Thread(target=automate_backend, args=(1,))
+automate_thread.start()
 
-    # from utreview.database.populate_database import populate_sem
-    # populate_sem()
 
-    # x = threading.Thread(target=thread_function, args=(1,))
-    # x.start()
-    app.run(debug=True)
-    # x.join()
-
+# if __name__ == '__main__':    
     
+    # app.run(debug=True)
