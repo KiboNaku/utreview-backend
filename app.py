@@ -269,12 +269,12 @@ if __name__ == '__main__':
     # fetch_profcourse_info("prof_course.txt", sems, depts)
     # from utreview.database.populate_database import populate_profcourse
     # populate_profcourse("prof_course.txt")
-    # from utreview.services.fetch_ftp import fetch_ftp_files, fetch_sem_values, parse_ftp
-    # from utreview.database.populate_database import populate_scheduled_course
-    # fetch_ftp_files('input_data') 
-    # fetch_sem_values("input_data", "")
-    # ftp_info = parse_ftp("input_data")
-    # populate_scheduled_course(ftp_info)
+    from utreview.services.fetch_ftp import fetch_ftp_files, fetch_sem_values, parse_ftp
+    from utreview.database.populate_database import populate_scheduled_course
+    fetch_ftp_files('input_data') 
+    fetch_sem_values("input_data", "")
+    ftp_info = parse_ftp("input_data")
+    populate_scheduled_course(ftp_info)
     # -----------------------------------------
 
     # from utreview.database.populate_database import populate_sem
@@ -282,7 +282,7 @@ if __name__ == '__main__':
 
     # x = threading.Thread(target=thread_function, args=(1,))
     # x.start()
-    app.run(debug=True)
+    # app.run(debug=True)
     # x.join()
 
     
