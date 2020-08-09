@@ -1,15 +1,7 @@
 env
 __pycache__
 log
-utreview/index/_MAIN_1.toc
-utreview/index/MAIN_8wbjvlhkx54mvyn7.seg
-utreview/index/MAIN_wber9zckca9y0eg1.seg
-utreview/index/_MAIN_1.toc
-utreview/index/MAIN_8wbjvlhkx54mvyn7.seg
-utreview/index/_MAIN_1.toc
-utreview/index/MAIN_8wbjvlhkx54mvyn7.seg
-utreview/index/MAIN_qgq4iucjw47vq1qj.seg
-utreview/index/_MAIN_1.toc
+utreview/index
 *.seg
 *.toc
 utreview/course_index/MAIN_WRITELOCK
@@ -29,3 +21,4 @@ cloud_sql_proxy.exe
 input_data
 site.db
 .idea
+maintenance.txt

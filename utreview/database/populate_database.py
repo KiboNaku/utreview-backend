@@ -221,6 +221,18 @@ def populate_scheduled_course(course_info):
 		# check to see if scheduled course exists else create new
 		cur_schedule = ScheduledCourse.query.filter_by(unique_no=scheduled.unique_no, sem_id=semester.id).first()
 		
+		# check to see if cross_listings exist else create new
+		x_list = None
+		for x_list_str in scheduled.x_listings:
+			x_course = ScheduledCourse.query.filter_by(unique_no=x_list_str, sem_id=semester.id).first()
+			if x_course is not None and x_course.xlist is not None:
+				x_list = x_course.xlist
+
+		if x_list is None:
+			x_list = CrossListed()
+			db.session.add(x_list)
+			db.session.commit()
+
 		if cur_schedule is None:
 			
 			# print(f"Adding new scheduled course ({scheduled.yr}{scheduled.sem}): {scheduled.dept} {scheduled.c_num} ", end="")
@@ -229,18 +241,9 @@ def populate_scheduled_course(course_info):
 			# else:
 			# 	print()
 
-			# check to see if cross_listings exist else create new
-			x_list = None
-			for x_list_str in scheduled.x_listings:
-				x_course = ScheduledCourse.query.filter_by(unique_no=x_list_str, sem_id=semester.id).first()
-				if x_course is not None and x_course.xlist is not None:
-					x_list = x_course.xlist
-
-			if x_list is None:
-				x_list = CrossListed()
-
 			cur_schedule = ScheduledCourse(
-				unique_no=scheduled.unique_no, session=scheduled.session, 
+				unique_no=scheduled.unique_no, 
+				session=scheduled.session, 
 				days=scheduled.days, time_from=scheduled.time_from, time_to=scheduled.time_to, 
 				location=scheduled.location, 
 				max_enrollement=scheduled.max_enrollment, seats_taken=scheduled.seats_taken,
@@ -264,7 +267,9 @@ def populate_scheduled_course(course_info):
 			cur_schedule.max_enrollment = scheduled.max_enrollment
 			cur_schedule.seats_taken = scheduled.seats_taken
 			cur_schedule.course_id = cur_course.id
-			if cur_prof is not None: cur_schedule.prof_id = cur_prof.id
+			cur_schedule.prof_id=cur_prof.id if cur_prof else None
+			cur_schedule.cross_listed=x_list.id
+
 
 		# add prof course relationship if doesnt exist
 		if cur_prof:
