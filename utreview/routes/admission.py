@@ -43,7 +43,8 @@ def register():
     email = request.get_json()['email']
     major = request.get_json()['major']
     other_major = request.get_json()['other_major']
-    password_hash = bcrypt.generate_password_hash(request.get_json()['password']).decode('utf-8')
+    password_hash = bcrypt.generate_password_hash(
+        request.get_json()['password']).decode('utf-8')
 
     major_id = None
     if(major != None and major != ""):
@@ -66,15 +67,16 @@ def register():
             send_confirmation_email(user.email, user.first_name)
     else:
         r_val['email'] = email
-        user = User(first_name=first_name, last_name=last_name, 
-            email=email, password_hash=password_hash, profile_pic_id=profile_pic.id, 
-            verified=False, major_id=major_id, other_major=other_major)
+        user = User(first_name=first_name, last_name=last_name,
+                    email=email, password_hash=password_hash, profile_pic_id=profile_pic.id,
+                    verified=False, major_id=major_id, other_major=other_major)
         db.session.add(user)
         # sending confirmation email
         send_confirmation_email(user.email, user.first_name)
 
     db.session.commit()
     return r_val
+
 
 @app.route('/api/check_duplicate_email', methods=['POST'])
 def check_duplicate_email():
@@ -83,9 +85,10 @@ def check_duplicate_email():
     error = None
     if user and user.verified:
         error = "An account already exists for this email."
-        
+
     r_val = {'email': email, 'error': error}
     return r_val
+
 
 @app.route('/api/check_valid_email', methods=['POST'])
 def check_valid_email():
@@ -94,9 +97,10 @@ def check_valid_email():
     error = None
     if not user:
         error = "An account does not exist for this email."
-        
+
     r_val = {'email': email, 'error': error}
     return r_val
+
 
 @app.route('/api/check_verified_email', methods=['POST'])
 def check_verified_email():
@@ -105,9 +109,10 @@ def check_verified_email():
     error = None
     if user and not user.verified:
         error = "This account has not been verified."
-        
+
     r_val = {'email': email, 'error': error}
     return r_val
+
 
 @app.route('/api/check_valid_password', methods=['POST'])
 def check_valid_password():
@@ -190,37 +195,50 @@ def login():
 
     user = User.query.filter_by(email=email).first()
 
-    if user and bcrypt.check_password_hash(user.password_hash, password):
-        
-        if user.verified:
-            r_val["success"] = 1
-            r_val['token'] = get_user_token(email)
-        else:
-            r_val["success"] = -101
-            r_val['error'] = "The account associated with this email address has not been verified."
-            send_confirmation_email(email, user.first_name)
-    else:
+    if password == None:
         if user:
-            r_val["success"] = -1
-            r_val['error'] = "Invalid email and password combination. Please check your email/password and try again."
+            if user.verified:
+                r_val["success"] = 1
+                r_val['token'] = get_user_token(email)
+            else:
+                r_val["success"] = -101
+                r_val['error'] = "The account associated with this email address has not been verified."
+                send_confirmation_email(email, user.first_name)
         else:
             r_val["success"] = -2
             r_val['error'] = "An account does not exist for this email."
+    else:
+        if user and bcrypt.check_password_hash(user.password_hash, password):
+
+            if user.verified:
+                r_val["success"] = 1
+                r_val['token'] = get_user_token(email)
+            else:
+                r_val["success"] = -101
+                r_val['error'] = "The account associated with this email address has not been verified."
+                send_confirmation_email(email, user.first_name)
+        else:
+            if user:
+                r_val["success"] = -1
+                r_val['error'] = "Invalid email and password combination. Please check your email/password and try again."
+            else:
+                r_val["success"] = -2
+                r_val['error'] = "An account does not exist for this email."
 
     return r_val
 
 
 def get_user_token(email):
-    
+
     user = User.query.filter_by(email=email).first()
     access_token = create_access_token(identity={
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'email': user.email,
-            'major': user.major.name if user.major_id != None else None,
-            'profile_pic': user.pic.file_name,
-            'other_major': user.other_major
-        })
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'email': user.email,
+        'major': user.major.name if user.major_id != None else None,
+        'profile_pic': user.pic.file_name,
+        'other_major': user.other_major
+    })
     return access_token
 
 
@@ -229,7 +247,7 @@ def send_confirmation_email(email, name=None):
     r_val = {'success': 0}
 
     if name is None:
-        
+
         user = User.query.filter_by(email=email).first()
         if user is None:
             r_val['success'] = -1
@@ -238,9 +256,9 @@ def send_confirmation_email(email, name=None):
 
     r_val['success'] = 1
     msg = Message(
-            'UT Review Confirmation Email',
-            sender=("UT Review", "utexas.review@gmail.com"), 
-            recipients=[email])
+        'UT Review Confirmation Email',
+        sender=("UT Review", "utexas.review@gmail.com"),
+        recipients=[email])
 
     # TODO: update link as needed
     e_token = s.dumps(email, salt="confirm_email")
@@ -249,7 +267,8 @@ def send_confirmation_email(email, name=None):
 
     link = website + "confirm_email?token=" + e_token
 
-    msg.html = render_template('confirm_email.html', name=name, link=link, email=email)
+    msg.html = render_template(
+        'confirm_email.html', name=name, link=link, email=email)
     mail.send(msg)
     return r_val
 
@@ -272,12 +291,13 @@ def forgot_password():
     db.session.commit()
     return r_val
 
+
 def send_reset_password(email, name=None):
 
     r_val = {'success': 0}
 
     if name is None:
-        
+
         user = User.query.filter_by(email=email).first()
         if user is None:
             r_val['success'] = -1
@@ -286,9 +306,9 @@ def send_reset_password(email, name=None):
 
     r_val['success'] = 1
     msg = Message(
-            'UT Review Password Reset',
-            sender=("UT Review", "utexas.review@gmail.com"), 
-            recipients=[email])
+        'UT Review Password Reset',
+        sender=("UT Review", "utexas.review@gmail.com"),
+        recipients=[email])
 
     # TODO: update link as needed
     e_token = s.dumps(email, salt="reset_password") 
@@ -300,6 +320,7 @@ def send_reset_password(email, name=None):
     msg.html = render_template('reset_password.html', name=name, link=link)
     mail.send(msg)
     return r_val
+
 
 @app.route('/api/send_reset_password', methods=['POST'])
 def send_reset_email():
@@ -336,13 +357,15 @@ def reset_password_link():
 
     return r_val
 
+
 @app.route('/api/reset_password', methods=['POST'])
 def reset_password():
     r_val = {'success': 0, 'error': None}
 
     email = request.get_json()['email']
-    password_hash = bcrypt.generate_password_hash(request.get_json()['password']).decode('utf-8')
-    
+    password_hash = bcrypt.generate_password_hash(
+        request.get_json()['password']).decode('utf-8')
+
     user = User.query.filter_by(email=email).first()
     user.password_hash = password_hash
     db.session.commit()
