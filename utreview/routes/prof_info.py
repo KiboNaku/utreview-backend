@@ -15,10 +15,12 @@ def prof_id():
         profString (string): prof pathname
 
     Returns:
-        result (json): returns the prof id if successful, returns an error if failed
+        result (json): returns the prof id along with other information if successful, 
+        returns an error if failed
     """
     prof_string = request.get_json()['profString']
     prof_parsed = prof_string.split("_")
+
     invalid_input = False
     if(len(prof_parsed) == 2):
         first_name = prof_parsed[0]
@@ -39,6 +41,7 @@ def prof_id():
                 prof_id = prof.id
                 result_first = prof.first_name
                 result_last = prof.last_name
+
     if(prof_found):
         result = jsonify({"profId": prof_id, "firstName": result_first, "lastName": result_last})
     else:
@@ -124,7 +127,7 @@ def get_scheduled_prof(scheduled_prof):
                 'crossListed' (list): list of cross listed courses
                     x_listed_obj = {
                         'id' (int): course id
-                        'dept' (string): course deptartment abbreviation
+                        'dept' (string): course department abbreviation
                         'num' (string): course num
                         'title' (string): course title
                     }
@@ -305,7 +308,7 @@ def get_review_info(review, logged_in, curr_user):
         'likePressed': like_pressed,
         'dislikePressed': dislike_pressed,
         'date': str(review.date_posted),
-        'dateString': timeago.format(review.date_posted, datetime.datetime.utcnow()),
+        'dateString': timeago.format(review.date_posted, datetime.utcnow()),
         'year': review.semester.year,
         'semester': semester
     }

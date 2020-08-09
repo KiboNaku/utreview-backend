@@ -488,7 +488,7 @@ def get_review_info(review, logged_in, curr_user):
         'numDisliked': num_disliked,
         'likePressed': like_pressed,
         'dislikePressed': dislike_pressed,
-        'dateString': timeago.format(review.date_posted, datetime.datetime.utcnow()),
+        'dateString': timeago.format(review.date_posted, datetime.utcnow()),
         'date': str(review.date_posted),
         'year': review.semester.year,
         'semester': semester
