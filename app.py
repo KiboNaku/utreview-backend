@@ -222,30 +222,31 @@ def automate_backend(name):
     from utreview.services.fetch_web import fetch_profcourse_info, fetch_profcourse_semdepts
     from utreview.database.populate_database import populate_profcourse
     
-    # while True:
+    while True:
         
-    dt_today = datetime.datetime.now(pytz.timezone('America/Chicago'))
-    dt_tmr = dt_today + datetime.timedelta(days=1)
-    dt_tmr = dt_tmr.replace(hour=1, minute=0)
-    
-    until_start = (dt_today-dt_tmr).total_seconds()
-    logger.info(f"Waiting {until_start} seconds until start time")
-    # time.sleep(until_start)
+        dt_today = datetime.datetime.now(pytz.timezone('America/Chicago'))
+        dt_tmr = dt_today + datetime.timedelta(days=1)
+        dt_tmr = dt_tmr.replace(hour=1, minute=0)
 
-    # task 1: fetch ftp files and update scheduled course info
-    # logger.info("Fetching new ftp files")
-    # fetch_ftp_files('input_data') 
-    # fetch_sem_values("input_data", "")
+        until_start = int((dt_tmr-dt_today).total_seconds())
+        logger.info(f"Waiting {until_start} seconds until start time")
+        for _ in range(until_start):
+            time.sleep(1)
 
-    # logger.info("Updating scheduled course database info")
-    # ftp_info = parse_ftp("input_data")
-    # populate_scheduled_course(ftp_info)
+        # task 1: fetch ftp files and update scheduled course info
+        logger.info("Fetching new ftp files")
+        fetch_ftp_files('input_data') 
+        fetch_sem_values("input_data", "")
 
-    # task 2: read maintenance.txt and perform task as necessary
-    run_maintenance()
+        logger.info("Updating scheduled course database info")
+        ftp_info = parse_ftp("input_data")
+        populate_scheduled_course(ftp_info)
 
-    # task 3: organize log files
-    organize_log_files()
+        # task 2: read maintenance.txt and perform task as necessary
+        run_maintenance()
+
+        # task 3: organize log files
+        organize_log_files()
 
 
 def run_maintenance():
@@ -349,6 +350,7 @@ def get_log_file_path(file_name, check_date=True):
 
 
 automate_thread = threading.Thread(target=automate_backend, args=(1,))
+automate_thread.daemon = True
 automate_thread.start()
 
 
