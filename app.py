@@ -351,7 +351,8 @@ def get_log_file_path(file_name, check_date=True):
 
 automate_thread = threading.Thread(target=automate_backend, args=(1,))
 automate_thread.daemon = True
-automate_thread.start()
+if not automate_thread.is_alive():
+    automate_thread.start()
 
 
 if __name__ == '__main__':    

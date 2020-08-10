@@ -149,7 +149,7 @@ def confirm_email():
         token = request.get_json()['token']
         email = s.loads(token, salt='confirm_email', max_age=3600)
         user = User.query.filter_by(email=email).first()
-
+        
         if user.verified:
             r_val['success'] = -1
             r_val['error'] = "The account has already been verified."
@@ -157,6 +157,7 @@ def confirm_email():
             user.verified = True
             db.session.commit()
             r_val['success'] = 1
+        
     except SignatureExpired:
         r_val["success"] = -2
         r_val['error'] = "The confirmation code has expired."
@@ -166,6 +167,9 @@ def confirm_email():
     except KeyError:
         r_val["success"] = -4
         r_val['error'] = "No confirmation code found."
+    except AttributeError:
+        r_val["success"] = -5
+        r_val['error'] = "The email cannot be found."
 
     return r_val
 
