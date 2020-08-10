@@ -240,6 +240,8 @@ def automate_backend(name):
 
         logger.info("Updating scheduled course database info")
         ftp_info = parse_ftp("input_data")
+        reset_courses()
+        reset_profs()
         populate_scheduled_course(ftp_info)
 
         # task 2: read maintenance.txt and perform task as necessary

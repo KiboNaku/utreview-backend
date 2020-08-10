@@ -150,6 +150,7 @@ def populate_dept_info(dept_info):
 
 def reset_courses():
 
+	ScheduledCourse.query.delete()
 	courses = Course.query.all()
 
 	for course in courses:
