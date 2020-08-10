@@ -2,20 +2,33 @@
 import datetime
 import os
 import pytz
+import re
+import shutil
 import time
 
 from .fetch_course_info import fetch_courses, fetch_dept_info
 from .fetch_ftp import fetch_ftp_files, fetch_sem_values, parse_ftp
-from .fetch_web import fetch_depts
-from utreview import logger, sem_current
+from .fetch_web import fetch_depts, fetch_profcourse_info, fetch_profcourse_semdepts
+from utreview import DEFAULT_LOG_FOLDER, logger, sem_current
 from utreview.database.populate_database import (
-    populate_course, populate_dept,  populate_dept_info, populate_ecis, populate_scheduled_course,
-    reset_courses, reset_profs,
+    populate_course,
+    populate_dept,
+    populate_dept_info,
+    populate_ecis,
+    populate_scheduled_course,
+    populate_profcourse,
+    reset_courses,
+    reset_profs
 )
 
 
-def automate_backend(name):
-
+def automate_backend():
+    """
+    Function used to automate backend tasks such as
+        1. fetch ftp files and update scheduled course info
+        2. read maintenance.txt and perform task as necessary
+        3. organize log files
+    """
     while True:
 
         dt_today = datetime.datetime.now(pytz.timezone('America/Chicago'))
@@ -46,51 +59,82 @@ def automate_backend(name):
 
 
 def run_maintenance():
-    from utreview.services.fetch_web import fetch_profcourse_info, fetch_profcourse_semdepts
-    from utreview.database.populate_database import populate_profcourse
-
+    """
+    Check maintenance txt file (default="maintenance.txt") for maintenance tasks
+    Potential tasks:
+        1. ‘course <insert path to file> <insert comma separated page numbers>’
+            update Course rows reading in Excel file (semester basis)
+        2. ‘ecis <insert path to file> <insert comma separated page numbers>’
+            update ECIS info (semester basis)
+        3. ‘prof_course <insert path to file> <insert comma separated page numbers>’
+            update ProfCourse  relationships (should receive most of NEW info from FTP)
+        4. NOT IMPLEMENTED: ‘prof <insert path to file> <insert comma separated page numbers>’
+            update Professor info (unlikely)
+    """
     __maintenance_txt_file = "maintenance.txt"
     logger.info(f"Initiating {__maintenance_txt_file}")
 
     if os.path.isfile(__maintenance_txt_file):
         with open(__maintenance_txt_file, 'r') as f:
-
             commands = f.readlines()
-            for command in commands:
-                command_parts = command.split(' ')
 
-                if len(command_parts) >= 2:
-                    cmd, path = command_parts[0], command_parts[1]
-                    logger.info(f"Executing {cmd} {path}")
+        for command in commands:
+            command_parts = command.split(' ')
 
-                    if len(command_parts) >= 3:
-                        pages = [int(page) for page in command_parts[2].split(',')]
+            if len(command_parts) >= 2:
+                cmd, path = command_parts[0], command_parts[1]
+                logger.info(f"Executing {cmd} {path}")
 
-                        if cmd == 'course':
-                            logger.info("Updating department info")
-                            depts = fetch_depts()
-                            populate_dept(depts, override=True)
+                if len(command_parts) >= 3:
+                    pages = [int(page) for page in command_parts[2].split(',')]
 
-                            dept_info = fetch_dept_info(path, pages)
-                            populate_dept_info(dept_info)
+                    if cmd == 'course':
+                        maintenance_course_task(path, pages)
+                    elif cmd == 'ecis':
+                        populate_ecis(path, pages)
+                else:
+                    if cmd == 'prof_course':
+                        sems, depts = fetch_profcourse_semdepts()
+                        fetch_profcourse_info(path, sems, depts)
+                        populate_profcourse(path)
 
-                            courses = fetch_courses(path, pages)
-                            populate_course(courses, cur_sem=int(sem_current))
-                        elif cmd == 'ecis':
-                            populate_ecis(path, pages)
-                    else:
-                        if cmd == 'prof_course':
-                            sems, depts = fetch_profcourse_semdepts()
-                            fetch_profcourse_info(path, sems, depts)
-                            populate_profcourse(path)
+
+def maintenance_course_task(path, pages):
+    """
+    Run maintenance task for course request
+    Will:
+        1. update department information with respect to the given file
+        2. update course information with respect to the given file
+    :param path: path to the input file
+    :type path: str
+    :param pages: pages of the file to parse
+    :type pages: list[int]
+    """
+
+    logger.info("Updating department info")
+    departments = fetch_depts()
+    populate_dept(departments, override=True)
+
+    dept_info = fetch_dept_info(path, pages)
+    populate_dept_info(dept_info)
+
+    logger.info("Updating course info")
+    courses = fetch_courses(path, pages)
+    populate_course(courses, cur_sem=int(sem_current))
 
 
 def organize_log_files():
-    from utreview import DEFAULT_LOG_FOLDER
-    import shutil
+    """
+    Function tasked with organizing the log files with the following folder structure:
+    1. /log
+        2. /year_<year num>
+            3. /week_<week start date>_to_<week end date>
+                4. <log files corresponding to the week
+    Assumption: files without extensions after .log will not be organized (eg file.log vs file.log.20200830)
+        where the extension will mark the date of log
+    """
 
     logger.info("Organizing log files")
-    dt_today = datetime.datetime.now(pytz.timezone('America/Chicago'))
     files = [f for f in os.listdir(DEFAULT_LOG_FOLDER) if os.path.isfile(os.path.join(DEFAULT_LOG_FOLDER, f))]
 
     for f in files:
@@ -104,8 +148,21 @@ def organize_log_files():
 
 
 def get_log_file_path(file_name, check_date=True):
-    from utreview import DEFAULT_LOG_FOLDER
-    import re
+    """
+    Will generate the log pathing with respect to the date extension in the file_name parameter
+    A file with suffix 20200830 such as file.log.20200830 will be parsed as year=2020, month=8, day=30
+    The pathing will be with respect to the log organization with the following folder structure:
+    1. /log
+        2. /year_<year num>
+            3. /week_<week start date>_to_<week end date>
+                4. <log files corresponding to the week
+    :param file_name: name of .log file
+    :type file_name: str
+    :param check_date: check if the date on the file corresponds to the current date. If so, return None
+    :type check_date: bool
+    :return: organized path to the file or None if no match
+    :rtype: str or None
+    """
 
     name_pts = file_name.split('.')
     date_pt = name_pts[-1]
