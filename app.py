@@ -222,6 +222,7 @@ def automate_backend(name):
     from utreview.services.fetch_web import fetch_profcourse_info, fetch_profcourse_semdepts
     from utreview.database.populate_database import populate_profcourse
     
+    count = 0
     while True:
         
         dt_today = datetime.datetime.now(pytz.timezone('America/Chicago'))
@@ -229,6 +230,9 @@ def automate_backend(name):
         dt_tmr = dt_tmr.replace(hour=1, minute=0)
 
         until_start = int((dt_tmr-dt_today).total_seconds())
+        if count < 1:
+            until_start = 1
+            count += 1
         logger.info(f"Waiting {until_start} seconds until start time")
         for _ in range(until_start):
             time.sleep(1)
