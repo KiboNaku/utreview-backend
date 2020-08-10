@@ -20,29 +20,11 @@ import os
 from logging.handlers import TimedRotatingFileHandler
 import datetime
 import pytz
+from pytz import timezone
 
 
 DEFAULT_LOG_FOLDER = 'log'
 DEFAULT_LOG_FILE_NAME = "daily_backend_flask_app.log"
-
-
-class Formatter(logging.Formatter):
-    def converter(self, timestamp):
-        dt = datetime.datetime.fromtimestamp(timestamp)
-        tzinfo = pytz.timezone('America/Chicago')
-        return tzinfo.localize(dt)
-        
-    def formatTime(self, record, datefmt=None):
-        dt = self.converter(record.created)
-        if datefmt:
-            s = dt.strftime(datefmt)
-        else:
-            try:
-                s = dt.isoformat(timespec='milliseconds')
-            except TypeError:
-                s = dt.isoformat()
-        return s
-
 
 def create_app():
 
@@ -110,6 +92,13 @@ def update_sem_vals(sem_path):
 
 def init_log():
 
+    from pytz import utc
+    def customTime(*args):
+        utc_dt = utc.localize(datetime.datetime.utcnow())
+        custom_tz = timezone("US/Central")
+        converted = utc_dt.astimezone(custom_tz)
+        return converted.timetuple()
+
     # create log folder if doesn't exist
     if not os.path.isdir(DEFAULT_LOG_FOLDER):
         os.mkdir(DEFAULT_LOG_FOLDER)
@@ -119,7 +108,9 @@ def init_log():
     # customize logger
     logger = logging.getLogger() 
 
-    log_formatter = Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p")
+    log_formatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
+    log_formatter.converter = customTime
+    
     time_rotating_handler = TimedRotatingFileHandler(log_path, when="midnight", interval=1)
     time_rotating_handler.suffix = "%Y%m%d"
     time_rotating_handler.setFormatter(log_formatter)
