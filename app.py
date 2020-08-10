@@ -7,7 +7,6 @@ import pytz
 
 from utreview import db, app, update_sem_vals, logger
 from utreview.routes import *
-from utreview.services import *
 from utreview.database.populate_database import *
 
 

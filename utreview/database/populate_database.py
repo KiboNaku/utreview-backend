@@ -1,43 +1,40 @@
 
 import re
 import json
-from titlecase import titlecase
-from utreview import sem_current, sem_next, sem_future
-from utreview.services.fetch_course_info import *
-from utreview.models import *
+
 from string import ascii_lowercase
+from titlecase import titlecase
+
 from .scheduled_course import ScheduledCourseInfo
+from utreview import sem_current, sem_next, sem_future
+from utreview.models.course import *
+from utreview.models.ecis import *
+from utreview.models.others import *
+from utreview.models.prof import *
+from utreview.services.fetch_course_info import *
 
 
 def refresh_ecis():
-	# update current ecis values
-	for course in Course.query.all():
-		course_ecis = 0
-		course_students = 0
-		for prof_course in course.prof_course:
-			for prof_course_sem in prof_course.prof_course_sem:
-				for ecis_child in prof_course_sem.ecis:
-					course_ecis += ecis_child.course_avg * ecis_child.num_students
-					course_students += ecis_child.num_students
+	"""
+	Set course and prof ecis_avg and ecis_students by iterating through ecis_scores
+	"""
 
-		if course_students > 0:
-			course.ecis_avg = course_ecis / course_students
-		course.ecis_students = course_students
-		db.session.commit()
+	query_tuple = (Course.query.all(), Prof.query.all())
 
-	for prof in Prof.query.all():
-		prof_ecis = 0
-		prof_students = 0
-		for prof_course in prof.prof_course:
-			for prof_course_sem in prof_course.prof_course_sem:
-				for ecis_child in prof_course_sem.ecis:
-					prof_ecis += ecis_child.prof_avg * ecis_child.num_students
-					prof_students += ecis_child.num_students
+	for queries in query_tuple:
+		for query in queries:
+			ecis = 0
+			students = 0
+			for prof_course in query.prof_course:
+				for prof_course_sem in prof_course.prof_course_sem:
+					for ecis_child in prof_course_sem.ecis:
+						ecis += ecis_child.course_avg * ecis_child.num_students
+						students += ecis_child.num_students
 
-		if prof_students > 0:
-			prof.ecis_avg = prof_ecis / prof_students
-		prof.ecis_students = prof_students
-		db.session.commit()
+			if students > 0:
+				query.ecis_avg = ecis / students
+			query.ecis_students = students
+			db.session.commit()
 
 
 def populate_ecis(file_path, pages):
