@@ -43,8 +43,11 @@ def register():
     email = request.get_json()['email']
     major = request.get_json()['major']
     other_major = request.get_json()['other_major']
-    password_hash = bcrypt.generate_password_hash(
-        request.get_json()['password']).decode('utf-8')
+    if(request.get_json()['password'] != None): 
+        password_hash = bcrypt.generate_password_hash(
+            request.get_json()['password']).decode('utf-8')
+    else: 
+        password_hash = None
 
     major_id = None
     if(major != None and major != ""):
@@ -266,8 +269,8 @@ def send_confirmation_email(email, name=None):
 
     # TODO: update link as needed
     e_token = s.dumps(email, salt="confirm_email")
-    website = 'https://utexasreview.com/'
-    # website = 'http://localhost:3000/'
+    # website = 'https://utexasreview.com/'
+    website = 'http://localhost:3000/'
 
     link = website + "confirm_email?token=" + e_token
 
