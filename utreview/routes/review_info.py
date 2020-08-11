@@ -331,7 +331,7 @@ def update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_gradi
             prof.grading = (prof.grading * prof.num_ratings + prof_grading)/(prof.num_ratings + 1)
             prof.num_ratings = prof.num_ratings + 1
 
-    if commmit:
+    if commit:
         db.session.commit()
 
 
