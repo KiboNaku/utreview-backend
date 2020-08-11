@@ -232,7 +232,7 @@ def new_review():
 
     return result
 
-def update_course_stats(course, course_approval, course_difficulty, course_usefulness, course_workload, editing, prev_course_review):
+def update_course_stats(course, course_approval, course_difficulty, course_usefulness, course_workload, editing, prev_course_review, commit=False):
     """
     Updates a course instance's overall metrics using ratings provided from the review form
 
@@ -283,7 +283,7 @@ def update_course_stats(course, course_approval, course_difficulty, course_usefu
     if commit:
         db.session.commit()
 
-def update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, editing, prev_prof_review):
+def update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, editing, prev_prof_review, commit=False):
     """
     Updates a prof instance's overall metrics using ratings provided from the review form
 
