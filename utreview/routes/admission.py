@@ -269,8 +269,8 @@ def send_confirmation_email(email, name=None):
 
     # TODO: update link as needed
     e_token = s.dumps(email, salt="confirm_email")
-    # website = 'https://utexasreview.com/'
-    website = 'http://localhost:3000/'
+    website = 'https://utexasreview.com/'
+    # website = 'http://localhost:3000/'
 
     link = website + "confirm_email?token=" + e_token
 
