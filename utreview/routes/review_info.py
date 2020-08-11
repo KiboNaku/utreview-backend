@@ -11,6 +11,7 @@ This file contains all the routes related to reviews and the review form:
 from flask import request, jsonify
 from utreview.models import *
 from utreview import app, db, bcrypt, jwt
+import datetime
 
 def semester_to_number(semester):
     """
@@ -205,8 +206,7 @@ def new_review():
     update_course_stats(course, course_approval, course_difficulty, course_usefulness, course_workload, False, None)
     update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, False, None)
 
-    # create new review instance
-    review = Review(user_id=user.id, sem_id=semester.id, grade=grade, date_posted=datetime.utcnow(), submitted=True)
+    review = Review(user_id=user.id, sem_id=semester.id, grade=grade, date_posted=datetime.datetime.utcnow(), submitted=True)
     db.session.add(review)
     db.session.commit()
 
@@ -280,7 +280,8 @@ def update_course_stats(course, course_approval, course_difficulty, course_usefu
             course.workload = (course.workload * course.num_ratings + course_workload)/(course.num_ratings + 1)
             course.num_ratings = course.num_ratings + 1
     
-    db.session.commit()
+    if commit:
+        db.session.commit()
 
 def update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, editing, prev_prof_review):
     """
@@ -330,7 +331,8 @@ def update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_gradi
             prof.grading = (prof.grading * prof.num_ratings + prof_grading)/(prof.num_ratings + 1)
             prof.num_ratings = prof.num_ratings + 1
 
-    db.session.commit()
+    if commmit:
+        db.session.commit()
 
 
 @app.route('/api/review_error', methods=['POST'])

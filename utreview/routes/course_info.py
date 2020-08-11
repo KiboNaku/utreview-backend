@@ -315,8 +315,8 @@ def get_scheduled_course(scheduled_course):
 
     x_listed = []
     x_listed_ids = []
-    if(scheduled_course.cross_listed is not None):
-        for x_course in scheduled_course.cross_listed.courses:
+    if(scheduled_course.xlist is not None):
+        for x_course in scheduled_course.xlist.courses:
             if(x_course.course.id in x_listed_ids):
                 continue
             x_listed_ids.append(x_course.course.id)
@@ -492,7 +492,7 @@ def get_review_info(review, logged_in, curr_user):
         'numDisliked': num_disliked,
         'likePressed': like_pressed,
         'dislikePressed': dislike_pressed,
-        'dateString': timeago.format(review.date_posted, datetime.utcnow()),
+        'dateString': timeago.format(review.date_posted, datetime.datetime.utcnow()),
         'date': str(review.date_posted),
         'year': review.semester.year,
         'semester': semester

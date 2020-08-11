@@ -148,33 +148,62 @@ def populate_dept_info(dept_info):
 		db.session.commit()
 
 
-def reset_courses():
+def reset_scheduled_info():
+
+	ScheduledCourse.query.delete()
+	query_lst = (Course.query.all(), Prof.query.all())
+	for queries in query_lst:
+		for query in queries:
+			query.current_sem = False
+			query.next_sem = False
+			query.future_sem = False
+		db.session.commit()
+
+
+def refresh_review_info():
 
 	courses = Course.query.all()
-
 	for course in courses:
-		course.current_sem = False
-		course.next_sem = False
-		course.future_sem = False
-	db.session.commit()
-
-
-def reset_profs():
+		course.num_ratings = len(course.reviews)
+		approval = 0
+		difficulty = 0
+		usefulness = 0
+		workload = 0
+		for review in course.reviews:
+			approval += int(review.approval)
+			difficulty += review.difficulty
+			usefulness += review.usefulness
+			workload += review.workload
+		course.approval = approval / course.num_ratings if course.num_ratings > 0 else None
+		course.difficulty = difficulty / course.num_ratings if course.num_ratings > 0 else None
+		course.usefulness = usefulness / course.num_ratings if course.num_ratings > 0 else None
+		course.workload = workload / course.num_ratings if course.num_ratings > 0 else None
+		db.session.commit()
 
 	profs = Prof.query.all()
-
 	for prof in profs:
-		prof.current_sem = False
-		prof.next_sem = False
-		prof.future_sem = False
+		prof.num_ratings = len(prof.reviews)
+		approval = 0
+		clear = 0
+		engaging = 0
+		grading = 0
+		for review in prof.reviews:
+			approval += int(review.approval)
+			clear += review.clear
+			engaging += review.engaging
+			grading += review.grading
+		prof.approval = approval / prof.num_ratings if prof.num_ratings > 0 else None
+		prof.difficulty = clear / prof.num_ratings if prof.num_ratings > 0 else None
+		prof.usefulness = engaging / prof.num_ratings if prof.num_ratings > 0 else None
+		prof.workload = grading / prof.num_ratings if prof.num_ratings > 0 else None
+		db.session.commit()
+
 	db.session.commit()
 
 
 def populate_scheduled_course(course_info):
 
 	# print("Populate scheduled course: resetting professor and course semesters")
-	reset_courses()
-	reset_profs()
 	# print("Populate scheduled course: finished resetting professor and course semesters")
 	
 	for s_course in course_info:
@@ -221,6 +250,18 @@ def populate_scheduled_course(course_info):
 		# check to see if scheduled course exists else create new
 		cur_schedule = ScheduledCourse.query.filter_by(unique_no=scheduled.unique_no, sem_id=semester.id).first()
 		
+		# check to see if cross_listings exist else create new
+		x_list = None
+		for x_list_str in scheduled.x_listings:
+			x_course = ScheduledCourse.query.filter_by(unique_no=x_list_str, sem_id=semester.id).first()
+			if x_course is not None and x_course.xlist is not None:
+				x_list = x_course.xlist
+
+		if x_list is None:
+			x_list = CrossListed()
+			db.session.add(x_list)
+			db.session.commit()
+
 		if cur_schedule is None:
 			
 			# print(f"Adding new scheduled course ({scheduled.yr}{scheduled.sem}): {scheduled.dept} {scheduled.c_num} ", end="")
@@ -229,18 +270,9 @@ def populate_scheduled_course(course_info):
 			# else:
 			# 	print()
 
-			# check to see if cross_listings exist else create new
-			x_list = None
-			for x_list_str in scheduled.x_listings:
-				x_course = ScheduledCourse.query.filter_by(unique_no=x_list_str, sem_id=semester.id).first()
-				if x_course is not None and x_course.xlist is not None:
-					x_list = x_course.xlist
-
-			if x_list is None:
-				x_list = CrossListed()
-
 			cur_schedule = ScheduledCourse(
-				unique_no=scheduled.unique_no, session=scheduled.session, 
+				unique_no=scheduled.unique_no, 
+				session=scheduled.session, 
 				days=scheduled.days, time_from=scheduled.time_from, time_to=scheduled.time_to, 
 				location=scheduled.location, 
 				max_enrollement=scheduled.max_enrollment, seats_taken=scheduled.seats_taken,
@@ -264,7 +296,9 @@ def populate_scheduled_course(course_info):
 			cur_schedule.max_enrollment = scheduled.max_enrollment
 			cur_schedule.seats_taken = scheduled.seats_taken
 			cur_schedule.course_id = cur_course.id
-			if cur_prof is not None: cur_schedule.prof_id = cur_prof.id
+			cur_schedule.prof_id=cur_prof.id if cur_prof else None
+			cur_schedule.cross_listed=x_list.id
+
 
 		# add prof course relationship if doesnt exist
 		if cur_prof:

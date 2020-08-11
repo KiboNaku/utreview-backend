@@ -43,8 +43,11 @@ def register():
     email = request.get_json()['email']
     major = request.get_json()['major']
     other_major = request.get_json()['other_major']
-    password_hash = bcrypt.generate_password_hash(
-        request.get_json()['password']).decode('utf-8')
+    if(request.get_json()['password'] != None): 
+        password_hash = bcrypt.generate_password_hash(
+            request.get_json()['password']).decode('utf-8')
+    else: 
+        password_hash = None
 
     major_id = None
     if(major != None and major != ""):
@@ -149,7 +152,7 @@ def confirm_email():
         token = request.get_json()['token']
         email = s.loads(token, salt='confirm_email', max_age=3600)
         user = User.query.filter_by(email=email).first()
-
+        
         if user.verified:
             r_val['success'] = -1
             r_val['error'] = "The account has already been verified."
@@ -157,6 +160,7 @@ def confirm_email():
             user.verified = True
             db.session.commit()
             r_val['success'] = 1
+        
     except SignatureExpired:
         r_val["success"] = -2
         r_val['error'] = "The confirmation code has expired."
@@ -166,6 +170,9 @@ def confirm_email():
     except KeyError:
         r_val["success"] = -4
         r_val['error'] = "No confirmation code found."
+    except AttributeError:
+        r_val["success"] = -5
+        r_val['error'] = "The email cannot be found."
 
     return r_val
 
@@ -262,8 +269,8 @@ def send_confirmation_email(email, name=None):
 
     # TODO: update link as needed
     e_token = s.dumps(email, salt="confirm_email")
-    website = 'https://utexasreview.com/'
-    # website = 'http://localhost:3000/'
+    # website = 'https://utexasreview.com/'
+    website = 'http://localhost:3000/'
 
     link = website + "confirm_email?token=" + e_token
 
