@@ -6,12 +6,13 @@ from string import ascii_lowercase
 from titlecase import titlecase
 
 from .scheduled_course import ScheduledCourseInfo
-from utreview import sem_current, sem_next, sem_future
+from utreview import logger, sem_current, sem_next, sem_future
 from utreview.models.course import *
 from utreview.models.ecis import *
 from utreview.models.others import *
 from utreview.models.prof import *
 from utreview.services.fetch_course_info import *
+from utreview.services.fetch_ecis import *
 
 
 def refresh_ecis():
@@ -19,6 +20,7 @@ def refresh_ecis():
 	Set course and prof ecis_avg and ecis_students by iterating through ecis_scores
 	"""
 
+	logger.info("Refreshing course and professor ecis fields with respective data")
 	query_tuple = (Course.query.all(), Prof.query.all())
 
 	for queries in query_tuple:
@@ -38,54 +40,74 @@ def refresh_ecis():
 
 
 def populate_ecis(file_path, pages):
-	from utreview.services.fetch_ecis import parse_ecis_excel, KEY_UNIQUE_NUM, KEY_COURSE_AVG, KEY_PROF_AVG, \
-		KEY_NUM_STUDENTS, KEY_YR, KEY_SEM
-	ecis_lst = parse_ecis_excel(file_path, pages)
+	"""
+	Populate database with ECIS information
+	:param file_path: path to file containing data
+	:type file_path: str
+	:param pages: pages of file to parse
+	:type pages: list[str]
+	"""
 
-	# remember to update Course and Prof objects when inputting new ECIS scores
+	# remember to update Course and Prof ECIS fields when inputting new ECIS scores: ecis_avg and ecis_students
+
+	logger.info(f'Populating ecis database with data from: {file_path}')
+	ecis_lst = parse_ecis_excel(file_path, pages)
 
 	for ecis in ecis_lst:
 
-		unique, c_avg, p_avg, students, yr, sem = ecis[KEY_UNIQUE_NUM], ecis[KEY_COURSE_AVG], ecis[KEY_PROF_AVG], ecis[
-			KEY_NUM_STUDENTS], ecis[KEY_YR], ecis[KEY_SEM]
+		unique, c_avg, p_avg, students, yr, sem = (
+			ecis[KEY_UNIQUE_NUM],
+			ecis[KEY_COURSE_AVG],
+			ecis[KEY_PROF_AVG],
+			ecis[KEY_NUM_STUDENTS],
+			ecis[KEY_YR],
+			ecis[KEY_SEM]
+		)
 
+		logger.debug(f'Adding ecis for: unique={unique}, sem={yr}{sem}')
 		sem_obj = Semester.query.filter_by(year=yr, semester=sem).first()
 		if sem_obj is None:
-			# print("Cannot find semester for:", yr, sem, "Skipping...")
+			logger.debug(f"Cannot find semester for: {yr}{sem}. Skipping...")
 			continue
 
 		pcs_obj = ProfCourseSemester.query.filter_by(unique_num=unique, sem_id=sem_obj.id).first()
 		if pcs_obj is None:
-			# print("Failed to find ProfCourseSemester for: unique=", unique, "semester=", yr, sem, "Skipping...")
+			logger.debug(
+				f"Failed to find ProfCourseSemester for: unique={unique}, sem={yr}{sem}. Skipping..."
+			)
 			continue
 
 		# assumption: only one ecis score per prof_course_semester instance
 		ecis_lst = pcs_obj.ecis
 		if len(ecis_lst) >= 1:
+			# ecis already exists
 			continue
 
-		ecis_obj = EcisScore(course_avg=c_avg, prof_avg=p_avg, num_students=students, prof_course_sem_id=pcs_obj.id)
+		# creating the ecis object
+		ecis_obj = EcisScore(
+			course_avg=c_avg,
+			prof_avg=p_avg,
+			num_students=students,
+			prof_course_sem_id=pcs_obj.id)
 		db.session.add(ecis_obj)
 		db.session.commit()
 
-		# updating prof and course ecis avgs
+		# updating course and prof ecis fields
 		pc_obj = pcs_obj.prof_course
-		prof_obj = pc_obj.prof
 		course_obj = pc_obj.course
+		prof_obj = pc_obj.prof
 
-		total_students = prof_obj.ecis_students + students
-		total_avg = ((prof_obj.ecis_avg * prof_obj.ecis_students) if prof_obj.ecis_avg is not None else 0) + (
-			(p_avg * students) if p_avg is not None else 0)
-		prof_obj.ecis_avg = (total_avg / total_students) if total_students > 0 else None
-		prof_obj.ecis_students = total_students
-
-		total_students = course_obj.ecis_students + students
-		total_avg = ((course_obj.ecis_avg * course_obj.ecis_students) if course_obj.ecis_avg is not None else 0) + (
-			(c_avg * students) if c_avg is not None else 0)
-		course_obj.ecis_avg = (total_avg / total_students) if total_students > 0 else None
-		course_obj.ecis_students = total_students
+		queries = ((course_obj, c_avg), (prof_obj, p_avg))
+		for query, avg in queries:
+			total_students = query.ecis_students + students
+			total_avg = ((query.ecis_avg * query.ecis_students) if query.ecis_avg is not None else 0) + \
+						((avg * students) if avg is not None else 0)
+			query.ecis_avg = (total_avg / total_students) if total_students > 0 else None
+			query.ecis_students = total_students
 
 		db.session.commit()
+
+
 def populate_sem(start_yr=2010, end_yr=2020):
 
 	for yr in range(start_yr, end_yr):
