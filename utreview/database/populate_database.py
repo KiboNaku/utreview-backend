@@ -148,34 +148,35 @@ def populate_dept_info(dept_info):
 		db.session.commit()
 
 
-def reset_courses():
+def reset_scheduled_info():
 
 	ScheduledCourse.query.delete()
-	courses = Course.query.all()
+	query_lst = (Course.query.all(), Prof.query.all())
+	for queries in query_lst:
+		for query in queries:
+			query.current_sem = False
+			query.next_sem = False
+			query.future_sem = False
+		db.session.commit()
 
-	for course in courses:
-		course.current_sem = False
-		course.next_sem = False
-		course.future_sem = False
-	db.session.commit()
 
+def refresh_review_info():
 
-def reset_profs():
+	query_lst = (Course.query.all(), Prof.query.all())
+	for queries in query_lst:
+		for query in queries:
+			query.num_ratings = len(query.reviews)
+			approval = 0
+			for review in query.reviews:
+				approval += int(review.approval)
+			query.approval = approval / query.num_ratings if query.num_ratings > 0 else None
 
-	profs = Prof.query.all()
-
-	for prof in profs:
-		prof.current_sem = False
-		prof.next_sem = False
-		prof.future_sem = False
-	db.session.commit()
+		db.session.commit()
 
 
 def populate_scheduled_course(course_info):
 
 	# print("Populate scheduled course: resetting professor and course semesters")
-	reset_courses()
-	reset_profs()
 	# print("Populate scheduled course: finished resetting professor and course semesters")
 	
 	for s_course in course_info:
