@@ -144,14 +144,18 @@ def get_scheduled_prof(scheduled_prof):
         semester_name = "Fall"
 
     x_listed = []
+    x_listed_ids = []
     if(scheduled_prof.cross_listed is not None):
         for x_course in scheduled_prof.cross_listed.courses:
+            if(x_course.course.id in x_listed_ids):
+                continue
+            x_listed.append(x_course.course.id)
             x_listed_obj = {
-                'id': x_course.id,
-                'dept': x_course.dept.abr,
-                'num': x_course.num,
-                'title': x_course.title,
-                'topicNum': x_course.topic_num
+                'id': x_course.course.id,
+                'dept': x_course.course.dept.abr,
+                'num': x_course.course.num,
+                'title': x_course.course.title,
+                'topicNum': x_course.course.topic_num
             }
             x_listed.append(x_listed_obj)
 
@@ -308,7 +312,7 @@ def get_review_info(review, logged_in, curr_user):
         'likePressed': like_pressed,
         'dislikePressed': dislike_pressed,
         'date': str(review.date_posted),
-        'dateString': timeago.format(review.date_posted, datetime.utcnow()),
+        'dateString': timeago.format(review.date_posted, datetime.datetime.utcnow()),
         'year': review.semester.year,
         'semester': semester
     }
