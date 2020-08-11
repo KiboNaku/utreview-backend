@@ -477,28 +477,26 @@ def edit_review():
     review.date_posted = datetime.datetime.utcnow()
 
     # find old course review and prof review
-    prev_course_review = CourseReview.query.filter_by(review_id=review.id).first()
-    prev_prof_review = ProfReview.query.filter_by(review_id=review.id).first()
+    course_review = CourseReview.query.filter_by(review_id=review.id).first()
+    prof_review = ProfReview.query.filter_by(review_id=review.id).first()
 
     # update course/prof metrics based off old ratings and new ratings
     update_course_stats(course, course_approval, course_difficulty, course_usefulness, course_workload, True, prev_course_review)
     update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, True, prev_prof_review)
 
-    # delete old course/prof review
-    db.session.delete(prev_course_review)
-    db.session.delete(prev_prof_review)
-    db.session.commit()
+    # update metrics in course/prof objects
+    course_review.approval = course_approval
+    course_review.difficulty = course_difficulty
+    course_review.usefulness = course_usefulness
+    course_review.workload = course_workload
+    course_review.comments = course_comments
 
-    # create new course/prof review
-    course_review = CourseReview(review_id=review.id, course_id=course.id, approval=course_approval,
-                                 usefulness=course_usefulness, difficulty=course_difficulty, 
-                                 workload=course_workload, comments=course_comments)
-    prof_review = ProfReview(review_id=review.id, prof_id=prof.id, approval=prof_approval,
-                               clear=prof_clear, engaging=prof_engaging, grading=prof_grading, 
-                               comments=prof_comments)
+    prof_review.approval = prof_approval
+    prof_review.clear = prof_clear
+    prof_review.engaging = prof_engaging
+    prof_review.grading = prof_grading
+    prof_review.comments = prof_comments
 
-    db.session.add(course_review)
-    db.session.add(prof_review)
     db.session.commit()
 
     result_review = {
