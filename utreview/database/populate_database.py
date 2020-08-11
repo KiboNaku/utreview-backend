@@ -109,6 +109,13 @@ def populate_ecis(file_path, pages):
 
 
 def populate_sem(start_yr=2010, end_yr=2020):
+	"""
+	Populate database with semesters for the given year range. Will populate for spring, summer, fall semesters.
+	:param start_yr: starting year for the populate
+	:type start_yr: int
+	:param end_yr: ending year for the populate
+	:type end_yr: int
+	"""
 
 	for yr in range(start_yr, end_yr):
 		for sem in (2, 6, 9):
@@ -119,7 +126,7 @@ def populate_sem(start_yr=2010, end_yr=2020):
 	db.session.commit()
 
 
-def populate_profcourse(in_file):
+def populate_prof_course(in_file):
 
 	from utreview.services.fetch_web import KEY_SEM, KEY_DEPT, KEY_CNUM, KEY_TITLE, KEY_UNIQUE, KEY_PROF
 	__sem_fall = "Fall"

@@ -16,7 +16,7 @@ from utreview.database.populate_database import (
     populate_dept_info,
     populate_ecis,
     populate_scheduled_course,
-    populate_profcourse,
+    populate_prof_course,
     reset_courses,
     reset_profs
 )
@@ -96,7 +96,7 @@ def run_maintenance():
                     if cmd == 'prof_course':
                         sems, depts = fetch_profcourse_semdepts()
                         fetch_profcourse_info(path, sems, depts)
-                        populate_profcourse(path)
+                        populate_prof_course(path)
 
 
 def maintenance_course_task(path, pages):
