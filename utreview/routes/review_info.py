@@ -474,7 +474,7 @@ def edit_review():
     # find review and update grade and date posted
     review = Review.query.filter_by(id=review_id).first()
     review.grade = grade
-    review.date_posted = datetime.utcnow()
+    review.date_posted = datetime.datetime.utcnow()
 
     # find old course review and prof review
     prev_course_review = CourseReview.query.filter_by(review_id=review.id).first()
