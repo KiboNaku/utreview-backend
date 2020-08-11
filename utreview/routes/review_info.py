@@ -96,7 +96,7 @@ def new_review():
 
     return result
 
-def update_course_stats(course, course_approval, course_difficulty, course_usefulness, course_workload, editing, prev_course_review):
+def update_course_stats(course, course_approval, course_difficulty, course_usefulness, course_workload, editing, prev_course_review, commit=False):
     if(editing):
         num_liked = course.approval * course.num_ratings
         if(course_approval): 
@@ -129,9 +129,10 @@ def update_course_stats(course, course_approval, course_difficulty, course_usefu
             course.workload = (course.workload * course.num_ratings + course_workload)/(course.num_ratings + 1)
             course.num_ratings = course.num_ratings + 1
     
-    db.session.commit()
+    if commit:
+        db.session.commit()
 
-def update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, editing, prev_prof_review):
+def update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, editing, prev_prof_review, commit=False):
     if(editing):
         num_liked = prof.approval * prof.num_ratings
         if(prof_approval):
@@ -164,7 +165,8 @@ def update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_gradi
             prof.grading = (prof.grading * prof.num_ratings + prof_grading)/(prof.num_ratings + 1)
             prof.num_ratings = prof.num_ratings + 1
 
-    db.session.commit()
+    if commmit:
+        db.session.commit()
 
 
 @app.route('/api/review_error', methods=['POST'])

@@ -261,16 +261,43 @@ def reset_scheduled_info():
 
 def refresh_review_info():
 
-	query_lst = (Course.query.all(), Prof.query.all())
-	for queries in query_lst:
-		for query in queries:
-			query.num_ratings = len(query.reviews)
-			approval = 0
-			for review in query.reviews:
-				approval += int(review.approval)
-			query.approval = approval / query.num_ratings if query.num_ratings > 0 else None
-
+	courses = Course.query.all()
+	for course in courses:
+		course.num_ratings = len(course.reviews)
+		approval = 0
+		difficulty = 0
+		usefulness = 0
+		workload = 0
+		for review in course.reviews:
+			approval += int(review.approval)
+			difficulty += review.difficulty
+			usefulness += review.usefulness
+			workload += review.workload
+		course.approval = approval / course.num_ratings if course.num_ratings > 0 else None
+		course.difficulty = difficulty / course.num_ratings if course.num_ratings > 0 else None
+		course.usefulness = usefulness / course.num_ratings if course.num_ratings > 0 else None
+		course.workload = workload / course.num_ratings if course.num_ratings > 0 else None
 		db.session.commit()
+
+	profs = Prof.query.all()
+	for prof in profs:
+		prof.num_ratings = len(prof.reviews)
+		approval = 0
+		clear = 0
+		engaging = 0
+		grading = 0
+		for review in prof.reviews:
+			approval += int(review.approval)
+			clear += review.clear
+			engaging += review.engaging
+			grading += review.grading
+		prof.approval = approval / prof.num_ratings if prof.num_ratings > 0 else None
+		prof.difficulty = clear / prof.num_ratings if prof.num_ratings > 0 else None
+		prof.usefulness = engaging / prof.num_ratings if prof.num_ratings > 0 else None
+		prof.workload = grading / prof.num_ratings if prof.num_ratings > 0 else None
+		db.session.commit()
+
+	db.session.commit()
 
 
 def populate_scheduled_course(course_info):
