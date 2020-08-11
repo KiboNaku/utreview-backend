@@ -1,5 +1,5 @@
 
-from datetime import datetime
+import datetime
 from utreview import db
 
 # semester: only up to four years in the past
@@ -13,7 +13,7 @@ class Review(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())
+    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow())
     grade = db.Column(db.String(2))
     submitted = db.Column(db.Boolean, nullable=False, default=False)
 
