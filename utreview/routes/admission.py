@@ -320,8 +320,8 @@ def send_reset_password(email, name=None):
     # TODO: update link as needed
     e_token = s.dumps(email, salt="reset_password") 
     
-    website = 'https://utexasreview.com/'
-    # website = 'http://localhost:3000/'
+    # website = 'https://utexasreview.com/'
+    website = 'http://localhost:3000/'
     link = website + "reset_password?token=" + e_token
 
     msg.html = render_template('reset_password.html', name=name, link=link)
