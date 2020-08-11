@@ -481,8 +481,8 @@ def edit_review():
     prof_review = ProfReview.query.filter_by(review_id=review.id).first()
 
     # update course/prof metrics based off old ratings and new ratings
-    update_course_stats(course, course_approval, course_difficulty, course_usefulness, course_workload, True, prev_course_review)
-    update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, True, prev_prof_review)
+    update_course_stats(course, course_approval, course_difficulty, course_usefulness, course_workload, True, course_review)
+    update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, True, prof_review)
 
     # update metrics in course/prof objects
     course_review.approval = course_approval
