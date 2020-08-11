@@ -26,8 +26,8 @@ class Review(db.Model):
     def __repr__(self):
         return f"""Review(
                         'User: {self.author.email}', 
-                        'Course: {self.course_review.course.title}', 
-                        'Professor: {self.prof_review.prof.first_name} {self.prof_review.prof.last_name}'
+                        'Course: {self.course_review[0].course.title}', 
+                        'Professor: {self.prof_review[0].prof.first_name} {self.prof_review[0].prof.last_name}'
                         )"""
 
 
