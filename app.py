@@ -1,24 +1,27 @@
 
-from utreview import db, app, update_sem_vals, logger
-from utreview.models import *
-from utreview.routes import *
-from utreview.services import *
-from utreview.database.populate_database import *
-import logging
-import sys
 import os
 import threading
 import time
 import datetime
 import pytz
 
+from utreview import db, app, update_sem_vals, logger
+from utreview.routes import *
+from utreview.database.populate_database import *
 
-def is_residence_or_extension(course):
-        for string in course.values():
-            string = str(string)
-            if 'In residence' in string or 'Extension' in string:
-                return True
-        return False
+
+def is_residence_or_extension(course_obj):
+    """
+
+    :param course_obj:
+    :return:
+    """
+    for string in course_obj.values():
+        string = str(string)
+        if 'In residence' in string or 'Extension' in string:
+            return True
+    return False
+
 
 def parse_academic_summary(pdf_path):
 

@@ -1,15 +1,121 @@
 
 import re
 import json
-from titlecase import titlecase
-from utreview import sem_current, sem_next, sem_future
-from utreview.services.fetch_course_info import *
-from utreview.models import *
+
 from string import ascii_lowercase
+from titlecase import titlecase
+
 from .scheduled_course import ScheduledCourseInfo
+from utreview import logger, sem_current, sem_next, sem_future
+from utreview.models.course import *
+from utreview.models.ecis import *
+from utreview.models.others import *
+from utreview.models.prof import *
+from utreview.services.fetch_course_info import *
+from utreview.services.fetch_ecis import *
+
+
+def refresh_ecis():
+	"""
+	Set course and prof ecis_avg and ecis_students by iterating through ecis_scores
+	"""
+
+	logger.info("Refreshing course and professor ecis fields with respective data")
+	query_tuple = (Course.query.all(), Prof.query.all())
+
+	for queries in query_tuple:
+		for query in queries:
+			ecis = 0
+			students = 0
+			for prof_course in query.prof_course:
+				for prof_course_sem in prof_course.prof_course_sem:
+					for ecis_child in prof_course_sem.ecis:
+						ecis += ecis_child.course_avg * ecis_child.num_students
+						students += ecis_child.num_students
+
+			if students > 0:
+				query.ecis_avg = ecis / students
+			query.ecis_students = students
+			db.session.commit()
+
+
+def populate_ecis(file_path, pages):
+	"""
+	Populate database with ECIS information
+	:param file_path: path to file containing data
+	:type file_path: str
+	:param pages: pages of file to parse
+	:type pages: list[str]
+	"""
+
+	# remember to update Course and Prof ECIS fields when inputting new ECIS scores: ecis_avg and ecis_students
+
+	logger.info(f'Populating ecis database with data from: {file_path}')
+	ecis_lst = parse_ecis_excel(file_path, pages)
+
+	for ecis in ecis_lst:
+
+		unique, c_avg, p_avg, students, yr, sem = (
+			ecis[KEY_UNIQUE_NUM],
+			ecis[KEY_COURSE_AVG],
+			ecis[KEY_PROF_AVG],
+			ecis[KEY_NUM_STUDENTS],
+			ecis[KEY_YR],
+			ecis[KEY_SEM]
+		)
+
+		logger.debug(f'Adding ecis for: unique={unique}, sem={yr}{sem}')
+		sem_obj = Semester.query.filter_by(year=yr, semester=sem).first()
+		if sem_obj is None:
+			logger.debug(f"Cannot find semester for: {yr}{sem}. Skipping...")
+			continue
+
+		pcs_obj = ProfCourseSemester.query.filter_by(unique_num=unique, sem_id=sem_obj.id).first()
+		if pcs_obj is None:
+			logger.debug(
+				f"Failed to find ProfCourseSemester for: unique={unique}, sem={yr}{sem}. Skipping..."
+			)
+			continue
+
+		# assumption: only one ecis score per prof_course_semester instance
+		ecis_lst = pcs_obj.ecis
+		if len(ecis_lst) >= 1:
+			# ecis already exists
+			continue
+
+		# creating the ecis object
+		ecis_obj = EcisScore(
+			course_avg=c_avg,
+			prof_avg=p_avg,
+			num_students=students,
+			prof_course_sem_id=pcs_obj.id)
+		db.session.add(ecis_obj)
+		db.session.commit()
+
+		# updating course and prof ecis fields
+		pc_obj = pcs_obj.prof_course
+		course_obj = pc_obj.course
+		prof_obj = pc_obj.prof
+
+		queries = ((course_obj, c_avg), (prof_obj, p_avg))
+		for query, avg in queries:
+			total_students = query.ecis_students + students
+			total_avg = ((query.ecis_avg * query.ecis_students) if query.ecis_avg is not None else 0) + \
+						((avg * students) if avg is not None else 0)
+			query.ecis_avg = (total_avg / total_students) if total_students > 0 else None
+			query.ecis_students = total_students
+
+		db.session.commit()
 
 
 def populate_sem(start_yr=2010, end_yr=2020):
+	"""
+	Populate database with semesters for the given year range. Will populate for spring, summer, fall semesters.
+	:param start_yr: starting year for the populate
+	:type start_yr: int
+	:param end_yr: ending year for the populate
+	:type end_yr: int
+	"""
 
 	for yr in range(start_yr, end_yr):
 		for sem in (2, 6, 9):
@@ -20,7 +126,7 @@ def populate_sem(start_yr=2010, end_yr=2020):
 	db.session.commit()
 
 
-def populate_profcourse(in_file):
+def populate_prof_course(in_file):
 
 	from utreview.services.fetch_web import KEY_SEM, KEY_DEPT, KEY_CNUM, KEY_TITLE, KEY_UNIQUE, KEY_PROF
 	__sem_fall = "Fall"
