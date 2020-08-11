@@ -314,8 +314,12 @@ def get_scheduled_course(scheduled_course):
         semester_name = "Fall"
 
     x_listed = []
+    x_listed_ids = []
     if(scheduled_course.xlist is not None):
         for x_course in scheduled_course.xlist.courses:
+            if(x_course.course.id in x_listed_ids):
+                continue
+            x_listed_ids.append(x_course.course.id)
             x_listed_obj = {
                 'id': x_course.course.id,
                 'dept': x_course.course.dept.abr,

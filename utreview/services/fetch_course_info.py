@@ -13,15 +13,28 @@ KEY_PRE_REQ = "pre_req"
 
 
 def fetch_courses(file_name, sheet_lst):
-	"""Parse the course info from the excel sheet 
-
-	Args:
-		file_name (str): name of the excel file
-		sheet_name (int): 
-
-	Returns:
-		[type]: [description]
 	"""
+	Parse the course info from the excel sheet
+	:param file_name: name of the excel sheet
+	:type file_name: str
+	:param sheet_lst: list of page sheets
+	:type sheet_lst: list[int] or list[str]
+	:return: list of dictionaries containing the course info
+	:rtype: list[
+		dict[
+			KEY_SEM: int,
+			KEY_DEPT: str,
+			KEY_NUM: str,
+			KEY_TITLE: str,
+			KEY_CS_TITLE: str,
+			KEY_DESCRIPTION: str,
+			KEY_RESTRICTION: str,
+			KEY_TOPIC_NUM: int,
+			KEY_PRE_REQ: str
+		]
+	]
+	"""
+
 	courses = []
 
 	for sheet_name in sheet_lst:
@@ -29,7 +42,6 @@ def fetch_courses(file_name, sheet_lst):
 		df = pd.read_excel(
 			file_name, sheet_name=sheet_name)
 		df.reset_index()
-
 
 		for index, row in df.iterrows():
 			
@@ -59,15 +71,22 @@ def fetch_courses(file_name, sheet_lst):
 
 
 def fetch_dept_info(file_name, sheet_lst):
+	"""
+	Parse department info from the excel sheet provided
+	:param file_name: path to excel file
+	:type file_name: str
+	:param sheet_lst: list of sheet names / page numbers
+	:type sheet_lst: list[str] or list[int]
+	:return: list of tuples containing the parsed data in order: (abbreviation, department name, college name)
+	:rtype: list[tuple(str, str, str)]
+	"""
 
-	depts = set()
-
+	dept_set = set()
 	for sheet_name in sheet_lst:
 			
 		df = pd.read_excel(
 			file_name, sheet_name=sheet_name)
 		df.reset_index()
-
 
 		for index, row in df.iterrows():
 
@@ -80,12 +99,19 @@ def fetch_dept_info(file_name, sheet_lst):
 				row[__dept].strip(),
 				row[__college].strip(),
 			)
-			depts.add(dept)
+			dept_set.add(dept)
 	
-	return sorted(list(depts))
+	return sorted(list(dept_set))
 
 
 def parse_topic(topic_num):
+	"""
+	Parse topic number from the given string
+	:param topic_num: topic number from excel file
+	:type topic_num: str
+	:return: parsed topic number (-1 by default)
+	:rtype: int
+	"""
 
 	try:
 		return int(topic_num.strip())

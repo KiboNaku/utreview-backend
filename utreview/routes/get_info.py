@@ -212,6 +212,26 @@ def get_profile_pic():
     result = jsonify({"profile_pics": results})
     return result
 
+@app.route('/api/has_password', methods=['POST'])
+def has_password():
+    """
+    Given a user email, check if a password exists for the user
+
+    Args (from front end):
+        email (string): user utexas email
+
+    Returns:
+        hasPassword (boolean): true if user has a password, false if user doesn't
+    """
+    email = request.get_json()['email']
+    user = User.query.filter_by(email=email).first()
+    if(user.password_hash):
+        result = jsonify({"hasPassword": True})
+    else:
+        result = jsonify({"hasPassword": False})
+    
+    return result
+
 @app.route('/api/review_list', methods=['POST'])
 def review_list():
     # TODO: add user liked and disliked
