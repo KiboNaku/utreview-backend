@@ -1,9 +1,9 @@
 
 from .populate_database import ScheduledCourseInfo
-from utreview import logger
 from utreview.models.course import *
 from utreview.models.others import *
 from utreview.models.prof import *
+from utreview.services.logger import logger
 
 
 def check_or_add_prof(first_name, last_name):

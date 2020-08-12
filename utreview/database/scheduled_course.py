@@ -4,9 +4,32 @@ from utreview.models.others import ScheduledCourse
 
 
 class ScheduledCourseInfo:
-
+	"""
+	Class used to parse and filter information from dictionary containing ScheduledCourse data
+	"""
 	def __init__(self, s_course):
-
+		"""
+		initialize ScheduledCourseInfo with dictionary info
+		:param s_course: dictionary containing ScheduledCourse data.
+		:type s_course: dict{
+			"Year": str,
+			"Semester": str,
+			"Dept-Abbr": str,
+			"Course Nbr": str,
+			"Title": str,
+			"Topic": str,
+			"Instructor EID": str,
+			"Unique": str,
+			"Days": str,
+			"From": str,
+			"To": str,
+			"Building": str,
+			"Room": str,
+			"Max Enrollment": str,
+			"Seats Taken": str,
+			"X-Listings": str
+		}
+		"""
 		# sem info                                                                                                                                                                                                                                                                              
 		self.yr = int(s_course["Year"].strip())
 		self.sem = int(s_course["Semester"].strip())
@@ -50,9 +73,20 @@ class ScheduledCourseInfo:
 		self.seats_taken = int_or_none(s_course["Seats Taken"].strip())
 		self.x_listings = [listing.strip() for listing in s_course["X-Listings"].strip().split(",")]
 
-
 	def to_scheduled_course(self, scheduled_course, course, prof, x_list):
-
+		"""
+		Populate a ScheduledCourse with data from this class
+		:param scheduled_course: object to populate data
+		:type scheduled_course: ScheduledCourse
+		:param course: course object related to scheduled_course
+		:type course: Course
+		:param prof: prof object related to scheduled_course
+		:type prof: Prof
+		:param x_list: cross_listed object related to scheduled_course
+		:type x_list: CrossListed
+		:return: reference back to scheduled_course parameter
+		:rtype: ScheduledCourse
+		"""
 		scheduled_course.session = self.session
 		scheduled_course.days = self.days
 		scheduled_course.time_from = self.time_from
@@ -65,14 +99,34 @@ class ScheduledCourseInfo:
 		scheduled_course.cross_listed = x_list.id
 		return scheduled_course
 
-
 	def build_scheduled_course(self, course, prof, x_list):
+		"""
+		Populate a new ScheduledCourse with data from this class
+		:param course: course object related to scheduled_course
+		:type course: Course
+		:param prof: prof object related to scheduled_course
+		:type prof: Prof
+		:param x_list: cross_listed object related to scheduled_course
+		:type x_list: CrossListed
+		:return: reference to scheduled_course containing data
+		:rtype: ScheduledCourse
+		"""
 		scheduled_course = ScheduledCourse()
 		return self.to_scheduled_course(scheduled_course, course, prof, x_list)
 
 
 def parse_location(title, building, room):
-
+	"""
+	Parse location from parameters with default being WEB
+	:param title: title of course
+	:type title: str
+	:param building: building for scheduled_course
+	:type building: str
+	:param room: room number for building for scheduled_course
+	:type room: str
+	:return: location of course
+	:rtype: str
+	"""
 	__default = "N/A"
 	__web_tag = "-w"
 

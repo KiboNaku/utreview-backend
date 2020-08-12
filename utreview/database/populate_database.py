@@ -7,7 +7,7 @@ from titlecase import titlecase
 
 from .add_to_database import *
 from .scheduled_course import ScheduledCourseInfo
-from utreview import SPRING_SEM, SUMMER_SEM, FALL_SEM, logger, sem_current, sem_next, sem_future
+from utreview import SPRING_SEM, SUMMER_SEM, FALL_SEM, sem_current, sem_next, sem_future
 from utreview.models.course import *
 from utreview.models.ecis import *
 from utreview.models.others import *
@@ -15,6 +15,7 @@ from utreview.models.prof import *
 from utreview.services.fetch_course_info import *
 from utreview.services.fetch_ecis import *
 from utreview.services.fetch_web import KEY_SEM, KEY_DEPT, KEY_CNUM, KEY_TITLE, KEY_UNIQUE, KEY_PROF
+from utreview.services.logger import logger
 
 
 def refresh_ecis():
@@ -142,7 +143,7 @@ def populate_sem(start_yr=2010, end_yr=2020):
 def populate_prof_course(in_file):
 	"""
 	Populate database with Professor and Course relationship using data fetched from the web
-	(utreview.services.fetch_web.fetch_profcourse_info only)
+	(utreview.services.fetch_web.fetch_prof_course_info only)
 	:param in_file: file the data was fetched to
 	:type in_file: str
 	"""
@@ -439,8 +440,8 @@ def populate_course(course_info, cur_sem=None):
 	Populate database with courses
 	:param course_info: list of dictionaries containing course data
 	:type course_info: list[dict]
-	:param cur_sem: whether to keep the current semester. if set to None, it will be overriden with most recent value
-	:type cur_sem: bool or None
+	:param cur_sem: the current semester. if set to None, data will be replaced with most recent value
+	:type cur_sem: int or None
 	"""
 
 	__inherit = "(See Base Topic for inherited information.)"
