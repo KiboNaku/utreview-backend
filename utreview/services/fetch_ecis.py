@@ -1,7 +1,7 @@
 
 import pandas as pd
 
-from utreview import logger
+from utreview.services.logger import logger
 
 
 KEY_UNIQUE_NUM = "unique_num"

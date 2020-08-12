@@ -9,7 +9,7 @@ import time
 from .fetch_course_info import fetch_courses, fetch_dept_info
 from .fetch_ftp import fetch_ftp_files, fetch_sem_values, parse_ftp
 from .fetch_web import fetch_depts, fetch_prof_course_info, fetch_prof_course_sem_depts
-from utreview import DEFAULT_LOG_FOLDER, logger, sem_current
+from utreview import sem_current
 from utreview.database.populate_database import (
     populate_course,
     populate_dept,
@@ -19,6 +19,7 @@ from utreview.database.populate_database import (
     populate_prof_course,
     reset_scheduled_info
 )
+from utreview.services.logger import DEFAULT_LOG_FOLDER, logger
 
 
 def automate_backend(name):

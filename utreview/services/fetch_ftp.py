@@ -6,7 +6,7 @@ from ftplib import FTP
 from os import chdir, getcwd
 from os.path import join, isfile
 
-from utreview import logger
+from utreview.services.logger import logger
 
 
 filename_current = 'Current_Semester_Report'
@@ -54,8 +54,8 @@ def fetch_sem_values(ftp_dir, out_dir):
 				if __sem_label in line:
 					m = re.search(r'[A-Za-z ]+(\d{5}) (.*)?', line)
 					sem = m.group(1)
-		# else:
-			# print(f"Fetch Sem: cannot find file: {m_file} in {ftp_dir}")
+		else:
+			logger.debug(f"Fetch Sem: cannot find file: {m_file} in {ftp_dir}")
 
 		sem_dict[keys[i]] = sem
 

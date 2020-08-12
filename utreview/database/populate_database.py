@@ -7,7 +7,7 @@ from titlecase import titlecase
 
 from .add_to_database import *
 from .scheduled_course import ScheduledCourseInfo
-from utreview import SPRING_SEM, SUMMER_SEM, FALL_SEM, logger, sem_current, sem_next, sem_future
+from utreview import SPRING_SEM, SUMMER_SEM, FALL_SEM, sem_current, sem_next, sem_future
 from utreview.models.course import *
 from utreview.models.ecis import *
 from utreview.models.others import *
@@ -15,6 +15,7 @@ from utreview.models.prof import *
 from utreview.services.fetch_course_info import *
 from utreview.services.fetch_ecis import *
 from utreview.services.fetch_web import KEY_SEM, KEY_DEPT, KEY_CNUM, KEY_TITLE, KEY_UNIQUE, KEY_PROF
+from utreview.services.logger import logger
 
 
 def refresh_ecis():

@@ -2,7 +2,7 @@
 from bs4 import BeautifulSoup as BSoup
 
 from .fetch_web import fetch_html
-from utreview import logger
+from utreview.services.logger import logger
 
 
 def fetch_prof(query):
