@@ -1,155 +1,271 @@
 
 import re
 import json
-from titlecase import titlecase
-from utreview import sem_current, sem_next, sem_future
-from utreview.services.fetch_course_info import *
-from utreview.models import *
+
 from string import ascii_lowercase
+from titlecase import titlecase
+
+from .add_to_database import *
 from .scheduled_course import ScheduledCourseInfo
+from utreview import SPRING_SEM, SUMMER_SEM, FALL_SEM, logger, sem_current, sem_next, sem_future
+from utreview.models.course import *
+from utreview.models.ecis import *
+from utreview.models.others import *
+from utreview.models.prof import *
+from utreview.services.fetch_course_info import *
+from utreview.services.fetch_ecis import *
+from utreview.services.fetch_web import KEY_SEM, KEY_DEPT, KEY_CNUM, KEY_TITLE, KEY_UNIQUE, KEY_PROF
+
+
+def refresh_ecis():
+	"""
+	Set course and prof ecis_avg and ecis_students by iterating through ecis_scores
+	"""
+
+	logger.info("Refreshing course and professor ecis fields with respective data")
+	query_tuple = (Course.query.all(), Prof.query.all())
+
+	# will iterate between Course and Prof since code is identical
+	for queries in query_tuple:
+		for query in queries:
+
+			if type(query) is Course:
+				logger.debug(f"Refreshing ecis for Course: {query.dept} {query.num}")
+			elif type(query) is Prof:
+				logger.debug(f"Refreshing ecis for Prof: {query.first_name} {query.last_name}")
+
+			ecis = 0
+			students = 0
+
+			# iterate through ecis scores specific to the course/prof
+			for prof_course in query.prof_course:
+				for prof_course_sem in prof_course.prof_course_sem:
+					for ecis_child in prof_course_sem.ecis:
+						ecis += ecis_child.course_avg * ecis_child.num_students
+						students += ecis_child.num_students
+
+			# average will be None if there are no students
+			query.ecis_avg = (ecis / students) if students > 0 else None
+			query.ecis_students = students
+			db.session.commit()
+
+
+def populate_ecis(file_path, pages):
+	"""
+	Populate database with ECIS information
+	:param file_path: path to file containing data
+	:type file_path: str
+	:param pages: pages of file to parse
+	:type pages: list[int] or list[str]
+	"""
+
+	# FOR FUTURE UPDATES, PLEASE READ:
+	# remember to update Course and Prof ECIS fields when inputting new ECIS scores: ecis_avg and ecis_students
+
+	logger.info(f'Populating ecis database with data from: {file_path}')
+	ecis_lst = parse_ecis_excel(file_path, pages)
+
+	for ecis in ecis_lst:
+
+		# separate values from dictionary
+		unique, c_avg, p_avg, students, yr, sem = (
+			ecis[KEY_UNIQUE_NUM],
+			ecis[KEY_COURSE_AVG],
+			ecis[KEY_PROF_AVG],
+			ecis[KEY_NUM_STUDENTS],
+			ecis[KEY_YR],
+			ecis[KEY_SEM]
+		)
+
+		# check for existence of specified Semester, ProfCourseSemester in database
+		logger.debug(f'Adding ecis for: unique={unique}, sem={yr}{sem}')
+		sem_obj = Semester.query.filter_by(year=yr, semester=sem).first()
+		if sem_obj is None:
+			logger.debug(f"Cannot find semester for: {yr}{sem}. Skipping...")
+			continue
+
+		pcs_obj = ProfCourseSemester.query.filter_by(unique_num=unique, sem_id=sem_obj.id).first()
+		if pcs_obj is None:
+			logger.debug(
+				f"Failed to find ProfCourseSemester for: unique={unique}, sem={yr}{sem}. Skipping..."
+			)
+			continue
+
+		# assumption: only one ecis score per prof_course_semester instance -> else skip
+		ecis_lst = pcs_obj.ecis
+		if len(ecis_lst) >= 1:
+			# ecis already exists
+			continue
+
+		# creating the ecis object
+		ecis_obj = EcisScore(
+			course_avg=c_avg,
+			prof_avg=p_avg,
+			num_students=students,
+			prof_course_sem_id=pcs_obj.id)
+		db.session.add(ecis_obj)
+		db.session.commit()
+
+		# updating course and prof ecis fields
+		logger.debug("Updating prof and course ecis fields")
+		pc_obj = pcs_obj.prof_course
+		course_obj = pc_obj.course
+		prof_obj = pc_obj.prof
+
+		queries = ((course_obj, c_avg), (prof_obj, p_avg))
+		for query, avg in queries:
+			total_students = query.ecis_students + students
+			total_avg = ((query.ecis_avg * query.ecis_students) if query.ecis_avg is not None else 0) + \
+				((avg * students) if avg is not None else 0)
+			query.ecis_avg = (total_avg / total_students) if total_students > 0 else None
+			query.ecis_students = total_students
+
+		db.session.commit()
 
 
 def populate_sem(start_yr=2010, end_yr=2020):
+	"""
+	Populate database with semesters for the given year range. Will populate for spring, summer, fall semesters.
+	:param start_yr: starting year for the populate
+	:type start_yr: int
+	:param end_yr: ending year for the populate
+	:type end_yr: int
+	"""
 
+	logger.info(f"Populating database with semesters from {start_yr} to {end_yr}")
 	for yr in range(start_yr, end_yr):
 		for sem in (2, 6, 9):
 			if Semester.query.filter_by(year=yr, semester=sem).first() is not None:
-				semester = Semester(year=yr, semester=sem)
-				db.session.add(semester)
-	
-	db.session.commit()
+				check_or_add_semester(yr, sem)
 
 
-def populate_profcourse(in_file):
+def populate_prof_course(in_file):
+	"""
+	Populate database with Professor and Course relationship using data fetched from the web
+	(utreview.services.fetch_web.fetch_profcourse_info only)
+	:param in_file: file the data was fetched to
+	:type in_file: str
+	"""
 
-	from utreview.services.fetch_web import KEY_SEM, KEY_DEPT, KEY_CNUM, KEY_TITLE, KEY_UNIQUE, KEY_PROF
 	__sem_fall = "Fall"
 	__sem_spring = "Spring"
 	__sem_summer = "Summer"
 
+	logger.info(f"Populating database with prof_course info using {in_file}")
+
+	# creating list of prof-course relationships from the given file
 	prof_courses = []
 	with open(in_file, 'r') as f:
 		for line in f:
 			prof_courses.append(json.loads(line))
 
+	# add each prof-course relationship to the database if appropriate
 	for prof_course in prof_courses:
 
+		# check for existence of professor -> add if does not exist
 		prof_name = [name.strip() for name in prof_course[KEY_PROF].split(",")]
-		prof = Prof.query.filter_by(first_name=prof_name[1], last_name=prof_name[0]).first()
+		_, prof = check_or_add_prof(prof_name[1], prof_name[0])
 
-		if prof is None:
-			# print("Adding new prof:", prof_course[KEY_PROF])
-			prof = Prof(first_name=prof_name[1], last_name=prof_name[0])
-			db.session.add(prof)
-			db.session.commit()
-		
+		# check for existence of department -> skip if does not exist
 		abr = prof_course[KEY_DEPT].strip().upper()
 		dept = Dept.query.filter_by(abr=abr).first()
 		if dept is None:
-			# print("Cannot find dept:", abr, ". Skipping...")
+			logger.debug(f"Cannot find dept: {abr}. Skipping...")
 			continue
 
+		# check if course exists -> add if does not exist
 		# TODO: choosing topic 0 by default. Update when topic info available.
-		course = Course.query.filter_by(dept_id=dept.id, num=prof_course[KEY_CNUM])
-		if len(course.all()) < 1:
-			# print('Adding new course:', abr, prof_course[KEY_CNUM], prof_course[KEY_TITLE])
-			course = Course(dept_id=dept.id, num=prof_course[KEY_CNUM], title=prof_course[KEY_TITLE])
-			db.session.add(course)
-			db.session.commit()
-		elif len(course.all()) > 1:
-			for c in course:
+		num_results, course = check_or_add_course(dept, prof_course[KEY_CNUM], prof_course[KEY_TITLE])
+		if num_results > 1:
+			courses = Course.query.filter_by(dept_id=dept.id, num=prof_course[KEY_CNUM])
+			for c in courses:
 				if c.topic_num <= 0:
 					course = c
-		else:
-			course = course.first()
 
-		prof_course_obj = ProfCourse.query.filter_by(prof_id=prof.id, course_id=course.id).first()
-		if prof_course_obj is None:
-			prof_course_obj = ProfCourse(prof_id=prof.id, course_id=course.id)
-			db.session.add(prof_course_obj)
-			db.session.commit()
-		
+		# check if prof_course exists -> add if it doesn't
+		prof_course_obj = check_or_add_prof_course(prof, course)
+
+		# parse semester to integer representation
 		sem_lst = [s.strip() for s in prof_course[KEY_SEM].split(",")]
 		if sem_lst[1] == __sem_spring:
-			sem = 2
+			sem = SPRING_SEM
 		elif sem_lst[1] == __sem_summer:
-			sem = 6
+			sem = SUMMER_SEM
 		elif sem_lst[1] == __sem_fall:
-			sem = 9
+			sem = FALL_SEM
 		else:
-			# print("Invalid semester:", sem_lst[1], ". Skipping...")
+			logger.debug(f"Invalid semester: {sem_lst[1]}. Skipping...")
 			continue
-		
+
 		yr = int(sem_lst[0].strip())
 
-		sem_obj = Semester.query.filter_by(year=yr, semester=sem).first()
-		if sem_obj is None:
-			sem_obj = Semester(year=yr, semester=sem)
-			db.session.add(sem_obj)
-			db.session.commit()
+		# check for semester existence -> if it doesn't, add to database
+		_, sem_obj = check_or_add_semester(yr, sem)
 
-		prof_course_sem_obj = ProfCourseSemester.query.filter_by(
-			unique_num=prof_course[KEY_UNIQUE], prof_course_id=prof_course_obj.id, 
-			sem_id = sem_obj.id
-		).first()
-
-		if prof_course_sem_obj is None: 
-			prof_course_sem_obj = ProfCourseSemester(
-				unique_num=prof_course[KEY_UNIQUE], prof_course_id=prof_course_obj.id, 
-				sem_id = sem_obj.id
-			)
-			db.session.add(prof_course_sem_obj)
-			db.session.commit()
-	
+		# check for prof_course_semester existence -> if it doesn't add to database
+		check_or_add_prof_course_semester(prof_course[KEY_UNIQUE], prof_course_obj, sem_obj)
 
 
 def populate_dept(dept_info, override=False):
+	"""
+	Populate the database with departments
+	:param dept_info: list of tuples with: (abbreviation, name)
+	:type dept_info: tuple(str, str)
+	:param override: override current department with same abbreviation if found in database
+	:type override: bool
+	"""
 
+	logger.info("Populating database with departments")
 	for abr, name in dept_info:
 
 		cur_dept = Dept.query.filter_by(abr=abr).first()
 		if cur_dept is None:
-
+			# add department to database
 			abr = abr.strip()
 			name = name.strip()
-			
-			# print(f"Adding dept {name} ({abr}) to database")
+
+			logger.debug(f"Adding dept {name} ({abr}) to database")
 			dept = Dept(abr=abr, name=name)
 			db.session.add(dept)
 
 		elif override:
-			# print(f"Overriding dept {name} ({abr}) to database")
+			# override current department
+			logger.debug(f"Overriding dept {name} ({abr}) to database")
 			cur_dept.abr = abr
 			cur_dept.name = name
 
-		# else:
-			# print(f"Already exists: dept {name} ({abr})")
-		
+		else:
+			# department already exists and not overriding
+			logger.debug(f"Already exists: dept {name} ({abr})")
+
 		db.session.commit()
 
 
 def populate_dept_info(dept_info):
-	
-	# print('Populating departments with additional info')
-	
+	"""
+	Populate department with additional information (college and department name)
+	:param dept_info: list of tuples containing: (abbreviation, department name, college name)
+	:type dept_info: list[tuple(str, str, str)
+	"""
+	logger.info('Populating departments with additional info')
+
 	for abr, dept, college in dept_info:
 
 		cur_dept = Dept.query.filter_by(abr=abr).first()
 		if cur_dept is None:
-			# print(f"Cannot find dept {abr} --> adding as non-major")
-			cur_dept = Dept(abr=abr, dept=dept, college=college, name='')
-			db.session.add(cur_dept)
-
+			logger.debug(f"Cannot find dept {abr}")
 		else:
-			# print(f"Updating dept: {abr}")
+			logger.debug(f"Updating dept: {abr} with dept={dept}, college={college}")
 			cur_dept.dept = dept
 			cur_dept.college = college
-		
+
 		db.session.commit()
 
 
 def reset_scheduled_info():
-
+	"""
+	Reset professor and course fields: current_sem, next_sem, and future_sem to False
+	"""
 	ScheduledCourse.query.delete()
 	query_lst = (Course.query.all(), Prof.query.all())
 	for queries in query_lst:
@@ -161,64 +277,79 @@ def reset_scheduled_info():
 
 
 def refresh_review_info():
+	"""
+	Refresh course and prof review metric fields
+	For Course: approval, difficulty, usefulness, workload
+	For Prof: approval, clear, engaging, grading
+	"""
 
-	courses = Course.query.all()
-	for course in courses:
-		course.num_ratings = len(course.reviews)
-		approval = 0
-		difficulty = 0
-		usefulness = 0
-		workload = 0
-		for review in course.reviews:
-			approval += int(review.approval)
-			difficulty += review.difficulty
-			usefulness += review.usefulness
-			workload += review.workload
-		course.approval = approval / course.num_ratings if course.num_ratings > 0 else None
-		course.difficulty = difficulty / course.num_ratings if course.num_ratings > 0 else None
-		course.usefulness = usefulness / course.num_ratings if course.num_ratings > 0 else None
-		course.workload = workload / course.num_ratings if course.num_ratings > 0 else None
-		db.session.commit()
+	query_lst = (Course.query.all(), Prof.query.all())
+	for queries in query_lst:
+		for query in queries:
 
-	profs = Prof.query.all()
-	for prof in profs:
-		prof.num_ratings = len(prof.reviews)
-		approval = 0
-		clear = 0
-		engaging = 0
-		grading = 0
-		for review in prof.reviews:
-			approval += int(review.approval)
-			clear += review.clear
-			engaging += review.engaging
-			grading += review.grading
-		prof.approval = approval / prof.num_ratings if prof.num_ratings > 0 else None
-		prof.difficulty = clear / prof.num_ratings if prof.num_ratings > 0 else None
-		prof.usefulness = engaging / prof.num_ratings if prof.num_ratings > 0 else None
-		prof.workload = grading / prof.num_ratings if prof.num_ratings > 0 else None
-		db.session.commit()
+			if type(query) is Course:
+				logger.debug(f"Refreshing review fields for Course: {query.dept} {query.num}")
+			elif type(query) is Prof:
+				logger.debug(f"Refreshing review fields for Prof: {query.first_name} {query.last_name}")
 
-	db.session.commit()
+			# initiate variables
+			query.num_ratings = len(query.reviews)
+			approval = 0
+			metrics = [0, 0, 0]
+
+			# iterate through reviews and update metric values
+			for review in query.reviews:
+				approval += int(review.approval)
+				if type(query) is Course:
+					metrics[0] += review.difficulty
+					metrics[1] += review.usefulness
+					metrics[2] += review.workload
+				elif type(query) is Prof:
+					metrics[0] += review.clear
+					metrics[1] += review.engaging
+					metrics[2] += review.grading
+
+			# do final metric calculation (averages)
+			query.approval = approval / query.num_ratings if query.num_ratings > 0 else None
+			metrics[0] = metrics[0] / query.num_ratings if query.num_ratings > 0 else None
+			metrics[1] = metrics[1] / query.num_ratings if query.num_ratings > 0 else None
+			metrics[2] = metrics[2] / query.num_ratings if query.num_ratings > 0 else None
+
+			# update query based on type
+			if type(query) is Course:
+				query.difficulty = metrics[0]
+				query.usefulness = metrics[1]
+				query.workload = metrics[2]
+			elif type(query) is Prof:
+				query.difficulty = metrics[0]
+				query.usefulness = metrics[1]
+				query.workload = metrics[2]
+
+			db.session.commit()
 
 
 def populate_scheduled_course(course_info):
+	"""
+	Populate the database with scheduled course info as parsed from FTP
+	:param course_info: list of course data
+	:type course_info: list[dict]
+	"""
 
-	# print("Populate scheduled course: resetting professor and course semesters")
-	# print("Populate scheduled course: finished resetting professor and course semesters")
-	
+	logger.info("Populating database with scheduled course info")
+
 	for s_course in course_info:
 
+		# create ScheduledCourseInfo object using the s_course dictionary
 		try:
 			scheduled = ScheduledCourseInfo(s_course)
 		except ValueError as err:
-			# print(f"Populate scheduled course error: {err}. Skipping...")
+			logger.warn(f"Populate scheduled course error: {err}. Skipping...")
 			continue
-
 
 		# check to see if dept exists
 		dept_obj = Dept.query.filter_by(abr=scheduled.dept).first()
 		if dept_obj is None:
-			# print(f"Populate scheduled course: cannot find department {scheduled.dept}. Skipping...")
+			logger.debug(f"Populate scheduled course: cannot find department {scheduled.dept}. Skipping...")
 			continue
 
 		# check to see if course exists
@@ -228,91 +359,37 @@ def populate_scheduled_course(course_info):
 		cur_course = cur_courses.first()
 
 		if cur_course is None:
-			# print(f"Populate scheduled course: cannot find course {scheduled.dept} {scheduled.c_num} w/ topic num {scheduled.topic}. Skipping...")
+			course_log_description = f"{scheduled.dept} {scheduled.c_num} w/ topic num {scheduled.topic}"
+			logger.debug(f"Populate scheduled course: cannot find course {course_log_description}. Skipping...")
 			continue
 
-		# check to see if prof exists --> if not then add prof
+		# check to see if prof exists --> if not then leave empty
 		cur_prof = Prof.query.filter_by(eid=scheduled.prof_eid).first()
-		
-		if cur_prof is None and scheduled.prof_eid:
-			# populate_prof(fetch_prof(scheduled.prof_eid))
-			cur_prof = Prof.query.filter_by(eid=scheduled.prof_eid).first()
-			# if cur_prof is None:
-				# print("Failed to add professor. Leaving empty...")
+
+		if cur_prof is None:
+			logger.warn(f"Could not find professor w/ EID={scheduled.prof_eid}. Leaving empty...")
 
 		# check to see if semester exists else add semester
-		semester = Semester.query.filter_by(year=scheduled.yr, semester=scheduled.sem).first()
-		if semester is None:
-			semester = Semester(year=scheduled.yr, semester=scheduled.sem)
-			db.session.add(semester)
-			db.session.commit()
+		_, semester = check_or_add_semester(yr=scheduled.yr, sem=scheduled.sem)
+
+		# check to see if cross_listings exist else create new
+		x_list = check_or_add_xlist(scheduled.x_listings, semester)
 
 		# check to see if scheduled course exists else create new
-		cur_schedule = ScheduledCourse.query.filter_by(unique_no=scheduled.unique_no, sem_id=semester.id).first()
-		
-		# check to see if cross_listings exist else create new
-		x_list = None
-		for x_list_str in scheduled.x_listings:
-			x_course = ScheduledCourse.query.filter_by(unique_no=x_list_str, sem_id=semester.id).first()
-			if x_course is not None and x_course.xlist is not None:
-				x_list = x_course.xlist
+		num_results, cur_schedule = check_or_add_scheduled_course(scheduled, cur_course, cur_prof, x_list, semester)
+		if num_results > 0:
+			logger.debug(f"""Updating scheduled course. Unique = {scheduled.unique_no}
+					semester={repr(semester)}
+					course={repr(cur_course)}
+					prof={repr(cur_prof)}""")
+			scheduled.to_scheduled_course(cur_schedule, cur_course, cur_prof, x_list)
 
-		if x_list is None:
-			x_list = CrossListed()
-			db.session.add(x_list)
-			db.session.commit()
-
-		if cur_schedule is None:
-			
-			# print(f"Adding new scheduled course ({scheduled.yr}{scheduled.sem}): {scheduled.dept} {scheduled.c_num} ", end="")
-			# if cur_prof is not None:
-			# 	print(f"by {cur_prof.first_name} {cur_prof.last_name}")
-			# else:
-			# 	print()
-
-			cur_schedule = ScheduledCourse(
-				unique_no=scheduled.unique_no, 
-				session=scheduled.session, 
-				days=scheduled.days, time_from=scheduled.time_from, time_to=scheduled.time_to, 
-				location=scheduled.location, 
-				max_enrollement=scheduled.max_enrollment, seats_taken=scheduled.seats_taken,
-				sem_id=semester.id, 
-				course_id=cur_course.id, 
-				prof_id=cur_prof.id if cur_prof else None, 
-				cross_listed=x_list.id)
-			db.session.add(cur_schedule)
-		else:
-			# print(f"Updating scheduled course ({scheduled.yr}{scheduled.sem}): {scheduled.dept} {scheduled.c_num} ", end="")
-			# if cur_prof is not None:
-			# 	print(f"by {cur_prof.first_name} {cur_prof.last_name}")
-			# else:
-			# 	print()
-			
-			cur_schedule.session = scheduled.session
-			cur_schedule.days = scheduled.days
-			cur_schedule.time_from = scheduled.time_from
-			cur_schedule.time_to = scheduled.time_to
-			cur_schedule.location = scheduled.location
-			cur_schedule.max_enrollment = scheduled.max_enrollment
-			cur_schedule.seats_taken = scheduled.seats_taken
-			cur_schedule.course_id = cur_course.id
-			cur_schedule.prof_id=cur_prof.id if cur_prof else None
-			cur_schedule.cross_listed=x_list.id
-
-
-		# add prof course relationship if doesnt exist
+		# add prof course and prof course semester relationship if doesnt exist
 		if cur_prof:
-			prof_course = ProfCourse.query.filter_by(prof_id=cur_prof.id, course_id=cur_course.id).first()
+			_, prof_course = check_or_add_prof_course(cur_prof, cur_course)
+			check_or_add_prof_course_semester(scheduled.unique_no, prof_course, semester)
 
-			if prof_course is None:
-				prof_course = ProfCourse(prof_id=cur_prof.id, course_id=cur_course.id)
-				db.session.add(prof_course)
-
-			prof_course_semester = ProfCourseSemester.query.filter_by(prof_course_id=prof_course.id, sem_id=semester.id).first()
-			if prof_course_semester is None:
-				prof_course_semester = ProfCourseSemester(prof_course_id=prof_course.id, sem_id=semester.id)
-				db.session.add(prof_course_semester)
-
+		# update course and prof semester fields (whether they are teaching the respective semesters)
 		full_semester = int(str(semester.year) + str(semester.semester))
 
 		if full_semester == sem_current:
@@ -334,29 +411,42 @@ def populate_scheduled_course(course_info):
 
 
 def populate_prof(prof_info):
-	
+	"""
+	Populate database with a professor using data fetched from the web
+	:param prof_info: data fetched using fetch_prof from utreview.services.fetch_web
+	:type prof_info: list
+	"""
+
 	if prof_info is not None and len(prof_info) > 1:
-		
+
 		first_name, last_name = __parse_prof_name(prof_info[0])
 		eid = prof_info[1]
 
 		cur_prof = Prof.query.filter_by(first_name=first_name, last_name=last_name, eid=eid).first()
 		if cur_prof is None:
-			# print(f"Adding professor {first_name} {last_name}")
+			logger.debug(f"Adding professor {first_name} {last_name}")
 			prof = Prof(first_name=first_name, last_name=last_name, eid=eid)
 			db.session.add(prof)
 			db.session.commit()
-		# else:
-		# 	print(f"Professor {first_name} {last_name} already exists")
-
-	# else:
-		# print("Invalid input to populate_prof")
+		else:
+			logger.debug(f"Professor {first_name} {last_name} already exists")
+	else:
+		logger.debug(f"Invalid input to populate_prof: {prof_info}")
 
 
 def populate_course(course_info, cur_sem=None):
+	"""
+	Populate database with courses
+	:param course_info: list of dictionaries containing course data
+	:type course_info: list[dict]
+	:param cur_sem: whether to keep the current semester. if set to None, it will be overriden with most recent value
+	:type cur_sem: bool or None
+	"""
 
 	__inherit = "(See Base Topic for inherited information.)"
 	null_depts = set()
+
+	logger.info("Populating database with courses")
 
 	for course in course_info:
 
@@ -371,13 +461,13 @@ def populate_course(course_info, cur_sem=None):
 		t_num = course[KEY_TOPIC_NUM]
 		pre_req = course[KEY_PRE_REQ]
 
-		# check to see if dept exists --> else cannot add
+		# check to see if dept exists --> else ski[
 		dept_obj = Dept.query.filter_by(abr=dept).first()
 
 		if dept_obj is None:
 			null_depts.add(dept)
 			continue
-		
+
 		# if topic number > 0, then title = modified cs title
 		if t_num > 0:
 			cs_title = __parse_title(cs_title)
@@ -398,7 +488,7 @@ def populate_course(course_info, cur_sem=None):
 
 		# condition on topic number
 		if t_num >= 0:
-			
+
 			# all courses with same topic number --> should be unique topics
 			# if len 0 --> new topic
 			topic_courses_flask = Course.query.filter_by(dept_id=dept_obj.id, num=num)
@@ -422,35 +512,42 @@ def populate_course(course_info, cur_sem=None):
 
 				if len(t_course_flask.all()) > 0:
 					old_course = t_course_flask.first()
-				
+
 				__populate_child_topics(topic_zero, [new_course], __inherit)
-				
+
 		else:
 			# course doesn't have topic number
 			old_course = Course.query.filter_by(dept_id=dept_obj.id, num=num).first()
-		
+
 		# create new or replace old
 		if old_course is None:
 			# new course
-			# print("Creating new course", dept_obj.abr, new_course.num)
+			logger.debug(f"Creating new course {dept_obj.abr} {new_course.num}")
 			db.session.add(new_course)
-		elif cur_sem is None or semester==cur_sem:
+		elif cur_sem is None or semester == cur_sem:
 			# course existed but replacing
-			# print("Replacing previous", old_course.dept.abr, old_course.num)
+			logger.debug(f"Replacing previous {old_course.dept.abr} {old_course.num}")
 			__replace_course(old_course, new_course)
-		# else:
+		else:
 			# course existed and skipping
-			# print("Already existed:", old_course.dept.abr, old_course.num)
+			logger.debug(f"Already existed: {old_course.dept.abr} {old_course.num}")
 
 		db.session.commit()
 
 	null_depts = list(null_depts)
 	null_depts.sort()
-	# for dept in null_depts:
-	# 	print("Unexpected Error: department", dept, "cannot be found in the database")
+	for dept in null_depts:
+		logger.debug(f"Unexpected Error: department {dept} cannot be found in the database")
 
 
 def __parse_title(cs_title):
+	"""
+	Parse title from raw input title with titlecase
+	:param cs_title: raw cs title
+	:type cs_title: str
+	:return: parsed title string
+	:rtype: str
+	"""
 	m = re.search(r"^\d+-(.*)", cs_title)
 
 	if m is None:
@@ -461,7 +558,13 @@ def __parse_title(cs_title):
 
 
 def __is_all_one_letter(word):
-
+	"""
+	checks whether string is all one character
+	:param word: word to check
+	:type word: str
+	:return: whether the string is all one character
+	:rtype: bool
+	"""
 	word = word.lower()
 	for c in ascii_lowercase:
 		if word == c * len(word):
@@ -470,7 +573,15 @@ def __is_all_one_letter(word):
 
 
 def __populate_child_topics(parent_topic, child_topics, inherit_str):
-
+	"""
+	Populate child topics with parent topic info
+	:param parent_topic: parent topic object
+	:type parent_topic: Course
+	:param child_topics: child topic object
+	:type child_topics: list[Course]
+	:param inherit_str: string that marks an inherit-zone
+	:type inherit_str: str
+	"""
 	for topic in child_topics:
 
 		topic.description = topic.description.replace(inherit_str, parent_topic.description).strip()
@@ -479,8 +590,10 @@ def __populate_child_topics(parent_topic, child_topics, inherit_str):
 
 
 def __check_new_topic(topic_courses_flask):
-
-	topic = None
+	"""
+	Get topic if exists else create new topic
+	:param topic_courses_flask: object containing topic courses
+	"""
 	if len(topic_courses_flask.all()) > 0:
 		topic = topic_courses_flask.first().topic
 	else:
@@ -492,16 +605,28 @@ def __check_new_topic(topic_courses_flask):
 
 
 def __replace_course(old_course, new_course):
-
+	"""
+	Update course info with new course info
+	:param old_course: old course to replace
+	:type old_course: Course
+	:param new_course: new course with new course info
+	:type new_course: Course
+	"""
 	old_course.title = new_course.title
 	old_course.description = new_course.description
 	old_course.restrictions = new_course.restrictions
 	old_course.pre_req = new_course.pre_req
 	old_course.topic_num = new_course.topic_num
-	
+
 
 def __get_topic_zero(topic_courses):
-
+	"""
+	Retrieve topic zero from list if exists else return None
+	:param topic_courses: list of topic courses to iterate through
+	:type topic_courses: list[Course]
+	:return: topic course whose topic number is 0
+	:rtype: Course or None
+	"""
 	for topic_course in topic_courses:
 		if topic_course.topic_num == 0:
 			return topic_course
@@ -509,9 +634,14 @@ def __get_topic_zero(topic_courses):
 
 
 def __parse_prof_name(name):
-
-    name_parts = name.split(',')[0].split()
-    if len(name_parts) > 1:
-        return name_parts[0], ' '.join(name_parts[1:])
-    return '', name
-
+	"""
+	Parse professor name from last_name, first_name format
+	:param name: name to parse
+	:type name: str
+	:return: name split first_name, last_name
+	:rtype: tuple(str, str)
+	"""
+	name_parts = name.split(',')[0].split()
+	if len(name_parts) > 1:
+		return name_parts[0], ' '.join(name_parts[1:])
+	return '', name

@@ -1,30 +1,22 @@
 
+import json
+import logging
 import os
+import threading
+
 from decouple import config
 from flask import Flask
-from flask_mysqldb import MySQL
-from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
 from flask_bcrypt import Bcrypt
+from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from whoosh.index import create_in
-from whoosh import scoring
-from whoosh.fields import *
-from whoosh.qparser import QueryParser
-import json
-from utreview.services.fetch_ftp import key_current, key_next, key_future
-from utreview.database.scheduled_course import int_or_none
-import logging
-import sys
-import os
+from flask_sqlalchemy import SQLAlchemy
 from logging.handlers import TimedRotatingFileHandler
-import datetime
-import pytz
 from pytz import timezone
+from whoosh.index import create_in
+from whoosh.fields import *
 
+from utreview.services.fetch_ftp import key_current, key_next, key_future
 
-DEFAULT_LOG_FOLDER = 'log'
-DEFAULT_LOG_FILE_NAME = "daily_backend_flask_app.log"
 
 def create_app():
 
@@ -49,7 +41,7 @@ def create_ix():
     course_writer = course_ix.writer()
 
     courses = Course.query.all()
-    courses_tokens = [str(course).split() for course in courses]
+    # courses_tokens = [str(course).split() for course in courses]
 
     for course in courses:
 
@@ -76,11 +68,6 @@ def create_ix():
 
 def update_sem_vals(sem_path):
 
-    global sem_current
-    global sem_next
-    global sem_future
-
-    sem_dict = None
 
     with open(sem_path, 'r') as f:
         sem_dict = json.load(f) 
@@ -93,7 +80,8 @@ def update_sem_vals(sem_path):
 def init_log():
 
     from pytz import utc
-    def customTime(*args):
+
+    def custom_time(*args):
         utc_dt = utc.localize(datetime.datetime.utcnow())
         custom_tz = timezone("US/Central")
         converted = utc_dt.astimezone(custom_tz)
@@ -109,7 +97,7 @@ def init_log():
     logger = logging.getLogger() 
 
     log_formatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
-    log_formatter.converter = customTime
+    log_formatter.converter = custom_time
     
     time_rotating_handler = TimedRotatingFileHandler(log_path, when="midnight", interval=1)
     time_rotating_handler.suffix = "%Y%m%d"
@@ -125,6 +113,19 @@ def init_log():
     return logger
 
 
+def int_or_none(obj):
+    try:
+        return int(obj)
+    except (ValueError, TypeError):
+        return None
+
+
+DEFAULT_LOG_FOLDER = 'log'
+DEFAULT_LOG_FILE_NAME = "daily_backend_flask_app.log"
+SPRING_SEM = 2
+SUMMER_SEM = 6
+FALL_SEM = 9
+
 sem_current, sem_next, sem_future = update_sem_vals('semester.txt')
 logger = init_log()
 
@@ -133,3 +134,4 @@ bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 CORS(app)
 course_ix, prof_ix = create_ix()
+from utreview.routes import *
