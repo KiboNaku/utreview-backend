@@ -1,5 +1,4 @@
 
-from .automate_backend import *
 from .fetch_course_info import *
 from .fetch_ecis import *
 from .fetch_ftp import *

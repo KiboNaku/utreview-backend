@@ -1,7 +1,7 @@
 
+from .populate_database import ScheduledCourseInfo
 from utreview import logger
 from utreview.models.course import *
-from utreview.models.ecis import *
 from utreview.models.others import *
 from utreview.models.prof import *
 
@@ -113,7 +113,7 @@ def check_or_add_prof_course_semester(unique_num, prof_course, semester):
     :type prof_course: ProfCourse
     :param semester: semester object for the given relationship
     :type semester: Semester
-    :return: results of the search as a tuple(number of results, ProfCourseSemester object containing the info requested)
+    :return: results of the search as a tuple(number of results, ProfCourseSemester object containing the info)
     :rtype: tuple(int, ProfCourseSemester)
     """
     prof_course_sem_obj = ProfCourseSemester.query.filter_by(
@@ -131,3 +131,62 @@ def check_or_add_prof_course_semester(unique_num, prof_course, semester):
         db.session.add(prof_course_sem_obj)
         db.session.commit()
     return num_results, prof_course_sem_obj
+
+
+def check_or_add_xlist(x_listings, semester):
+    """
+    Checks the ScheduledCourse list for an xlist.
+    If it exists, nothing happens.
+    If it doesn't, add the said xlist (CrossListed)
+    :param x_listings: list of unique numbers to search through
+    :type x_listings: list[str]
+    :param semester: semester for the ScheduledCourse to iterate through
+    :type semester: Semester
+    :return: results of the search
+    :rtype: CrossListed
+    """
+    x_list = None
+    for x_list_str in x_listings:
+        x_course = ScheduledCourse.query.filter_by(unique_no=x_list_str, sem_id=semester.id).first()
+        if x_course is not None and x_course.xlist is not None:
+            x_list = x_course.xlist
+
+    if x_list is None:
+        logger.debug(f"Adding new CrossListed for semester {semester.year} {semester.semester}")
+        x_list = CrossListed()
+        db.session.add(x_list)
+        db.session.commit()
+    return x_list
+
+
+def check_or_add_scheduled_course(scheduled_info, course, prof, x_list, semester):
+    """
+    Checks the database for the existence of the scheduled_course
+    If it does, nothing happens.
+    If it doesn't, add the said ScheduledCourse
+    :param scheduled_info: object containing parsed scheduled course info
+    :type scheduled_info: ScheduledCourseInfo
+    :param course: model object containing course id related to scheduled course
+    :type course: Course
+    :param prof: model object containing prof id related to scheduled course
+    :type prof: Prof
+    :param x_list: model object containing cross_listed id related to scheduled course
+    :type x_list: CrossListed
+    :param semester: model object containing semester id related to scheduled course
+    :type semester: Semester
+    :return: results of the search as a tuple(number of results, ScheduledCourse object containing the info)
+    :rtype: tuple(int, ScheduledCourse)
+    """
+
+    cur_schedule = ScheduledCourse.query.filter_by(unique_no=scheduled_info.unique_no, sem_id=semester.id)
+    num_results = len(cur_schedule.all())
+    cur_schedule = cur_schedule.first()
+    if cur_schedule is None:
+        logger.debug(f"""Adding new scheduled course. Unique = {scheduled_info.unique_no}
+                    semester={repr(semester)}
+                    course={repr(course)}
+                    prof={repr(prof)}""")
+
+        cur_schedule = scheduled_info.build_scheduled_course(course, prof, x_list)
+        db.session.add(cur_schedule)
+    return num_results, cur_schedule

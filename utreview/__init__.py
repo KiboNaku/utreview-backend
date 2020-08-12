@@ -1,32 +1,21 @@
 
+import json
+import logging
 import os
+
 from decouple import config
 from flask import Flask
-from flask_mysqldb import MySQL
-from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
 from flask_bcrypt import Bcrypt
+from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from flask_sqlalchemy import SQLAlchemy
+from pytz import timezone
 from whoosh.index import create_in
-from whoosh import scoring
 from whoosh.fields import *
-from whoosh.qparser import QueryParser
-import json
+
 from utreview.services.fetch_ftp import key_current, key_next, key_future
 from utreview.database.scheduled_course import int_or_none
-import logging
-import sys
-import os
 from logging.handlers import TimedRotatingFileHandler
-import datetime
-import pytz
-from pytz import timezone
-
-DEFAULT_LOG_FOLDER = 'log'
-DEFAULT_LOG_FILE_NAME = "daily_backend_flask_app.log"
-SPRING_SEM = 2
-SUMMER_SEM = 6
-FALL_SEM = 9
 
 
 def create_app():
@@ -127,6 +116,12 @@ def init_log():
 
     return logger
 
+
+DEFAULT_LOG_FOLDER = 'log'
+DEFAULT_LOG_FILE_NAME = "daily_backend_flask_app.log"
+SPRING_SEM = 2
+SUMMER_SEM = 6
+FALL_SEM = 9
 
 sem_current, sem_next, sem_future = update_sem_vals('semester.txt')
 logger = init_log()

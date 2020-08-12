@@ -1,4 +1,6 @@
 
+from utreview.models.others import ScheduledCourse
+
 class ScheduledCourseInfo:
 
 	def __init__(self, s_course):
@@ -45,6 +47,26 @@ class ScheduledCourseInfo:
 		self.max_enrollment = int_or_none(s_course["Max Enrollment"].strip())
 		self.seats_taken = int_or_none(s_course["Seats Taken"].strip())
 		self.x_listings = [listing.strip() for listing in s_course["X-Listings"].strip().split(",")]
+
+
+	def to_scheduled_course(self, scheduled_course, course, prof, x_list):
+
+		scheduled_course.session = self.session
+		scheduled_course.days = self.days
+		scheduled_course.time_from = self.time_from
+		scheduled_course.time_to = self.time_to
+		scheduled_course.location = self.location
+		scheduled_course.max_enrollment = self.max_enrollment
+		scheduled_course.seats_taken = self.seats_taken
+		scheduled_course.course_id = course.id
+		scheduled_course.prof_id = prof.id if prof else None
+		scheduled_course.cross_listed = x_list.id
+		return scheduled_course
+
+
+	def build_scheduled_course(self, course, prof, x_list):
+		scheduled_course = ScheduledCourse()
+		return self.to_scheduled_course(scheduled_course, course, prof, x_list)
 
 
 def int_or_none(obj):

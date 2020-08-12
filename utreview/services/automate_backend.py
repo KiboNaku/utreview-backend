@@ -17,8 +17,7 @@ from utreview.database.populate_database import (
     populate_ecis,
     populate_scheduled_course,
     populate_prof_course,
-    reset_courses,
-    reset_profs
+    reset_scheduled_info
 )
 
 
@@ -47,8 +46,7 @@ def automate_backend():
 
         logger.info("Updating scheduled course database info")
         ftp_info = parse_ftp("input_data")
-        reset_courses()
-        reset_profs()
+        reset_scheduled_info()
         populate_scheduled_course(ftp_info)
 
         # task 2: read maintenance.txt and perform task as necessary
