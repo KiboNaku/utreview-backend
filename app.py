@@ -2,7 +2,7 @@
 
 import threading
 
-from utreview import app
+from utreview.routes import *
 from utreview.services.automate_backend import automate_backend
 
 automate_thread = threading.Thread(target=automate_backend, args=(1,))

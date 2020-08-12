@@ -134,3 +134,4 @@ bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 CORS(app)
 course_ix, prof_ix = create_ix()
+from utreview.routes import *
