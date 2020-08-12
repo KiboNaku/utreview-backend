@@ -47,7 +47,7 @@ def grade_distributions():
     conn = create_connection(database)
     with conn:
         # obtain grade distribution
-        grades = get_grades(conn, course_dept, prof_name, course_num)
+        grades = get_grades(conn, prof_name, course_dept, course_num)
     
     return jsonify(grades)
 
@@ -88,13 +88,15 @@ def get_grades(conn, prof_name, course_dept, course_num):
     query += " and dept like '%" + course_dept + "%'"
     query += " and prof like '%" + prof_name + "%'"
     query += " and course_nbr like '%" + course_num + "%'"
+    print(query)
     cur.execute(query)
 
     # fetch row, return None if nothing fetched
     rows = cur.fetchall()
+    print(rows)
     if len(rows) == 0:
         return None
-
+    
     A = A_minus = B_plus = B = B_minus = C_plus = C = C_minus = D_plus = D = D_minus = F = 0
     # count number of each type of grade
     for row in rows:
