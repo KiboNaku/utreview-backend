@@ -22,9 +22,12 @@ import datetime
 import pytz
 from pytz import timezone
 
-
 DEFAULT_LOG_FOLDER = 'log'
 DEFAULT_LOG_FILE_NAME = "daily_backend_flask_app.log"
+SPRING_SEM = 2
+SUMMER_SEM = 6
+FALL_SEM = 9
+
 
 def create_app():
 

@@ -5,14 +5,16 @@ import json
 from string import ascii_lowercase
 from titlecase import titlecase
 
+from .add_to_database import *
 from .scheduled_course import ScheduledCourseInfo
-from utreview import logger, sem_current, sem_next, sem_future
+from utreview import SPRING_SEM, SUMMER_SEM, FALL_SEM, logger, sem_current, sem_next, sem_future
 from utreview.models.course import *
 from utreview.models.ecis import *
 from utreview.models.others import *
 from utreview.models.prof import *
 from utreview.services.fetch_course_info import *
 from utreview.services.fetch_ecis import *
+from utreview.services.fetch_web import KEY_SEM, KEY_DEPT, KEY_CNUM, KEY_TITLE, KEY_UNIQUE, KEY_PROF
 
 
 def refresh_ecis():
@@ -23,18 +25,27 @@ def refresh_ecis():
 	logger.info("Refreshing course and professor ecis fields with respective data")
 	query_tuple = (Course.query.all(), Prof.query.all())
 
+	# will iterate between Course and Prof since code is identical
 	for queries in query_tuple:
 		for query in queries:
+
+			if type(query) is Course:
+				logger.debug(f"Refreshing ecis for Course: {query.dept} {query.num}")
+			elif type(query) is Prof:
+				logger.debug(f"Refreshing ecis for Prof: {query.first_name} {query.last_name}")
+
 			ecis = 0
 			students = 0
+
+			# iterate through ecis scores specific to the course/prof
 			for prof_course in query.prof_course:
 				for prof_course_sem in prof_course.prof_course_sem:
 					for ecis_child in prof_course_sem.ecis:
 						ecis += ecis_child.course_avg * ecis_child.num_students
 						students += ecis_child.num_students
 
-			if students > 0:
-				query.ecis_avg = ecis / students
+			# average will be None if there are no students
+			query.ecis_avg = (ecis / students) if students > 0 else None
 			query.ecis_students = students
 			db.session.commit()
 
@@ -48,6 +59,7 @@ def populate_ecis(file_path, pages):
 	:type pages: list[str]
 	"""
 
+	# FOR FUTURE UPDATES, PLEASE READ:
 	# remember to update Course and Prof ECIS fields when inputting new ECIS scores: ecis_avg and ecis_students
 
 	logger.info(f'Populating ecis database with data from: {file_path}')
@@ -55,6 +67,7 @@ def populate_ecis(file_path, pages):
 
 	for ecis in ecis_lst:
 
+		# separate values from dictionary
 		unique, c_avg, p_avg, students, yr, sem = (
 			ecis[KEY_UNIQUE_NUM],
 			ecis[KEY_COURSE_AVG],
@@ -64,6 +77,7 @@ def populate_ecis(file_path, pages):
 			ecis[KEY_SEM]
 		)
 
+		# check for existence of specified Semester, ProfCourseSemester in database
 		logger.debug(f'Adding ecis for: unique={unique}, sem={yr}{sem}')
 		sem_obj = Semester.query.filter_by(year=yr, semester=sem).first()
 		if sem_obj is None:
@@ -77,7 +91,7 @@ def populate_ecis(file_path, pages):
 			)
 			continue
 
-		# assumption: only one ecis score per prof_course_semester instance
+		# assumption: only one ecis score per prof_course_semester instance -> else skip
 		ecis_lst = pcs_obj.ecis
 		if len(ecis_lst) >= 1:
 			# ecis already exists
@@ -93,6 +107,7 @@ def populate_ecis(file_path, pages):
 		db.session.commit()
 
 		# updating course and prof ecis fields
+		logger.debug("Updating prof and course ecis fields")
 		pc_obj = pcs_obj.prof_course
 		course_obj = pc_obj.course
 		prof_obj = pc_obj.prof
@@ -101,7 +116,7 @@ def populate_ecis(file_path, pages):
 		for query, avg in queries:
 			total_students = query.ecis_students + students
 			total_avg = ((query.ecis_avg * query.ecis_students) if query.ecis_avg is not None else 0) + \
-						((avg * students) if avg is not None else 0)
+				((avg * students) if avg is not None else 0)
 			query.ecis_avg = (total_avg / total_students) if total_students > 0 else None
 			query.ecis_students = total_students
 
@@ -117,99 +132,87 @@ def populate_sem(start_yr=2010, end_yr=2020):
 	:type end_yr: int
 	"""
 
+	logger.info(f"Populating database with semesters from {start_yr} to {end_yr}")
 	for yr in range(start_yr, end_yr):
 		for sem in (2, 6, 9):
 			if Semester.query.filter_by(year=yr, semester=sem).first() is not None:
-				semester = Semester(year=yr, semester=sem)
-				db.session.add(semester)
-	
-	db.session.commit()
+				check_or_add_semester(yr, sem)
 
 
 def populate_prof_course(in_file):
+	"""
+	Populate database with Professor and Course relationship using data fetched from the web
+	(utreview.services.fetch_web.fetch_profcourse_info only)
+	:param in_file: file the data was fetched to
+	:type in_file: str
+	"""
 
-	from utreview.services.fetch_web import KEY_SEM, KEY_DEPT, KEY_CNUM, KEY_TITLE, KEY_UNIQUE, KEY_PROF
 	__sem_fall = "Fall"
 	__sem_spring = "Spring"
 	__sem_summer = "Summer"
 
+	logger.info(f"Populating database with prof_course info using {in_file}")
+
+	# creating list of prof-course relationships from the given file
 	prof_courses = []
 	with open(in_file, 'r') as f:
 		for line in f:
 			prof_courses.append(json.loads(line))
 
+	# add each prof-course relationship to the database if appropriate
 	for prof_course in prof_courses:
 
+		# check for existence of professor -> add if does not exist
 		prof_name = [name.strip() for name in prof_course[KEY_PROF].split(",")]
-		prof = Prof.query.filter_by(first_name=prof_name[1], last_name=prof_name[0]).first()
+		_, prof = check_or_add_prof(prof_name[1], prof_name[0])
 
-		if prof is None:
-			# print("Adding new prof:", prof_course[KEY_PROF])
-			prof = Prof(first_name=prof_name[1], last_name=prof_name[0])
-			db.session.add(prof)
-			db.session.commit()
-		
+		# check for existence of department -> skip if does not exist
 		abr = prof_course[KEY_DEPT].strip().upper()
 		dept = Dept.query.filter_by(abr=abr).first()
 		if dept is None:
-			# print("Cannot find dept:", abr, ". Skipping...")
+			logger.debug(f"Cannot find dept: {abr}. Skipping...")
 			continue
 
+		# check if course exists -> add if does not exist
 		# TODO: choosing topic 0 by default. Update when topic info available.
-		course = Course.query.filter_by(dept_id=dept.id, num=prof_course[KEY_CNUM])
-		if len(course.all()) < 1:
-			# print('Adding new course:', abr, prof_course[KEY_CNUM], prof_course[KEY_TITLE])
-			course = Course(dept_id=dept.id, num=prof_course[KEY_CNUM], title=prof_course[KEY_TITLE])
-			db.session.add(course)
-			db.session.commit()
-		elif len(course.all()) > 1:
-			for c in course:
+		num_results, course = check_or_add_course(dept, prof_course[KEY_CNUM], prof_course[KEY_TITLE])
+		if num_results > 1:
+			courses = Course.query.filter_by(dept_id=dept.id, num=prof_course[KEY_CNUM])
+			for c in courses:
 				if c.topic_num <= 0:
 					course = c
-		else:
-			course = course.first()
 
-		prof_course_obj = ProfCourse.query.filter_by(prof_id=prof.id, course_id=course.id).first()
-		if prof_course_obj is None:
-			prof_course_obj = ProfCourse(prof_id=prof.id, course_id=course.id)
-			db.session.add(prof_course_obj)
-			db.session.commit()
-		
+		# check if prof_course exists -> add if it doesn't
+		prof_course_obj = check_or_add_prof_course(prof, course)
+
+		# parse semester to integer representation
 		sem_lst = [s.strip() for s in prof_course[KEY_SEM].split(",")]
 		if sem_lst[1] == __sem_spring:
-			sem = 2
+			sem = SPRING_SEM
 		elif sem_lst[1] == __sem_summer:
-			sem = 6
+			sem = SUMMER_SEM
 		elif sem_lst[1] == __sem_fall:
-			sem = 9
+			sem = FALL_SEM
 		else:
-			# print("Invalid semester:", sem_lst[1], ". Skipping...")
+			logger.debug(f"Invalid semester: {sem_lst[1]}. Skipping...")
 			continue
 		
 		yr = int(sem_lst[0].strip())
 
-		sem_obj = Semester.query.filter_by(year=yr, semester=sem).first()
-		if sem_obj is None:
-			sem_obj = Semester(year=yr, semester=sem)
-			db.session.add(sem_obj)
-			db.session.commit()
+		# check for semester existence -> if it doesn't, add to database
+		_, sem_obj = check_or_add_semester(yr, sem)
 
-		prof_course_sem_obj = ProfCourseSemester.query.filter_by(
-			unique_num=prof_course[KEY_UNIQUE], prof_course_id=prof_course_obj.id, 
-			sem_id = sem_obj.id
-		).first()
-
-		if prof_course_sem_obj is None: 
-			prof_course_sem_obj = ProfCourseSemester(
-				unique_num=prof_course[KEY_UNIQUE], prof_course_id=prof_course_obj.id, 
-				sem_id = sem_obj.id
-			)
-			db.session.add(prof_course_sem_obj)
-			db.session.commit()
+		# check for prof_course_semester existence -> if it doesn't add to database
+		check_or_add_prof_course_semester(prof_course[KEY_UNIQUE], prof_course_obj, sem_obj)
 	
 
-
 def populate_dept(dept_info, override=False):
+	"""
+
+	:param dept_info:
+	:param override:
+	:return:
+	"""
 
 	for abr, name in dept_info:
 
