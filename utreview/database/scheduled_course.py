@@ -1,5 +1,7 @@
 
+from utreview import int_or_none
 from utreview.models.others import ScheduledCourse
+
 
 class ScheduledCourseInfo:
 
@@ -68,12 +70,6 @@ class ScheduledCourseInfo:
 		scheduled_course = ScheduledCourse()
 		return self.to_scheduled_course(scheduled_course, course, prof, x_list)
 
-
-def int_or_none(obj):
-	try:
-		return int(obj)
-	except (ValueError, TypeError):
-		return None
 
 def parse_location(title, building, room):
 

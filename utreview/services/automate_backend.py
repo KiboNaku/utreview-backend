@@ -21,7 +21,7 @@ from utreview.database.populate_database import (
 )
 
 
-def automate_backend():
+def automate_backend(name):
     """
     Function used to automate backend tasks such as
         1. fetch ftp files and update scheduled course info
