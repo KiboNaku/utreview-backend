@@ -142,7 +142,7 @@ def populate_sem(start_yr=2010, end_yr=2020):
 def populate_prof_course(in_file):
 	"""
 	Populate database with Professor and Course relationship using data fetched from the web
-	(utreview.services.fetch_web.fetch_profcourse_info only)
+	(utreview.services.fetch_web.fetch_prof_course_info only)
 	:param in_file: file the data was fetched to
 	:type in_file: str
 	"""
@@ -439,8 +439,8 @@ def populate_course(course_info, cur_sem=None):
 	Populate database with courses
 	:param course_info: list of dictionaries containing course data
 	:type course_info: list[dict]
-	:param cur_sem: whether to keep the current semester. if set to None, it will be overriden with most recent value
-	:type cur_sem: bool or None
+	:param cur_sem: the current semester. if set to None, data will be replaced with most recent value
+	:type cur_sem: int or None
 	"""
 
 	__inherit = "(See Base Topic for inherited information.)"

@@ -1,6 +1,8 @@
 
 import pandas as pd
 
+from utreview import logger
+
 
 KEY_UNIQUE_NUM = "unique_num"
 KEY_COURSE_AVG = "course_avg"
@@ -44,8 +46,10 @@ def parse_ecis_excel(file_path, sheet_lst):
 
 		rows_skipped = 0
 		ecis_df = pd.read_excel(file_path, sheet_name=sheet)
+
 		for index, row in ecis_df.iterrows():
-			
+
+			# check for valid year semester string. If invalid, skip
 			yr_sem = str(row[__sem_key])
 			if len(yr_sem) < 5:
 				rows_skipped += 1
@@ -55,10 +59,6 @@ def parse_ecis_excel(file_path, sheet_lst):
 			yr = yr_sem[0:-1]
 			sem = yr_sem[-1]
 
-			unique_num = 0
-			num_students = 0
-			course_avg = 0
-			prof_avg = 0
 			# convert everything to int or float--> if N/A then fail and skip
 			try:
 
@@ -74,15 +74,16 @@ def parse_ecis_excel(file_path, sheet_lst):
 				num_students = int(num_students_str)
 				course_avg = float(row[__course_avg_key])
 				prof_avg = float(row[__prof_avg_key])
-			except (ValueError, IndexError) as e:
+			except (ValueError, IndexError):
 				rows_skipped += 1
 				continue
 
 			# TODO: add course and prof relationship once available
+			# create ecis dictionary
 			ecis = {
 				KEY_UNIQUE_NUM: unique_num,
 				KEY_COURSE_AVG: course_avg, 
-				KEY_PROF_AVG: course_avg, 
+				KEY_PROF_AVG: prof_avg,
 				KEY_NUM_STUDENTS: num_students, 
 				KEY_YR: yr, 
 				KEY_SEM: sem
@@ -90,6 +91,6 @@ def parse_ecis_excel(file_path, sheet_lst):
 
 			ecis_lst.append(ecis)
 
-		# print(f'Finished parsing {sheet} sheet: num_rows_skipped={rows_skipped}')	
+		logger.info(f'Finished parsing {sheet} sheet: num_rows_skipped={rows_skipped}')
 
 	return ecis_lst

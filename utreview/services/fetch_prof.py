@@ -1,9 +1,19 @@
-from .fetch_web import fetch_html
+
 from bs4 import BeautifulSoup as BSoup
 
-def fetch_prof(query):
+from .fetch_web import fetch_html
+from utreview import logger
 
-    # print(f"Fetching Prof: {query}")
+
+def fetch_prof(query):
+    """
+    Fetch professor name and eid from UT directory website
+    :param query: professor query to search on site
+    :type query: str
+    :return: name and eid of professor in format: (name, eid)
+    :rtype: tuple(str, str)
+    """
+    logger.debug(f"Fetching Prof: {query}")
 
     __name_tag = "Name"
     __eid_tag = "UT EID"
@@ -11,18 +21,22 @@ def fetch_prof(query):
     name = None
     eid = None
 
+    # fetch html from link, if None, cannot continue
     html = fetch_html('https://directory.utexas.edu/index.php?q='
-                        f'{query}'
-                        '&scope=faculty%2Fstaff&submit=Search')
+                      f'{query}'
+                      '&scope=faculty%2Fstaff&submit=Search')
 
     if html is None:
-        return None
+        logger.debug("Failed to fetch professor data: html is None")
+        return None, None
 
     soup = BSoup(html, "html.parser")
 
+    # search for data using the html elements surrounding ti
     prof_info_table = soup.find("table", {"class": "dir_info"})
     if prof_info_table is None:
-        return None
+        logger.debug("Failed to fetch professor data: professor info table does not exist")
+        return None, None
     prof_info_table = prof_info_table.findAll("tr")
     prof_info_table = [tr.findAll("td") for tr in prof_info_table]
 
@@ -39,4 +53,3 @@ def fetch_prof(query):
             eid = val
 
     return name, eid
-    

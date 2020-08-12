@@ -8,7 +8,7 @@ import time
 
 from .fetch_course_info import fetch_courses, fetch_dept_info
 from .fetch_ftp import fetch_ftp_files, fetch_sem_values, parse_ftp
-from .fetch_web import fetch_depts, fetch_profcourse_info, fetch_profcourse_semdepts
+from .fetch_web import fetch_depts, fetch_prof_course_info, fetch_prof_course_sem_depts
 from utreview import DEFAULT_LOG_FOLDER, logger, sem_current
 from utreview.database.populate_database import (
     populate_course,
@@ -27,6 +27,8 @@ def automate_backend(name):
         1. fetch ftp files and update scheduled course info
         2. read maintenance.txt and perform task as necessary
         3. organize log files
+    :param name: required parameter as function passed to thread
+    :type name: str
     """
     while True:
 
@@ -92,8 +94,8 @@ def run_maintenance():
                         populate_ecis(path, pages)
                 else:
                     if cmd == 'prof_course':
-                        sems, depts = fetch_profcourse_semdepts()
-                        fetch_profcourse_info(path, sems, depts)
+                        sems, depts = fetch_prof_course_sem_depts()
+                        fetch_prof_course_info(path, sems, depts)
                         populate_prof_course(path)
 
 

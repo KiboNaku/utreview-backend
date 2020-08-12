@@ -1,9 +1,12 @@
 
+import json
+import re
+
+from ftplib import FTP
 from os import chdir, getcwd
 from os.path import join, isfile
-from ftplib import FTP
-import re
-import json
+
+from utreview import logger
 
 
 filename_current = 'Current_Semester_Report'
@@ -23,12 +26,18 @@ __sem_label = "Report of all active classes for"
 
 
 def fetch_sem_values(ftp_dir, out_dir):
+	"""
+	fetch semester values from the FTP data files from the given directory
+	:param ftp_dir: the directory containing the ftp data files
+	:param out_dir: the directory to output a file containing the semester data
+	"""
 
 	files = (filename_current, filename_next, filename_future)
 	keys = (key_current, key_next, key_future)
 
-	outpath = join(out_dir, sem_file)
+	out_path = join(out_dir, sem_file)
 	sem_dict = {}
+	logger.info(f"Fetching semester values from dir={ftp_dir}, to file={out_path}")
 
 	for i in range(len(files)):
 
@@ -38,24 +47,22 @@ def fetch_sem_values(ftp_dir, out_dir):
 
 		if isfile(filepath):
 
-			lines = []
-
 			with open(filepath, 'r') as f:
 				lines = f.readlines()				
 				
 			for line in lines:
 				if __sem_label in line:
-					m = re.search('[A-Za-z ]+(\d{5}) (.*)?', line)
+					m = re.search(r'[A-Za-z ]+(\d{5}) (.*)?', line)
 					sem = m.group(1)
 		# else:
 			# print(f"Fetch Sem: cannot find file: {m_file} in {ftp_dir}")
 
 		sem_dict[keys[i]] = sem
 
-	with open(outpath, 'w') as f:
+	with open(out_path, 'w') as f:
 		json.dump(sem_dict, f)
 	
-	return outpath
+	return out_path
 
 
 def fetch_ftp_files(out_dir):
@@ -67,6 +74,8 @@ def fetch_ftp_files(out_dir):
 	__url = 'reg-it.austin.utexas.edu'
 	__username = 'anonymous'
 
+	logger.info(f"Downloading FTP data files to {out_dir}")
+
 	cur_dir = getcwd()
 
 	ftp = FTP(__url)
@@ -75,10 +84,10 @@ def fetch_ftp_files(out_dir):
 	chdir(out_dir)
 	for filename in (filename_current, filename_next, filename_future):
 
-		# print(f'FTP: downloading {filename}')
-		localfile = open(filename, 'wb')
-		ftp.retrbinary('RETR ' + filename, localfile.write, 1024)
-		localfile.close()
+		logger.debug(f'FTP: downloading {filename}')
+		local_file = open(filename, 'wb')
+		ftp.retrbinary('RETR ' + filename, local_file.write, 1024)
+		local_file.close()
 	
 	ftp.quit()
 
@@ -91,7 +100,8 @@ def parse_ftp(in_dir):
 	Args:
 		in_dir (str): directory containinig the ftp files
 	"""
-	
+
+	logger.info(f"Parsing FTP files from {in_dir}")
 	courses = []
 
 	for filename in (filename_current, filename_next, filename_future):
@@ -100,7 +110,7 @@ def parse_ftp(in_dir):
 
 		if isfile(filepath):
 
-			# print(f'FTP: parsing {filename}')
+			logger.debug(f'FTP: parsing {filename}')
 			with open(filepath) as f:
 
 				lines = f.readlines()
@@ -109,23 +119,29 @@ def parse_ftp(in_dir):
 				if categories is not None:
 
 					for line in lines:
-
+						# standardizing the lines
 						line = line.lower()
 						data = line.split("\t")
 						data = [d.strip() for d in data]
 
 						if len(line) > 0 and len(data) >= len(categories):
-
+							# separating data by category list
 							course = {categories[i]: data[i] for i in range(len(categories))}
 							courses.append(course)
-		# else:
-		# 	print(f'FTP: {filename} does not exist in {in_dir}')
+		else:
+			logger.debug(f'FTP: {filename} does not exist in {in_dir}')
 
 	return courses
 
 
 def __parse_categories(ftp_lines):
-
+	"""
+	iterate through the lines and parse out a list of categories for an FTP file
+	:param ftp_lines: list of lines from the ftp files
+	:type ftp_lines: list[str]
+	:return: a tuple containing (list of categories, the list of lines after the categories -> the entire list if None)
+	:rtype: tuple(list(str) or None, list[str])
+	"""
 	line_num = 0
 
 	for line in ftp_lines:
