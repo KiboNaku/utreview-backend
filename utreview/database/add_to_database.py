@@ -159,7 +159,7 @@ def check_or_add_xlist(x_listings, semester):
     return x_list
 
 
-def check_or_add_scheduled_course(scheduled_info, course, prof, x_list, semester):
+def check_or_add_scheduled_course(scheduled_info,  course, prof, x_list, semester):
     """
     Checks the database for the existence of the scheduled_course
     If it does, nothing happens.
@@ -187,6 +187,6 @@ def check_or_add_scheduled_course(scheduled_info, course, prof, x_list, semester
                     course={repr(course)}
                     prof={repr(prof)}""")
 
-        cur_schedule = scheduled_info.build_scheduled_course(course, prof, x_list)
+        cur_schedule = scheduled_info.build_scheduled_course(semester, course, prof, x_list)
         db.session.add(cur_schedule)
     return num_results, cur_schedule

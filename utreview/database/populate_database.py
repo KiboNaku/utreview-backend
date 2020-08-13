@@ -391,12 +391,12 @@ def populate_scheduled_course(course_info):
 					semester={repr(semester)}
 					course={repr(cur_course)}
 					prof={repr(cur_prof)}""")
-			scheduled.to_scheduled_course(cur_schedule, cur_course, cur_prof, x_list)
+			scheduled.to_scheduled_course(cur_schedule, semester, cur_course, cur_prof, x_list)
 
 		# add prof course and prof course semester relationship if doesnt exist
 		if cur_prof:
 			_, prof_course = check_or_add_prof_course(cur_prof, cur_course)
-			check_or_add_prof_course_semester(scheduled.unique_no, prof_course, semester)
+			check_or_add_prof_course_semester(scheduled.unique_no, prof_course, semester)	
 
 		# update course and prof semester fields (whether they are teaching the respective semesters)
 		full_semester = int(str(semester.year) + str(semester.semester))

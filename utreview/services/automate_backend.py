@@ -37,10 +37,10 @@ def automate_backend(name):
         dt_tmr = dt_today + datetime.timedelta(days=1)
         dt_tmr = dt_tmr.replace(hour=1, minute=0)
 
-        until_start = int((dt_tmr - dt_today).total_seconds())
-        logger.info(f"Waiting {until_start} seconds until start time")
-        for _ in range(until_start):
-            time.sleep(1)
+        # until_start = int((dt_tmr - dt_today).total_seconds())
+        # logger.info(f"Waiting {until_start} seconds until start time")
+        # for _ in range(until_start):
+        #     time.sleep(1)
 
         # task 1: fetch ftp files and update scheduled course info
         logger.info("Fetching new ftp files")
