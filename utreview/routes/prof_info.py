@@ -145,6 +145,7 @@ def get_scheduled_prof(scheduled_prof):
 
     x_listed = []
     x_listed_ids = []
+    x_listed_ids.append(scheduled_prof.course.id)
     if(scheduled_prof.xlist is not None):
         for x_course in scheduled_prof.xlist.courses:
             if(x_course.course.id in x_listed_ids):

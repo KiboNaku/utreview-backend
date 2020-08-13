@@ -88,12 +88,10 @@ def get_grades(conn, prof_name, course_dept, course_num):
     query += " and dept like '%" + course_dept + "%'"
     query += " and prof like '%" + prof_name + "%'"
     query += " and course_nbr like '%" + course_num + "%'"
-    print(query)
     cur.execute(query)
 
     # fetch row, return None if nothing fetched
     rows = cur.fetchall()
-    print(rows)
     if len(rows) == 0:
         return None
     

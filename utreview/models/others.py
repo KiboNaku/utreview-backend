@@ -72,7 +72,7 @@ class ScheduledCourse(db.Model):
     def __repr__(self):
         return f"""ScheduledCourse(
                                     '{self.unique_no}', 
-                                    '{self.prof.first_name} {self.prof.last_name}',
+                                    '',
                                     '{self.course.dept.abr} {self.course.num}', 
                                     '{self.semester.year}{self.semester.semester}', 
                                     '{self.location}'
