@@ -5,7 +5,15 @@ import json
 from string import ascii_lowercase
 from titlecase import titlecase
 
-from .add_to_database import *
+from .add_to_database import (
+	check_or_add_course,
+	check_or_add_prof,
+	check_or_add_scheduled_course,
+	check_or_add_semester,
+	check_or_add_prof_course,
+	check_or_add_prof_course_semester,
+	check_or_add_xlist
+)
 from .scheduled_course import ScheduledCourseInfo
 from utreview import SPRING_SEM, SUMMER_SEM, FALL_SEM, sem_current, sem_next, sem_future
 from utreview.models.course import *

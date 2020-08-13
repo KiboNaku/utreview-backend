@@ -1,5 +1,5 @@
 
-from .populate_database import ScheduledCourseInfo
+from .scheduled_course import ScheduledCourseInfo
 from utreview.models.course import *
 from utreview.models.others import *
 from utreview.models.prof import *
