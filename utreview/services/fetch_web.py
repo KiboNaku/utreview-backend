@@ -1,9 +1,11 @@
-import os
+
 import json
-from urllib.request import urlopen, http
+
 from bs4 import BeautifulSoup as BSoup
 from titlecase import titlecase
+from urllib.request import urlopen, http
 
+from utreview.services.logger import logger
 
 # ProfCourse dictionary keys
 KEY_SEM = 'sem'
@@ -13,37 +15,70 @@ KEY_CNUM = 'cnum'
 KEY_UNIQUE = 'unique'
 KEY_PROF = 'prof'
 
+# contains a list of failed requests
 failed_requests = []
 
+
 def fetch_html(url, attempt=1):
+    """
+    Fetch html from the provided url
+    :param url: link to site to fetch
+    :type url: str
+    :param attempt: attempt number for the url
+    :type attempt: int
+    :return: html object pertaining to the url
+    """
 
-    # print("fetching: ", url)
-
-    MAX_ATTEMPTS = 10
+    logger.debug("fetching: ", url)
+    __max_attempts = 10
 
     try:
         client = urlopen(url)
         html = client.read()
         client.close()
-    except http.client.HTTPException as e:
+    except http.client.HTTPException:
 
-        # print("URL Failed:", url, "Attempt:", attempt)
-        return fetch_html(url, attempt+1)
-
-        if attempt >= MAX_ATTEMPTS:
+        logger.debug(f"URL Failed: {url}, Attempt Number: {attempt}")
+        if attempt >= __max_attempts:
             failed_requests.append(url)
             return None
-
+        return fetch_html(url, attempt+1)
     return html
 
 
 def get_course_url(sem="spring", year=2020, dept="", c_num="", c_title="", u_num="", inst_first="", inst_last=""):
+    """
+    Generate url to site with syllabi/cvs data
+    Also contains data for professor, course, and unique number, separated by semester
+    :param sem: semester to search. Valid values: 'spring', 'summer', 'fall'
+    :type sem: str
+    :param year: year to search
+    :type year: int
+    :param dept: department to search
+    :type dept: str
+    :param c_num: course number to search
+    :type c_num: str
+    :param c_title: course title to search
+    :type c_title: str
+    :param u_num: unique number to search
+    :type u_num: str
+    :param inst_first: instructor first name to search
+    :type inst_first: str
+    :param inst_last: instructor last name to search
+    :type inst_last: str
+    :return: url to site
+    :rtype: str
+    """
 
-    sem_num = 2
-    if sem == "summer":
+    if sem == "spring":
+        sem_num = 2
+    elif sem == "summer":
         sem_num = 6
     elif sem == "fall":
         sem_num = 9
+    else:
+        logger.debug(f"Cannot parse semester: {sem}. Defaulting to spring...")
+        sem_num = 2
 
     return ('https://utdirect.utexas.edu/apps/student/coursedocs/nlogon/?'
             f'semester={year}{sem_num}'
@@ -56,17 +91,32 @@ def get_course_url(sem="spring", year=2020, dept="", c_num="", c_title="", u_num
             '&course_type=In+Residence&search=Search')
 
 
-
-def get_profcourse_url(semester="20202", department="E E"):
-
+def get_prof_course_url(semester="20202", department="E E"):
+    """
+    Generate url to site containing prof course mapping
+    :param semester: semester to search
+    :type semester: str
+    :param department: department to seatch
+    :type department: str
+    :return: url to the site
+    :rtype: str
+    """
     department = department.replace(" ", "+")
     return ("https://utdirect.utexas.edu/apps/student/coursedocs/nlogon/?"
             f"semester={semester}&department={department}&course_number=&course_title=&"
             "unique=&instructor_first=&instructor_last=&course_type=In+Residence&course_type=Extension&search=Search")
 
 
-def fetch_profcourse_info(out_file, sems, depts):
-
+def fetch_prof_course_info(out_file, sems, depts):
+    """
+    Parse prof course info from the site -> for the relationship
+    :param out_file: file to output the relationships/data
+    :type out_file: str
+    :param sems: semesters to fetch data for
+    :type sems: list[str]
+    :param depts: departments to fetch data for
+    :type depts: list[str]
+    """
     __sem_header = 'SEMESTER'
     __dept_header = 'DEPT'
     __title_header = 'TITLE'
@@ -74,33 +124,47 @@ def fetch_profcourse_info(out_file, sems, depts):
     __unique_header = 'UNIQUE'
     __instr_header = 'INSTRUCTOR(S)*'
 
-    prof_courses = []
+    logger.info(f"Fetching prof_course info. Output={out_file}. Semesters={sems}. Departments={depts}")
 
     for sem in sems:
         for dept in depts:
-            
-            html = fetch_html(get_profcourse_url(sem, dept))
+
+            # get BeautifulSoup object for the parameters
+            html = fetch_html(get_prof_course_url(sem, dept))
             html_soup = BSoup(html, "html.parser")
 
+            # look for headers on page -> headers for the table
             headers = html_soup.find("tr", {"class": "tbh header"})
             if headers is None:
-                # print("Cannot find headers for profcourse search. Skipping...")
+                logger.debug("Cannot find headers for prof_course search: "
+                             f"Semester={sem}, Department={dept}. Skipping...")
                 continue
             headers = [header.text.replace("\n", "").strip() for header in headers.findAll("th")]
-            # print("Fetched headers from profcourse site:", headers)
+            logger.debug(f"Fetched headers from profcourse site with headers: {headers}")
 
+            # parse out indices for each of the headers
             sem_index, dept_index, title_index, cnum_index, unique_index, instr_index = get_header_indices(
-                headers, __sem_header, __dept_header, __title_header, __course_num_header, __unique_header, __instr_header
-                )
+                headers,
+                __sem_header,
+                __dept_header,
+                __title_header,
+                __course_num_header,
+                __unique_header,
+                __instr_header
+            )
 
+            # iterate through each row in the web table and parse out data
             rows = html_soup.findAll("tr", {"class": ["tboff", "tbon"]})
             for row in rows:
                 cols = row.findAll("td")
                 cols = [col.text.replace("\n", "").strip() for col in cols]
 
+                # get data via the indices for the headers
                 for i in range(len(cols)):
                     if 'CV' in cols[i]:
                         cols[i] = cols[i].split('CV')[0].strip()
+
+                # create dictionary containing the data
                 prof_course = {
                     KEY_SEM: cols[sem_index] if sem_index is not None else None,
                     KEY_DEPT: cols[dept_index] if dept_index is not None else None,
@@ -110,48 +174,81 @@ def fetch_profcourse_info(out_file, sems, depts):
                     KEY_PROF: cols[instr_index] if instr_index is not None else None
                 }
 
+                # write dictionary to file
                 with open(out_file, "a") as f:
                     json.dump(prof_course, f)
                     f.write("\n")
     
 
-def fetch_profcourse_semdepts():
+def fetch_prof_course_sem_depts():
+    """
+    From the professor course site, fetch lists of the semesters and departments available
+    :return: list of semesters and departments (semesters, departments)
+    :rtype: tuple(list[str], list[str])
+    """
     
     base_html = fetch_html("https://utdirect.utexas.edu/apps/student/coursedocs/nlogon/")
     if base_html is None:
-        # print("Failed to fetch profcourse info")
-        return prof_courses
+        logger.debug("Failed to fetch prof_course semester and department lists")
+        return None
     
     base_soup = BSoup(base_html, "html.parser")
-    sems = parse_profcourse_sems(base_soup)[1:]
-    depts = parse_profcourse_depts(base_soup)[1:]
+    sems = parse_prof_course_sems(base_soup)[1:]
+    depts = parse_prof_course_depts(base_soup)[1:]
 
     return sems, depts
 
 
 def get_header_indices(headers, *header_vals):
-
+    """
+    Provided a list of headers and some headers, find the indices for each of the second set of headers
+    :param headers: list of headers to search through
+    :type headers: list[str]
+    :param header_vals: list of headers to find indices for
+    :return: a tuple of indices for the headers
+    :rtype: list[int]
+    """
     indices = []
     for header in header_vals:
         try:
             index = headers.index(header)
             indices.append(index)
         except ValueError:
-            # print("Cannot find index for:", header)
+            logger.debug(f"Cannot find index for: {header}")
             indices.append(None)
     return tuple(indices)
 
 
-def parse_profcourse_depts(base_soup):
-    return [option['value'] for option in base_soup.find("select", {"id": "id_department"}).findAll("option", value=True)]
+def parse_prof_course_depts(base_soup):
+    """
+    Parse out a list of departments from the beautiful soup object
+    :param base_soup: object containing department list
+    :type base_soup: BeautifulSoup
+    :return: list of departments
+    :rtype: list[str]
+    """
+    return [option['value']
+            for option in base_soup.find("select", {"id": "id_department"}).findAll("option", value=True)]
 
 
-def parse_profcourse_sems(base_soup):
-    return [option['value'] for option in base_soup.find("select", {"id": "id_semester"}).findAll("option", value=True)]
+def parse_prof_course_sems(base_soup):
+    """
+    Parse out a list of semesters from the beautiful soup object
+    :param base_soup: object containing semester list
+    :type base_soup: BeautifulSoup
+    :return: list of semesters
+    :rtype: list[str]
+    """
+    return [option['value']
+            for option in base_soup.find("select", {"id": "id_semester"}).findAll("option", value=True)]
 
 
 def fetch_depts():
-
+    """
+    Fetch list of departments from the site
+    :return: list of departments at UT Austin
+    :rtype: list[str]
+    """
     c_html = fetch_html('https://registrar.utexas.edu/staff/fos')
 
     if c_html is None:
@@ -177,6 +274,9 @@ def fetch_depts():
     return depts
 
 
+# -------------Below contains functions no longer in use---------------
+# Initial use: fetching course and professor data from UT website
+# Problem: too many requests causes warnings to go off for their security
 def fetch_course_info(depts, sem="spring", year=2020):
 
     f_courses = []
@@ -233,7 +333,7 @@ def fetch_prof_info(depts, sem="spring", year=2020):
     return f_profs
 
 
-def collapse_prof_info(info, profs=[]):
+def collapse_prof_info(info, profs=None):
 
     p_name = info[5]
 
@@ -241,9 +341,10 @@ def collapse_prof_info(info, profs=[]):
         child.decompose()
     p_name = p_name.text.strip()
 
-    for prof in profs:
-        if prof.get("name") == p_name:
-            return None
+    if profs is not None:
+        for prof in profs:
+            if prof.get("name") == p_name:
+                return None
 
     ecis_search = ("http://utdirect.utexas.edu/ctl/ecis/results/index.WBX?&s_in_action_sw=S&s_in_search_type_sw=N&"
                    f"s_in_search_name={p_name.replace(' ', '+').replace(',', '%2C')}")
@@ -255,16 +356,18 @@ def collapse_prof_info(info, profs=[]):
     }
 
 
-def collapse_course_info(dept, info, courses=[]):
+def collapse_course_info(dept, info, courses=None):
 
     c_num = info[2].text
     c_name = info[3].text
 
-    for course in courses:
-        if course.get("dept") == dept and course.get("num") == c_num:
-            return None
+    if courses is not None:
+        for course in courses:
+            if course.get("dept") == dept and course.get("num") == c_num:
+                return None
 
-    ecis_search = ("http://utdirect.utexas.edu/ctl/ecis/results/index.WBX?s_in_action_sw=S&s_in_search_type_sw=C&s_in_max_nbr_return=10&"
+    ecis_search = ("http://utdirect.utexas.edu/ctl/ecis/results/index.WBX?"
+                   "s_in_action_sw=S&s_in_search_type_sw=C&s_in_max_nbr_return=10&"
                    f"s_in_search_course_dept={dept.replace(' ', '+')}&s_in_search_course_num={c_num}")
     ecis = fetch_ecis_scores(ecis_search, scores=[])
 
@@ -276,7 +379,10 @@ def collapse_course_info(dept, info, courses=[]):
     }
 
 
-def fetch_ecis_scores(url, scores=[], c_mode=True):
+def fetch_ecis_scores(url, scores=None, c_mode=True):
+
+    if scores is None:
+        scores = []
 
     html = fetch_html(url)
     if html is None:
@@ -312,51 +418,3 @@ def fetch_ecis_scores(url, scores=[], c_mode=True):
         "&".join(i["name"].replace(" ", "+") + "=" +
                  i["value"].replace(" ", "+") for i in np_info)
     return fetch_ecis_scores(np_link, scores=scores)
-
-
-# # temporary debugging function
-# def print_all_courses():
-
-#     courses = fetch_course_info()
-#     for course in courses:
-
-#         ecis = course.get("ecis")
-#         score = 0
-#         num_students = 0
-#         for n, s in ecis:
-#             num_students += n
-#             score += n*s
-
-#         avg = "N/A"
-#         if num_students > 0:
-#             avg = str(score/num_students)
-
-#         print(course.get("dept"), course.get("num"), course.get(
-#             "name"), avg, str(num_students), sep="\t")
-
-#     print("-----------Failed URLS---------")
-#     for url in failed_requests:
-#         print(url)
-
-
-# # temporary debugging function
-# def print_all_profs():
-#     profs = fetch_prof_info()
-#     for prof in profs:
-
-#         ecis = prof.get("ecis")
-#         score = 0
-#         num_students = 0
-#         for dept, c_num, n, s in ecis:
-#             score += s*n
-#             num_students += n
-
-#         avg = "N/A"
-#         if num_students > 0:
-#             avg = str(score/num_students)
-
-#         print(prof.get("name"), avg, str(num_students), sep="\t")
-
-#     print("-----------Failed URLS---------")
-#     for url in failed_requests:
-#         print(url)

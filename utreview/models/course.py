@@ -1,8 +1,11 @@
 
 from utreview import db
 
+
 class Topic(db.Model):
-    
+    """
+    Class containing list of courses corresponding to the same topic group
+    """
     id = db.Column(db.Integer, primary_key=True)
     courses = db.relationship("Course", backref="topic", lazy=True)
 
@@ -17,7 +20,9 @@ class Topic(db.Model):
 
 
 class UserCourse(db.Model):
-
+    """
+    Class corresponding to a course that a user took in a given semester
+    """
     id = db.Column(db.Integer, primary_key=True)
 
     unique_num = db.Column(db.Integer, nullable=True)
@@ -28,9 +33,12 @@ class UserCourse(db.Model):
 
 
 class Course(db.Model):
-
+    """
+    Class corresponding to data for a course at UT Austin
+    """
     id = db.Column(db.Integer, primary_key=True)
-    
+
+    # course catalog data fields
     num = db.Column(db.String(6), nullable=False)
     title = db.Column(db.String(100), nullable=False)
 
@@ -41,9 +49,7 @@ class Course(db.Model):
     # note: possible for a course to have a base topic but no further topics
     topic_num = db.Column(db.Integer, default=-1)
 
-    topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'), nullable=True)
-    dept_id = db.Column(db.Integer, db.ForeignKey('dept.id'), nullable=False)
-    
+    # ecis fields
     # update on review submission/ecis update
     ecis_avg = db.Column(db.Float, nullable=True)
     ecis_students = db.Column(db.Integer, nullable=False, default=0)
@@ -53,10 +59,16 @@ class Course(db.Model):
     usefulness = db.Column(db.Float, nullable=True)
     workload = db.Column(db.Float, nullable=True)
 
+    # scheduled/semester fields -> True if the course is taught at the specified semester
     current_sem = db.Column(db.Boolean, nullable=False, default=False)
     next_sem = db.Column(db.Boolean, nullable=False, default=False)
     future_sem = db.Column(db.Boolean, nullable=False, default=False)
 
+    # id fields
+    topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'), nullable=True)
+    dept_id = db.Column(db.Integer, db.ForeignKey('dept.id'), nullable=False)
+
+    # relationship fields
     user_courses = db.relationship('UserCourse', backref='course', lazy=True)
     reviews = db.relationship('CourseReview', backref='course', lazy=True)
     scheduled = db.relationship('ScheduledCourse', backref='course', lazy=True)
@@ -67,7 +79,9 @@ class Course(db.Model):
 
 
 class CrossListed(db.Model):
-    
+    """
+    Class containing list of ScheduledCourse objects that are cross-listed
+    """
     id = db.Column(db.Integer, primary_key=True)
     courses = db.relationship('ScheduledCourse', backref='xlist', lazy=True)
 

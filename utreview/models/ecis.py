@@ -3,7 +3,9 @@ from utreview import db
 
 
 class EcisScore(db.Model):
-
+    """
+    Class to contain ECIS data for given professor, course, semester, and unique_number
+    """
     id = db.Column(db.Integer, primary_key=True)
 
     course_avg = db.Column(db.Float, nullable=False)
@@ -20,4 +22,3 @@ class EcisScore(db.Model):
                                 course_avg={self.course_avg}, prof_avg={self.prof_avg},
                                 num_students={self.num_students}
                                 )"""
-
