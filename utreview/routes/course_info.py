@@ -315,6 +315,7 @@ def get_scheduled_course(scheduled_course):
 
     x_listed = []
     x_listed_ids = []
+    x_listed_ids.append(scheduled_course.course.id)
     if(scheduled_course.xlist is not None):
         for x_course in scheduled_course.xlist.courses:
             if(x_course.course.id in x_listed_ids):
@@ -374,17 +375,17 @@ def get_course_schedule(course, is_parent):
     current_list = []
     future_list = []
     courses_scheduled_ids = []
-    courses_scheduled = course.scheduled
+    courses_scheduled = course.scheduled.copy()
     for i in range(len(course.scheduled)):
         courses_scheduled_ids.append(course.scheduled[i].id)
     if(is_parent):
         topic = course.topic
         for topic_course in topic.courses:
-            for i in range(len(topic_course.scheduled)):
-                if(topic_course.scheduled[i].id in courses_scheduled_ids):
+            for topic_scheduled in topic_course.scheduled:
+                if(topic_scheduled.id in courses_scheduled_ids):
                     continue
-                courses_scheduled_ids.append(topic_course.scheduled[i].id)
-                courses_scheduled.append(topic_course.scheduled[i])
+                courses_scheduled_ids.append(topic_scheduled.id)
+                courses_scheduled.append(topic_scheduled)
     for scheduled_course in courses_scheduled:
         scheduled_obj = get_scheduled_course(scheduled_course)
         if(scheduled_course.semester.year == current_sem['year'] and
