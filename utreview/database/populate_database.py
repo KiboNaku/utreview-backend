@@ -230,28 +230,32 @@ def populate_prof_eid(profs):
         last_words = [word.strip() for word in last.split(' ') if len(word.strip()) > 0]
         first_words = [word.strip() for word in first.split(' ') if len(word.strip()) > 0]
 
-        target_prof = None
-        for cur_prof in cur_profs:
-            found = True
+		# check if professor exists by eid
+        target_prof = Prof.query.filter_by(eid=eid).first()
 
-            cur_last, cur_first = cur_prof.last_name.lower(), cur_prof.first_name.lower()
-            cur_last_words = [word.strip() for word in cur_last.split(' ') if len(word.strip()) > 0]
-            cur_first_words = [word.strip() for word in cur_first.split(' ') if len(word.strip()) > 0]
+		# if None then check by name matching		
+        if target_prof is None:
+			for cur_prof in cur_profs:
+				found = True
 
-            for word in cur_last_words:
-                if word not in last_words:
-                    found = False
-                    break
-            
-            if found:
-                for word in cur_first_words:
-                    if word not in first_words:
-                        found = False
-                        break
-            
-            if found:
-                target_prof = cur_prof
-                break
+				cur_last, cur_first = cur_prof.last_name.lower(), cur_prof.first_name.lower()
+				cur_last_words = [word.strip() for word in cur_last.split(' ') if len(word.strip()) > 0]
+				cur_first_words = [word.strip() for word in cur_first.split(' ') if len(word.strip()) > 0]
+
+				for word in cur_last_words:
+					if word not in last_words:
+						found = False
+						break
+				
+				if found:
+					for word in cur_first_words:
+						if word not in first_words:
+							found = False
+							break
+				
+				if found:
+					target_prof = cur_prof
+					break
 
         first = first.title()
         last = last.title()
