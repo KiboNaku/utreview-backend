@@ -83,7 +83,7 @@ def populate_ecis(file_path, pages):
 			ecis[KEY_PROF_AVG],
 			ecis[KEY_NUM_STUDENTS],
 			ecis[KEY_YR],
-			ecis[KEY_SEM]
+			ecis[KEY_SEMESTER]
 		)
 
 		# check for existence of specified Semester, ProfCourseSemester in database
@@ -192,7 +192,7 @@ def populate_prof_course(in_file):
 					course = c
 
 		# check if prof_course exists -> add if it doesn't
-		prof_course_obj = check_or_add_prof_course(prof, course)
+		_, prof_course_obj = check_or_add_prof_course(prof, course)
 
 		# parse semester to integer representation
 		sem_lst = [s.strip() for s in prof_course[KEY_SEM].split(",")]
@@ -213,6 +213,60 @@ def populate_prof_course(in_file):
 
 		# check for prof_course_semester existence -> if it doesn't add to database
 		check_or_add_prof_course_semester(prof_course[KEY_UNIQUE], prof_course_obj, sem_obj)
+
+
+def populate_prof_eid(profs):
+
+    cur_profs = Prof.query.all()
+
+    for name, eid in profs:
+        if ',' not in name:
+            logger.debug(f'Invalid prof name: {name}')
+            continue
+        
+        name = name.lower()
+        name = name.split(',')
+        last, first = name[0].strip(), name[1].strip()
+        last_words = [word.strip() for word in last.split(' ') if len(word.strip()) > 0]
+        first_words = [word.strip() for word in first.split(' ') if len(word.strip()) > 0]
+
+        target_prof = None
+        for cur_prof in cur_profs:
+            found = True
+
+            cur_last, cur_first = cur_prof.last_name.lower(), cur_prof.first_name.lower()
+            cur_last_words = [word.strip() for word in cur_last.split(' ') if len(word.strip()) > 0]
+            cur_first_words = [word.strip() for word in cur_first.split(' ') if len(word.strip()) > 0]
+
+            for word in cur_last_words:
+                if word not in last_words:
+                    found = False
+                    break
+            
+            if found:
+                for word in cur_first_words:
+                    if word not in first_words:
+                        found = False
+                        break
+            
+            if found:
+                target_prof = cur_prof
+                break
+
+        first = first.title()
+        last = last.title()
+
+        if target_prof is None:
+            logger.debug(f'Adding new prof: {first} {last}')
+            new_prof = Prof(first_name=first, last_name=last, eid=eid)
+            db.session.add(new_prof)
+        else: 
+            logger.debug(f'Updating prof: {target_prof.first_name} {target_prof.last_name} -> {first} {last}')
+            target_prof.first_name = first
+            target_prof.last_name = last
+            target_prof.eid = eid
+
+        db.session.commit()
 
 
 def populate_dept(dept_info, override=False):

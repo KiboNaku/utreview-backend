@@ -9,7 +9,7 @@ KEY_COURSE_AVG = "course_avg"
 KEY_PROF_AVG = "prof_avg"
 KEY_NUM_STUDENTS = "num_students"
 KEY_YR = "year"
-KEY_SEM = "semester"
+KEY_SEMESTER = "semester"
 
 
 def parse_ecis_excel(file_path, sheet_lst):
@@ -28,7 +28,7 @@ def parse_ecis_excel(file_path, sheet_lst):
 					KEY_PROF_AVG: float,
 					KEY_NUM_STUDENTS: int,
 					KEY_YR: int,
-					KEY_SEM: int,
+					KEY_SEMESTER: int,
 				}, ...
 			]
 	"""
@@ -86,7 +86,7 @@ def parse_ecis_excel(file_path, sheet_lst):
 				KEY_PROF_AVG: prof_avg,
 				KEY_NUM_STUDENTS: num_students, 
 				KEY_YR: yr, 
-				KEY_SEM: sem
+				KEY_SEMESTER: sem
 			}
 
 			ecis_lst.append(ecis)
