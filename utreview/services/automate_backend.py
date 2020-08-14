@@ -85,7 +85,9 @@ def run_maintenance():
         with open(__maintenance_txt_file, 'r') as f:
             commands = f.readlines()
 
-        for command in commands:
+        while len(commands) > 0:
+
+            command = commands[0]
             command_parts = command.split(' ')
             print(command, command_parts)
 
@@ -112,6 +114,10 @@ def run_maintenance():
                         ftp_info = parse_ftp("input_data")
                         reset_scheduled_info()
                         populate_scheduled_course(ftp_info)
+            
+            commands = commands[1:]
+            with open(__maintenance_txt_file, 'w') as f:
+                f.writelines
 
 
 def maintenance_course_task(path, pages):
