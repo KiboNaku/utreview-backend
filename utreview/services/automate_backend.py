@@ -49,14 +49,14 @@ def automate_backend(run_once):
                 time.sleep(1)
 
         # task 1: fetch ftp files and update scheduled course info
-        # logger.info("Fetching new ftp files")
-        # fetch_ftp_files('input_data')
-        # fetch_sem_values("input_data", "")
+        logger.info("Fetching new ftp files")
+        fetch_ftp_files('input_data')
+        fetch_sem_values("input_data", "")
 
-        # logger.info("Updating scheduled course database info")
-        # ftp_info = parse_ftp("input_data")
-        # reset_scheduled_info()
-        # populate_scheduled_course(ftp_info)
+        logger.info("Updating scheduled course database info")
+        ftp_info = parse_ftp("input_data")
+        reset_scheduled_info()
+        populate_scheduled_course(ftp_info)
 
         # task 2: read maintenance.txt and perform task as necessary
         run_maintenance()
@@ -117,7 +117,7 @@ def run_maintenance():
             
             commands = commands[1:]
             with open(__maintenance_txt_file, 'w') as f:
-                f.writelines
+                f.writelines(commands)
 
 
 def maintenance_course_task(path, pages):
