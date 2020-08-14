@@ -59,6 +59,7 @@ def fetch_prof(query):
 
 def parse_prof_csv(file_path):
 
+    __key_sem = 'CCYYS'
     __key_prof_name = 'INSTR_NAME'
     __key_prof_eid = 'INSTR_EID'
 
@@ -67,7 +68,14 @@ def parse_prof_csv(file_path):
     profs = set()
     for index, row in df.iterrows():
         
-        name, eid = row[__key_prof_name], row[__key_prof_eid]
-        profs.add((name.lower(), eid.lower()))
+        semester, name, eid = row[__key_sem], row[__key_prof_name], row[__key_prof_eid]
+        try:
+            semester = int(semester)
+        except ValueError:
+            logger.debug(f'Unable to parse semester {semester}. Defaulting to 0...')
+            semester = 0
 
+        profs.add((semester, name.lower(), eid.lower()))
+    
+    profs = sorted(list(profs), key=lambda x: x[0])
     return profs

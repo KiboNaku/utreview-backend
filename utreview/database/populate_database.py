@@ -216,25 +216,28 @@ def populate_prof_course(in_file):
 
 
 def populate_prof_eid(profs):
+	# profs must be sorted in order of semester
+	# NOTE: professors sometimes have different names by semester -> take most recent (check by eid)]
 
-    cur_profs = Prof.query.all()
+	cur_profs = Prof.query.all()
 
-    for name, eid in profs:
-        if ',' not in name:
-            logger.debug(f'Invalid prof name: {name}')
-            continue
-        
-        name = name.lower()
-        name = name.split(',')
-        last, first = name[0].strip(), name[1].strip()
-        last_words = [word.strip() for word in last.split(' ') if len(word.strip()) > 0]
-        first_words = [word.strip() for word in first.split(' ') if len(word.strip()) > 0]
+	for semester, name, eid in profs:
+		
+		if ',' not in name:
+			logger.debug(f'Invalid prof name: {name}')
+			continue
+		
+		name = name.lower()
+		name = name.split(',')
+		last, first = name[0].strip(), name[1].strip()
+		last_words = [word.strip() for word in last.split(' ') if len(word.strip()) > 0]
+		first_words = [word.strip() for word in first.split(' ') if len(word.strip()) > 0]
 
 		# check if professor exists by eid
-        target_prof = Prof.query.filter_by(eid=eid).first()
+		target_prof = Prof.query.filter_by(eid=eid).first()
 
 		# if None then check by name matching		
-        if target_prof is None:
+		if target_prof is None:
 			for cur_prof in cur_profs:
 				found = True
 
@@ -257,20 +260,20 @@ def populate_prof_eid(profs):
 					target_prof = cur_prof
 					break
 
-        first = first.title()
-        last = last.title()
+		first = first.title()
+		last = last.title()
 
-        if target_prof is None:
-            logger.debug(f'Adding new prof: {first} {last}')
-            new_prof = Prof(first_name=first, last_name=last, eid=eid)
-            db.session.add(new_prof)
-        else: 
-            logger.debug(f'Updating prof: {target_prof.first_name} {target_prof.last_name} -> {first} {last}')
-            target_prof.first_name = first
-            target_prof.last_name = last
-            target_prof.eid = eid
+		if target_prof is None:
+			logger.debug(f'Adding new prof: {first} {last}')
+			new_prof = Prof(first_name=first, last_name=last, eid=eid)
+			db.session.add(new_prof)
+		else: 
+			logger.debug(f'Updating prof: {target_prof.first_name} {target_prof.last_name} -> {first} {last}')
+			target_prof.first_name = first
+			target_prof.last_name = last
+			target_prof.eid = eid
 
-        db.session.commit()
+		db.session.commit()
 
 
 def populate_dept(dept_info, override=False):
