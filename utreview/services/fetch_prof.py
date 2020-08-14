@@ -1,4 +1,6 @@
 
+import pandas as pd
+
 from bs4 import BeautifulSoup as BSoup
 
 from .fetch_web import fetch_html
@@ -53,3 +55,19 @@ def fetch_prof(query):
             eid = val
 
     return name, eid
+
+
+def parse_prof_csv(file_path):
+
+    __key_prof_name = 'INSTR_NAME'
+    __key_prof_eid = 'INSTR_EID'
+
+    logger.info(f'Parsing prof csv file: {file_path}')
+    df = pd.read_csv(file_path)
+    profs = set()
+    for index, row in df.iterrows():
+        
+        name, eid = row[__key_prof_name], row[__key_prof_eid]
+        profs.add((name.lower(), eid.lower()))
+
+    return profs

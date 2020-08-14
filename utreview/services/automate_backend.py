@@ -15,14 +15,16 @@ from utreview.database.populate_database import (
     populate_dept,
     populate_dept_info,
     populate_ecis,
-    populate_scheduled_course,
     populate_prof_course,
+    populate_prof_eid,
+    populate_scheduled_course,
     reset_scheduled_info
 )
+from utreview.services.fetch_prof import parse_prof_csv
 from utreview.services.logger import DEFAULT_LOG_FOLDER, logger
 
 
-def automate_backend(name):
+def automate_backend(run_once):
     """
     Function used to automate backend tasks such as
         1. fetch ftp files and update scheduled course info
@@ -37,20 +39,24 @@ def automate_backend(name):
         dt_tmr = dt_today + datetime.timedelta(days=1)
         dt_tmr = dt_tmr.replace(hour=1, minute=0)
 
-        until_start = int((dt_tmr - dt_today).total_seconds())
-        logger.info(f"Waiting {until_start} seconds until start time")
-        for _ in range(until_start):
-            time.sleep(1)
+        if run_once:
+            run_once = False
+            logger.info('Running once for automation')
+        else:
+            until_start = int((dt_tmr - dt_today).total_seconds())
+            logger.info(f"Waiting {until_start} seconds until start time for automation")
+            for _ in range(until_start):
+                time.sleep(1)
 
         # task 1: fetch ftp files and update scheduled course info
-        logger.info("Fetching new ftp files")
-        fetch_ftp_files('input_data')
-        fetch_sem_values("input_data", "")
+        # logger.info("Fetching new ftp files")
+        # fetch_ftp_files('input_data')
+        # fetch_sem_values("input_data", "")
 
-        logger.info("Updating scheduled course database info")
-        ftp_info = parse_ftp("input_data")
-        reset_scheduled_info()
-        populate_scheduled_course(ftp_info)
+        # logger.info("Updating scheduled course database info")
+        # ftp_info = parse_ftp("input_data")
+        # reset_scheduled_info()
+        # populate_scheduled_course(ftp_info)
 
         # task 2: read maintenance.txt and perform task as necessary
         run_maintenance()
@@ -69,7 +75,7 @@ def run_maintenance():
             update ECIS info (semester basis)
         3. ‘prof_course <insert path to file> <insert comma separated page numbers>’
             update ProfCourse  relationships (should receive most of NEW info from FTP)
-        4. NOT IMPLEMENTED: ‘prof <insert path to file> <insert comma separated page numbers>’
+        4. ‘prof <insert path to file>'
             update Professor info (unlikely)
     """
     __maintenance_txt_file = "maintenance.txt"
@@ -81,13 +87,15 @@ def run_maintenance():
 
         for command in commands:
             command_parts = command.split(' ')
+            print(command, command_parts)
 
             if len(command_parts) >= 2:
-                cmd, path = command_parts[0], command_parts[1]
+                cmd, path = command_parts[0].strip(), command_parts[1].strip()
                 logger.info(f"Executing {cmd} {path}")
 
                 if len(command_parts) >= 3:
-                    pages = [int(page) for page in command_parts[2].split(',')]
+                    pages = [int(page.strip().replace('\'', "").replace("\"", "")) for page in command_parts[2].split(',')]
+                    print(pages)
 
                     if cmd == 'course':
                         maintenance_course_task(path, pages)
@@ -95,9 +103,15 @@ def run_maintenance():
                         populate_ecis(path, pages)
                 else:
                     if cmd == 'prof_course':
-                        sems, depts = fetch_prof_course_sem_depts()
-                        fetch_prof_course_info(path, sems, depts)
                         populate_prof_course(path)
+                    elif cmd == 'prof':
+                        profs = parse_prof_csv(path)
+                        populate_prof_eid(profs)
+                    elif cmd == 'ftp':
+                        logger.info("Updating scheduled course database info")
+                        ftp_info = parse_ftp("input_data")
+                        reset_scheduled_info()
+                        populate_scheduled_course(ftp_info)
 
 
 def maintenance_course_task(path, pages):
