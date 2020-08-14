@@ -2,6 +2,7 @@
 import datetime
 import logging
 import os
+import sys
 
 from logging.handlers import TimedRotatingFileHandler
 from pytz import timezone
@@ -46,4 +47,9 @@ def init_log():
     return logger
 
 
+def error_log_handler(type, value, tb):
+    logger.exception(f"Uncaught exception: {str(value)}")
+
+
 logger = init_log()
+sys.excepthook = error_log_handler
