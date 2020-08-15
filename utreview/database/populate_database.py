@@ -167,14 +167,45 @@ def populate_prof_course(in_file):
 	with open(in_file, 'r') as f:
 		for line in f:
 			prof_courses.append(json.loads(line))
+	cur_profs = Prof.query.all()
 
 	# add each prof-course relationship to the database if appropriate
 	for prof_course in prof_courses:
 
 		# check for existence of professor -> add if does not exist
-		prof_name = [name.strip() for name in prof_course[KEY_PROF].split(",")]
-		_, prof = check_or_add_prof(prof_name[1], prof_name[0])
+		prof_name = [name.strip() for name in prof_course[KEY_PROF].lower().split(",")]
+		last, first = prof_name[0].strip(), prof_name[1].strip()
+		last_words = [word.strip() for word in last.split(' ') if len(word.strip()) > 0]
+		first_words = [word.strip() for word in first.split(' ') if len(word.strip()) > 0]
 
+  
+		target_prof = None
+		for cur_prof in cur_profs:
+			found = True
+
+			cur_last, cur_first = cur_prof.last_name.lower(), cur_prof.first_name.lower()
+			cur_last_words = [word.strip() for word in cur_last.split(' ') if len(word.strip()) > 0]
+			cur_first_words = [word.strip() for word in cur_first.split(' ') if len(word.strip()) > 0]
+
+			for word in last_words:
+				if word not in cur_last_words:
+					found = False
+					break
+			
+			if found:
+				for word in first_words:
+					if word not in cur_first_words:
+						found = False
+						break
+			
+			if found:
+				target_prof = cur_prof
+				break
+		
+		if target_prof is None:
+			logger.debug(f"Cannot find prof: {prof_course[KEY_PROF]}. Skipping...")
+			continue
+  
 		# check for existence of department -> skip if does not exist
 		abr = prof_course[KEY_DEPT].strip().upper()
 		dept = Dept.query.filter_by(abr=abr).first()
@@ -190,9 +221,11 @@ def populate_prof_course(in_file):
 			for c in courses:
 				if c.topic_num <= 0:
 					course = c
-
+		db.session.commit()
+  
 		# check if prof_course exists -> add if it doesn't
-		_, prof_course_obj = check_or_add_prof_course(prof, course)
+		_, prof_course_obj = check_or_add_prof_course(target_prof, course)
+		db.session.commit()
 
 		# parse semester to integer representation
 		sem_lst = [s.strip() for s in prof_course[KEY_SEM].split(",")]
@@ -213,6 +246,7 @@ def populate_prof_course(in_file):
 
 		# check for prof_course_semester existence -> if it doesn't add to database
 		check_or_add_prof_course_semester(prof_course[KEY_UNIQUE], prof_course_obj, sem_obj)
+		db.session.commit()
 
 
 def populate_prof_eid(profs):
