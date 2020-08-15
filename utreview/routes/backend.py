@@ -15,3 +15,7 @@ def home():
 @app.route("/reset_password")
 def password():
     return render_template('reset_password.html', name='Andy', link='https://www.google.com')
+
+@app.route("/create_password")
+def create_password():
+    return render_template('create_password.html', name='Andy', link='https://www.google.com')

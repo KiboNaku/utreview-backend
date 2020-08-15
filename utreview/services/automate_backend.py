@@ -89,7 +89,6 @@ def run_maintenance():
 
             command = commands[0]
             command_parts = command.split(' ')
-            print(command, command_parts)
 
             if len(command_parts) >= 2:
                 cmd, path = command_parts[0].strip(), command_parts[1].strip()
@@ -97,7 +96,6 @@ def run_maintenance():
 
                 if len(command_parts) >= 3:
                     pages = [int(page.strip().replace('\'', "").replace("\"", "")) for page in command_parts[2].split(',')]
-                    print(pages)
 
                     if cmd == 'course':
                         maintenance_course_task(path, pages)
