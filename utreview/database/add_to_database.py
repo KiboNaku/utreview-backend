@@ -189,4 +189,5 @@ def check_or_add_scheduled_course(scheduled_info,  course, prof, x_list, semeste
 
         cur_schedule = scheduled_info.build_scheduled_course(semester, course, prof, x_list)
         db.session.add(cur_schedule)
+        db.session.commit()
     return num_results, cur_schedule

@@ -370,13 +370,16 @@ def reset_scheduled_info():
 	"""
 	Reset professor and course fields: current_sem, next_sem, and future_sem to False
 	"""
+	logger.info("Resetting scheduled info")
 	ScheduledCourse.query.delete()
+	db.session.commit()
 	query_lst = (Course.query.all(), Prof.query.all())
 	for queries in query_lst:
 		for query in queries:
 			query.current_sem = False
 			query.next_sem = False
 			query.future_sem = False
+			db.session.commit()
 		db.session.commit()
 
 
@@ -487,6 +490,7 @@ def populate_scheduled_course(course_info):
 					course={repr(cur_course)}
 					prof={repr(cur_prof)}""")
 			scheduled.to_scheduled_course(cur_schedule, semester, cur_course, cur_prof, x_list)
+		db.session.commit()
 
 		# add prof course and prof course semester relationship if doesnt exist
 		if cur_prof:
