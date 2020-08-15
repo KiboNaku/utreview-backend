@@ -12,7 +12,6 @@ ARG_RUN_ONCE = '--one'
 
 #  initiate backend thread for automation
 run_once = ARG_RUN_ONCE in sys.argv
-run_once = True
 
 automate_thread = threading.Thread(target=automate_backend, args=[run_once])
 automate_thread.daemon = True
