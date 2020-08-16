@@ -5,7 +5,9 @@ from utreview.models import *
 from utreview import app, db, bcrypt, jwt
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
 from flask_mail import Mail, Message
+from smtplib import SMTPRecipientsRefused
 import random
+from utreview.services.logger import logger
 
 mail = Mail(app)
 
@@ -65,10 +67,15 @@ def register():
             r_val['error'] = "An account already exists for this email."
         else:
             r_val['email'] = email
-            user.first_name = first_name
-            user.last_name = last_name
-            user.password_hash = password_hash
-            send_confirmation_email(user.email, user.first_name)
+            try:
+                send_confirmation_email(user.email, first_name)
+                user.first_name = first_name
+                user.last_name = last_name
+                user.password_hash = password_hash
+            except SMTPRecipientsRefused as e:
+                logger.error(f"Confirmation email error: {e}")
+                r_val['success'] = -2
+                r_val['error'] = "Invalid email.\nPlease make sure your entry does not include @utexas.edu as that is included automatically."
     else:
         r_val['email'] = email
         user = User(first_name=first_name, last_name=last_name,
@@ -76,7 +83,12 @@ def register():
                     verified=False, major_id=major_id, other_major=other_major)
         db.session.add(user)
         # sending confirmation email
-        send_confirmation_email(user.email, user.first_name)
+        try:
+            send_confirmation_email(user.email, first_name)
+        except SMTPRecipientsRefused as e:
+            logger.error(f"Confirmation email error: {e}")
+            r_val['success'] = -2
+            r_val['error'] = "Invalid email.\nPlease make sure your entry does not include @utexas.edu as that is included automatically."
 
     db.session.commit()
     return r_val
@@ -209,9 +221,14 @@ def login():
                 r_val["success"] = 1
                 r_val['token'] = get_user_token(email)
             else:
-                r_val["success"] = -101
-                r_val['error'] = "The account associated with this email address has not been verified."
-                send_confirmation_email(email, user.first_name)
+                try:
+                    r_val["success"] = -101
+                    r_val['error'] = "The account associated with this email address has not been verified."
+                    send_confirmation_email(email, user.first_name)
+                except SMTPRecipientsRefused as e:
+                    logger.error(f"Confirmation email error: {e}")
+                    r_val['success'] = -3
+                    r_val['error'] = "Invalid email.\nPlease make sure your entry does not include @utexas.edu as that is included automatically."
         else:
             r_val["success"] = -2
             r_val['error'] = "An account does not exist for this email."
@@ -222,9 +239,14 @@ def login():
                 r_val["success"] = 1
                 r_val['token'] = get_user_token(email)
             else:
-                r_val["success"] = -101
-                r_val['error'] = "The account associated with this email address has not been verified."
-                send_confirmation_email(email, user.first_name)
+                try:
+                    r_val["success"] = -101
+                    r_val['error'] = "The account associated with this email address has not been verified."
+                    send_confirmation_email(email, user.first_name)
+                except SMTPRecipientsRefused as e:
+                    logger.error(f"Confirmation email error: {e}")
+                    r_val['success'] = -2
+                    r_val['error'] = "Invalid email.\nPlease make sure your entry does not include @utexas.edu as that is included automatically."
         else:
             if user:
                 r_val["success"] = -1

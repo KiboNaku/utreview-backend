@@ -43,7 +43,11 @@ def automate_backend(run_once):
             run_once = False
             logger.info('Running once for automation')
         else:
+            __a_day_secs = 24 * 3600
             until_start = int((dt_tmr - dt_today).total_seconds())
+            if until_start > __a_day_secs:
+                until_start -= __a_day_secs
+
             logger.info(f"Waiting {until_start} seconds until start time for automation")
             for _ in range(until_start):
                 time.sleep(1)
