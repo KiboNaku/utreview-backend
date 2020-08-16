@@ -116,6 +116,7 @@ def get_topics():
 @app.route('/api/get_major', methods=['GET'])
 def get_major():
     majors = Dept.query.all()
+    majors = sorted(majors, key=lambda major: major.name)
     results = dict.fromkeys((range(len(majors))))
     i = 0
     for m in majors:
