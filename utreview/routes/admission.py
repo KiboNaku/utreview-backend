@@ -117,6 +117,17 @@ def check_verified_email():
     r_val = {'email': email, 'error': error}
     return r_val
 
+@app.route('/api/check_email_password', methods=['POST'])
+def check_email_password():
+    email = request.get_json()['email']
+    user = User.query.filter_by(email=email).first()
+    error = None
+    if user and not user.password_hash:
+        error = "This account does not have an associated password. Login with Google and then create a password."
+
+    r_val = {'email': email, 'error': error}
+    return r_val
+
 
 @app.route('/api/check_valid_password', methods=['POST'])
 def check_valid_password():
@@ -125,8 +136,9 @@ def check_valid_password():
     user = User.query.filter_by(email=email).first()
 
     error = None
-    if user and not bcrypt.check_password_hash(user.password_hash, password):
-        error = "Invalid email/password combination."
+    if user and user.password_hash:
+        if not bcrypt.check_password_hash(user.password_hash, password):
+            error = "Invalid email/password combination."
 
     r_val = {'email': email, 'error': error}
     return r_val
