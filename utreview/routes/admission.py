@@ -221,9 +221,14 @@ def login():
                 r_val["success"] = 1
                 r_val['token'] = get_user_token(email)
             else:
-                r_val["success"] = -101
-                r_val['error'] = "The account associated with this email address has not been verified."
-                send_confirmation_email(email, user.first_name)
+                try:
+                    r_val["success"] = -101
+                    r_val['error'] = "The account associated with this email address has not been verified."
+                    send_confirmation_email(email, user.first_name)
+                except SMTPRecipientsRefused as e:
+                    logger.error(f"Confirmation email error: {e}")
+                    r_val['success'] = -3
+                    r_val['error'] = "Invalid email.\nPlease make sure your entry does not include @utexas.edu as that is included automatically."
         else:
             r_val["success"] = -2
             r_val['error'] = "An account does not exist for this email."
@@ -234,9 +239,14 @@ def login():
                 r_val["success"] = 1
                 r_val['token'] = get_user_token(email)
             else:
-                r_val["success"] = -101
-                r_val['error'] = "The account associated with this email address has not been verified."
-                send_confirmation_email(email, user.first_name)
+                try:
+                    r_val["success"] = -101
+                    r_val['error'] = "The account associated with this email address has not been verified."
+                    send_confirmation_email(email, user.first_name)
+                except SMTPRecipientsRefused as e:
+                    logger.error(f"Confirmation email error: {e}")
+                    r_val['success'] = -2
+                    r_val['error'] = "Invalid email.\nPlease make sure your entry does not include @utexas.edu as that is included automatically."
         else:
             if user:
                 r_val["success"] = -1
