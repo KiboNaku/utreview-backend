@@ -1,4 +1,6 @@
 
+import pandas as pd
+
 from bs4 import BeautifulSoup as BSoup
 
 from .fetch_web import fetch_html
@@ -53,3 +55,27 @@ def fetch_prof(query):
             eid = val
 
     return name, eid
+
+
+def parse_prof_csv(file_path):
+
+    __key_sem = 'CCYYS'
+    __key_prof_name = 'INSTR_NAME'
+    __key_prof_eid = 'INSTR_EID'
+
+    logger.info(f'Parsing prof csv file: {file_path}')
+    df = pd.read_csv(file_path)
+    profs = set()
+    for index, row in df.iterrows():
+        
+        semester, name, eid = row[__key_sem], row[__key_prof_name], row[__key_prof_eid]
+        try:
+            semester = int(semester)
+        except ValueError:
+            logger.debug(f'Unable to parse semester {semester}. Defaulting to 0...')
+            semester = 0
+
+        profs.add((semester, name.lower(), eid.lower()))
+    
+    profs = sorted(list(profs), key=lambda x: x[0])
+    return profs

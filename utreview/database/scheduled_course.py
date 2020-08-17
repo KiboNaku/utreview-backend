@@ -73,13 +73,15 @@ class ScheduledCourseInfo:
 		self.seats_taken = int_or_none(s_course["Seats Taken"].strip())
 		self.x_listings = [listing.strip() for listing in s_course["X-Listings"].strip().split(",")]
 
-	def to_scheduled_course(self, scheduled_course, course, prof, x_list):
+	def to_scheduled_course(self, scheduled_course, semester, course, prof, x_list):
 		"""
 		Populate a ScheduledCourse with data from this class
 		:param scheduled_course: object to populate data
 		:type scheduled_course: ScheduledCourse
 		:param course: course object related to scheduled_course
 		:type course: Course
+		:param semester: model object containing semester id related to scheduled course
+		:type semester: Semester
 		:param prof: prof object related to scheduled_course
 		:type prof: Prof
 		:param x_list: cross_listed object related to scheduled_course
@@ -87,6 +89,7 @@ class ScheduledCourseInfo:
 		:return: reference back to scheduled_course parameter
 		:rtype: ScheduledCourse
 		"""
+		scheduled_course.unique_no = self.unique_no
 		scheduled_course.session = self.session
 		scheduled_course.days = self.days
 		scheduled_course.time_from = self.time_from
@@ -94,14 +97,17 @@ class ScheduledCourseInfo:
 		scheduled_course.location = self.location
 		scheduled_course.max_enrollment = self.max_enrollment
 		scheduled_course.seats_taken = self.seats_taken
+		scheduled_course.sem_id = semester.id
 		scheduled_course.course_id = course.id
 		scheduled_course.prof_id = prof.id if prof else None
 		scheduled_course.cross_listed = x_list.id
 		return scheduled_course
 
-	def build_scheduled_course(self, course, prof, x_list):
+	def build_scheduled_course(self, semester, course, prof, x_list):
 		"""
 		Populate a new ScheduledCourse with data from this class
+		:param semester: model object containing semester id related to scheduled course
+		:type semester: Semester
 		:param course: course object related to scheduled_course
 		:type course: Course
 		:param prof: prof object related to scheduled_course
@@ -112,7 +118,7 @@ class ScheduledCourseInfo:
 		:rtype: ScheduledCourse
 		"""
 		scheduled_course = ScheduledCourse()
-		return self.to_scheduled_course(scheduled_course, course, prof, x_list)
+		return self.to_scheduled_course(scheduled_course, semester, course, prof, x_list)
 
 
 def parse_location(title, building, room):

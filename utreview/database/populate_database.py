@@ -5,7 +5,15 @@ import json
 from string import ascii_lowercase
 from titlecase import titlecase
 
-from .add_to_database import *
+from .add_to_database import (
+	check_or_add_course,
+	check_or_add_prof,
+	check_or_add_scheduled_course,
+	check_or_add_semester,
+	check_or_add_prof_course,
+	check_or_add_prof_course_semester,
+	check_or_add_xlist
+)
 from .scheduled_course import ScheduledCourseInfo
 from utreview import SPRING_SEM, SUMMER_SEM, FALL_SEM, sem_current, sem_next, sem_future
 from utreview.models.course import *
@@ -75,7 +83,7 @@ def populate_ecis(file_path, pages):
 			ecis[KEY_PROF_AVG],
 			ecis[KEY_NUM_STUDENTS],
 			ecis[KEY_YR],
-			ecis[KEY_SEM]
+			ecis[KEY_SEMESTER]
 		)
 
 		# check for existence of specified Semester, ProfCourseSemester in database
@@ -159,14 +167,45 @@ def populate_prof_course(in_file):
 	with open(in_file, 'r') as f:
 		for line in f:
 			prof_courses.append(json.loads(line))
+	cur_profs = Prof.query.all()
 
 	# add each prof-course relationship to the database if appropriate
 	for prof_course in prof_courses:
 
 		# check for existence of professor -> add if does not exist
-		prof_name = [name.strip() for name in prof_course[KEY_PROF].split(",")]
-		_, prof = check_or_add_prof(prof_name[1], prof_name[0])
+		prof_name = [name.strip() for name in prof_course[KEY_PROF].lower().split(",")]
+		last, first = prof_name[0].strip(), prof_name[1].strip()
+		last_words = [word.strip() for word in last.split(' ') if len(word.strip()) > 0]
+		first_words = [word.strip() for word in first.split(' ') if len(word.strip()) > 0]
 
+  
+		target_prof = None
+		for cur_prof in cur_profs:
+			found = True
+
+			cur_last, cur_first = cur_prof.last_name.lower(), cur_prof.first_name.lower()
+			cur_last_words = [word.strip() for word in cur_last.split(' ') if len(word.strip()) > 0]
+			cur_first_words = [word.strip() for word in cur_first.split(' ') if len(word.strip()) > 0]
+
+			for word in last_words:
+				if word not in cur_last_words:
+					found = False
+					break
+			
+			if found:
+				for word in first_words:
+					if word not in cur_first_words:
+						found = False
+						break
+			
+			if found:
+				target_prof = cur_prof
+				break
+		
+		if target_prof is None:
+			logger.debug(f"Cannot find prof: {prof_course[KEY_PROF]}. Skipping...")
+			continue
+  
 		# check for existence of department -> skip if does not exist
 		abr = prof_course[KEY_DEPT].strip().upper()
 		dept = Dept.query.filter_by(abr=abr).first()
@@ -182,9 +221,11 @@ def populate_prof_course(in_file):
 			for c in courses:
 				if c.topic_num <= 0:
 					course = c
-
+		db.session.commit()
+  
 		# check if prof_course exists -> add if it doesn't
-		prof_course_obj = check_or_add_prof_course(prof, course)
+		_, prof_course_obj = check_or_add_prof_course(target_prof, course)
+		db.session.commit()
 
 		# parse semester to integer representation
 		sem_lst = [s.strip() for s in prof_course[KEY_SEM].split(",")]
@@ -205,6 +246,68 @@ def populate_prof_course(in_file):
 
 		# check for prof_course_semester existence -> if it doesn't add to database
 		check_or_add_prof_course_semester(prof_course[KEY_UNIQUE], prof_course_obj, sem_obj)
+		db.session.commit()
+
+
+def populate_prof_eid(profs):
+	# profs must be sorted in order of semester
+	# NOTE: professors sometimes have different names by semester -> take most recent (check by eid)]
+
+	cur_profs = Prof.query.all()
+
+	for semester, name, eid in profs:
+		
+		if ',' not in name:
+			logger.debug(f'Invalid prof name: {name}')
+			continue
+		
+		name = name.lower()
+		name = name.split(',')
+		last, first = name[0].strip(), name[1].strip()
+		last_words = [word.strip() for word in last.split(' ') if len(word.strip()) > 0]
+		first_words = [word.strip() for word in first.split(' ') if len(word.strip()) > 0]
+
+		# check if professor exists by eid
+		target_prof = Prof.query.filter_by(eid=eid).first()
+
+		# if None then check by name matching		
+		if target_prof is None:
+			for cur_prof in cur_profs:
+				found = True
+
+				cur_last, cur_first = cur_prof.last_name.lower(), cur_prof.first_name.lower()
+				cur_last_words = [word.strip() for word in cur_last.split(' ') if len(word.strip()) > 0]
+				cur_first_words = [word.strip() for word in cur_first.split(' ') if len(word.strip()) > 0]
+
+				for word in cur_last_words:
+					if word not in last_words:
+						found = False
+						break
+				
+				if found:
+					for word in cur_first_words:
+						if word not in first_words:
+							found = False
+							break
+				
+				if found:
+					target_prof = cur_prof
+					break
+
+		first = first.title()
+		last = last.title()
+
+		if target_prof is None:
+			logger.debug(f'Adding new prof: {first} {last}')
+			new_prof = Prof(first_name=first, last_name=last, eid=eid)
+			db.session.add(new_prof)
+		else: 
+			logger.debug(f'Updating prof: {target_prof.first_name} {target_prof.last_name} -> {first} {last}')
+			target_prof.first_name = first
+			target_prof.last_name = last
+			target_prof.eid = eid
+
+		db.session.commit()
 
 
 def populate_dept(dept_info, override=False):
@@ -267,13 +370,16 @@ def reset_scheduled_info():
 	"""
 	Reset professor and course fields: current_sem, next_sem, and future_sem to False
 	"""
+	logger.info("Resetting scheduled info")
 	ScheduledCourse.query.delete()
+	db.session.commit()
 	query_lst = (Course.query.all(), Prof.query.all())
 	for queries in query_lst:
 		for query in queries:
 			query.current_sem = False
 			query.next_sem = False
 			query.future_sem = False
+			db.session.commit()
 		db.session.commit()
 
 
@@ -383,12 +489,13 @@ def populate_scheduled_course(course_info):
 					semester={repr(semester)}
 					course={repr(cur_course)}
 					prof={repr(cur_prof)}""")
-			scheduled.to_scheduled_course(cur_schedule, cur_course, cur_prof, x_list)
+			scheduled.to_scheduled_course(cur_schedule, semester, cur_course, cur_prof, x_list)
+		db.session.commit()
 
 		# add prof course and prof course semester relationship if doesnt exist
 		if cur_prof:
 			_, prof_course = check_or_add_prof_course(cur_prof, cur_course)
-			check_or_add_prof_course_semester(scheduled.unique_no, prof_course, semester)
+			check_or_add_prof_course_semester(scheduled.unique_no, prof_course, semester)	
 
 		# update course and prof semester fields (whether they are teaching the respective semesters)
 		full_semester = int(str(semester.year) + str(semester.semester))
