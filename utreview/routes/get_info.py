@@ -1,4 +1,5 @@
 import timeago, datetime
+import json
 from flask import request, jsonify
 from flask_jwt_extended import (create_access_token)
 from utreview.models import *
@@ -129,6 +130,24 @@ def get_major():
 
     result = jsonify({"majors": results})
     return result
+
+
+@app.route('/api/get_semester', methods=['GET'])
+def get_semester():
+    with open('semester.txt') as f:
+        semesters = json.load(f)
+        for key, value in semesters.items():
+            if value is not None:
+                year = value[0:-1]
+                if value[-1] == '2':
+                    semesters[key] = f'Spring {year}'
+                elif value[-1] == '6':
+                    semesters[key] = f'Summer {year}'
+                elif value[-1] == '9':
+                    semesters[key] = f'Fall {year}'
+        return semesters
+
+    return None
 
 
 @app.route('/api/get_profs', methods=['POST'])
