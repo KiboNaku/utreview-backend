@@ -307,7 +307,7 @@ def send_confirmation_email(email, name=None):
     website = 'https://utexasreview.com/'
     # website = 'http://localhost:3000/'
 
-    link = website + "confirm_email?token=" + e_token
+    link = website + "confirm-email?token=" + e_token
 
     msg.html = render_template(
         'confirm_email.html', name=name, link=link, email=email)
