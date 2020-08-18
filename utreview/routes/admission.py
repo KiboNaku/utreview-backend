@@ -357,7 +357,7 @@ def send_reset_password(email, name=None):
     
     website = 'https://utexasreview.com/'
     # website = 'http://localhost:3000/'
-    link = website + "reset_password?token=" + e_token
+    link = website + "reset-password?token=" + e_token
 
     msg.html = render_template('reset_password.html', name=name, link=link)
     mail.send(msg)
@@ -374,6 +374,69 @@ def send_reset_email():
         return {'success': -3}
 
     return send_reset_password(email, user.first_name)
+
+@app.route('/api/send_create_password', methods=['POST'])
+def send_create_email():
+
+    email = request.get_json()['email']
+    user = User.query.filter_by(email=email).first()
+
+    if user is None:
+        return {'success': -3}
+
+    return send_create_password(email, user.first_name)
+
+def send_create_password(email, name=None):
+
+    r_val = {'success': 0}
+
+    if name is None:
+
+        user = User.query.filter_by(email=email).first()
+        if user is None:
+            r_val['success'] = -1
+            return r_val
+        name = user.first_name
+
+    r_val['success'] = 1
+    msg = Message(
+        'UT Review Password Creation',
+        sender=("UT Review", "utexas.review@gmail.com"),
+        recipients=[email])
+
+    # TODO: update link as needed
+    e_token = s.dumps(email, salt="create_password") 
+    
+    website = 'https://utexasreview.com/'
+    # website = 'http://localhost:3000/'
+    link = website + "create-password?token=" + e_token
+
+    msg.html = render_template('create_password.html', name=name, link=link)
+    mail.send(msg)
+    return r_val
+
+@app.route('/api/create_password_link', methods=['POST'])
+def create_password_link():
+
+    r_val = {'success': 0, 'error': None}
+
+    try:
+        token = request.get_json()['token']
+        email = s.loads(token, salt='create_password', max_age=3600)
+        user = User.query.filter_by(email=email).first()
+
+        r_val['success'] = 1
+    except SignatureExpired:
+        r_val["success"] = -2
+        r_val['error'] = "The password creation link has expired."
+    except BadTimeSignature:
+        r_val["success"] = -3
+        r_val['error'] = "The password creation link is invalid."
+    except KeyError:
+        r_val["success"] = -4
+        r_val['error'] = "No password creation link found."
+
+    return r_val
 
 
 @app.route('/api/reset_password_link', methods=['POST'])
