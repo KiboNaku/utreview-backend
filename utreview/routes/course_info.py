@@ -271,12 +271,13 @@ def time_to_string(time_to_string):
         time_string += " PM"
     return time_string
 
-def get_scheduled_course(scheduled_course):
+def get_scheduled_course(scheduled_course, is_parent):
     """
     Obtain information for the scheduled course
 
     Args:
         scheduled_course (model instance): scheduled course
+        is_parent (boolean): true if course is a parent topic
 
     Returns:
         scheduled_obj (obj): Contains detailed information about the scheduled course
@@ -319,6 +320,8 @@ def get_scheduled_course(scheduled_course):
     if(scheduled_course.xlist is not None):
         for x_course in scheduled_course.xlist.courses:
             if(x_course.course.id in x_listed_ids):
+                continue
+            if(is_parent and x_course.course.topic_num != 0):
                 continue
             x_listed_ids.append(x_course.course.id)
             x_listed_obj = {
@@ -387,7 +390,7 @@ def get_course_schedule(course, is_parent):
                 courses_scheduled_ids.append(topic_scheduled.id)
                 courses_scheduled.append(topic_scheduled)
     for scheduled_course in courses_scheduled:
-        scheduled_obj = get_scheduled_course(scheduled_course)
+        scheduled_obj = get_scheduled_course(scheduled_course, is_parent)
         if(scheduled_course.semester.year == current_sem['year'] and
         scheduled_course.semester.semester == current_sem['sem']):
             current_list.append(scheduled_obj)
