@@ -269,6 +269,10 @@ def login():
 
     return r_val
 
+@app.route('/api/refresh_user_token', methods=['POST'])
+def refresh_user_token():
+    email = request.get_json()['email']
+    return {'token': get_user_token(email) }
 
 def get_user_token(email):
 

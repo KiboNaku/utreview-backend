@@ -1,3 +1,11 @@
+"""
+This file contains routes to fetch information needed on the professor details page:
+    get_prof_reviews,
+    get_prof_schedule,
+    get_prof_courses
+
+"""
+
 import timeago, datetime
 from flask import request, jsonify
 from utreview.models import *
@@ -18,34 +26,41 @@ def prof_id():
         result (json): returns the prof id along with other information if successful, 
         returns an error if failed
     """
+    # get arg from front end and parse into separate words
     prof_string = request.get_json()['profString']
     prof_parsed = prof_string.split("_")
 
+    # check to see if input is valid, parse into first name and last name if valid
     invalid_input = False
     if(len(prof_parsed) == 2):
         first_name = prof_parsed[0]
         last_name = prof_parsed[1]
-        topic_num = -1
     else:
         invalid_input = True
 
     prof_found = False
     prof_id = None
+
+    # if input is valid, search for prof in database
     if(not invalid_input):
         profs = Prof.query.all()
         for prof in profs:
             prof_first = prof.first_name.lower().replace(" ", "")
             prof_last = prof.last_name.lower().replace(" ", "")
+
+            # if prof found, gather corresponding info
             if(first_name == prof_first and last_name == prof_last):
                 prof_found = True
                 prof_id = prof.id
                 result_first = prof.first_name
                 result_last = prof.last_name
 
+    # return prof information if found, return error if not found
     if(prof_found):
         result = jsonify({"profId": prof_id, "firstName": result_first, "lastName": result_last})
     else:
         result = jsonify({"error": "No prof was found"})
+
     return result
 
 @app.route('/api/prof_details', methods=['POST'])
@@ -71,15 +86,18 @@ def prof_details():
             "prof_schedule" (object): prof schedule
             "prof_reviews" (list): list of reviews for the prof
     """
+    # get args from front end
     prof_id = request.get_json()['profId']
     logged_in = request.get_json()['loggedIn']
     user_email = request.get_json()['userEmail']
 
+    # get user info if logged in
     if(logged_in):
         curr_user = User.query.filter_by(email=user_email).first()
     else:
         curr_user = None
 
+    # get basic prof info and median grade
     prof = Prof.query.filter_by(id=prof_id).first()
     median_grade = prof_median_grade(prof.first_name, prof.last_name)
     prof_info = {
@@ -89,10 +107,12 @@ def prof_details():
         "medianGrade": median_grade
     }
 
+    # get other more detailed prof info
     prof_rating, review_list = get_prof_reviews(prof, logged_in, curr_user)
     prof_schedule = get_prof_schedule(prof)
     course_list = get_prof_courses(prof)
 
+    # return object storing all prof details information
     result = jsonify({"prof_info": prof_info,
                       "prof_rating": prof_rating,
                       "prof_courses": course_list,
@@ -133,8 +153,8 @@ def get_scheduled_prof(scheduled_prof):
                     }
             }
     """
+    # get scheduled course and semester information
     course = scheduled_prof.course
-
     semester_name = ""
     if(scheduled_prof.semester.semester == 2):
         semester_name = "Spring"
@@ -143,9 +163,12 @@ def get_scheduled_prof(scheduled_prof):
     elif(scheduled_prof.semester.semester == 9):
         semester_name = "Fall"
 
+    # obtain list of all cross listed courses
     x_listed = []
     x_listed_ids = []
     x_listed_ids.append(scheduled_prof.course.id)
+
+    # iterate through all cross listed courses and append to list
     if(scheduled_prof.xlist is not None):
         for x_course in scheduled_prof.xlist.courses:
             if(x_course.course.id in x_listed_ids):
@@ -160,6 +183,7 @@ def get_scheduled_prof(scheduled_prof):
             }
             x_listed.append(x_listed_obj)
 
+    # return object with scheduled prof information
     scheduled_obj = {
         "id": scheduled_prof.id,
         'uniqueNum': scheduled_prof.unique_no,
@@ -177,6 +201,7 @@ def get_scheduled_prof(scheduled_prof):
         'semester': semester_name,
         'year': scheduled_prof.semester.year
     }
+
     return scheduled_obj
 
 def get_prof_schedule(prof):
@@ -193,18 +218,22 @@ def get_prof_schedule(prof):
             "futureSem" (list): list of scheduled prof for the future semester
         }
     """
+     # current and future semester, as labeled by FTP, update manually
     current_sem = {
         'year': 2020,
         'sem': 6
     }
-
     future_sem = {
         'year': 2020,
         'sem': 9
     }
+
+    # obtain list of scheduled profs for current and future semesters
     current_list = []
     future_list = []
     profs_scheduled = prof.scheduled
+
+    # for each scheduled prof instance, get scheduled prof information and append it to corresponding list
     for scheduled_prof in profs_scheduled:
         scheduled_obj = get_scheduled_prof(scheduled_prof)
         if(scheduled_prof.semester.year == current_sem['year'] and
@@ -213,6 +242,7 @@ def get_prof_schedule(prof):
         elif(scheduled_prof.semester.year == future_sem['year']  and
         scheduled_prof.semester.semester == future_sem['sem'] ):
             future_list.append(scheduled_obj)
+
     prof_schedule = {
         "currentSem": current_list,
         "futureSem": future_list
@@ -258,6 +288,7 @@ def get_review_info(review, logged_in, curr_user):
             'semester' (string): string representation of semester
         }
     """
+    # convert semester to string representation
     semester = review.semester.semester
     if(semester == 6):
         semester = "Summer"
@@ -268,8 +299,10 @@ def get_review_info(review, logged_in, curr_user):
     else:
         semester = "N/A"
     
+    # get prof review instance
     prof_review = review.prof_review[0]
 
+    # get user and course information
     user = review.author
     course = review.course_review[0].course
     user_major = user.major
@@ -279,21 +312,26 @@ def get_review_info(review, logged_in, curr_user):
     num_disliked = 0
     like_pressed = False
     dislike_pressed = False
+
+    # calculate number of likes and determine if current user liked the review
     for like in prof_review.users_liked:
         num_liked += 1
         if(logged_in):
             if(curr_user.id == like.user_id):
                 like_pressed = True
 
+    # calulcate number of dislikes and determine if current user disliked the review
     for dislike in prof_review.users_disliked:
         num_disliked += 1
         if(logged_in):
             if(curr_user.id == dislike.user_id):
                 dislike_pressed = True
     
+    # if the review comment is empty, return None
     if(prof_review.comments == ""):
         return None
 
+    # return detailed review information
     review_object = {
         'id': prof_review.id,
         'comments': prof_review.comments,
@@ -317,6 +355,7 @@ def get_review_info(review, logged_in, curr_user):
         'year': review.semester.year,
         'semester': semester
     }
+
     return review_object
 
 def get_prof_reviews(prof, logged_in, curr_user):
@@ -340,13 +379,18 @@ def get_prof_reviews(prof, logged_in, curr_user):
             }
         review_list (list): list of all reviews for the prof
     """
+    # obtain list of prof reviews
     prof_reviews = prof.reviews
     review_list = []
+
+    # iterate through all prof reviews and add to review list
     for prof_review in prof_reviews:
         review = prof_review.review
         review_object = get_review_info(review, logged_in, curr_user)
         if review_object:
             review_list.append(review_object)
+    
+    # return prof rating information
     prof_rating = {
         'eCIS': round(prof.ecis_avg, 1) if prof.ecis_avg != None else None,
         'percentLiked': round(prof.approval, 2) * 100 if prof.approval != None else None,
@@ -355,6 +399,7 @@ def get_prof_reviews(prof, logged_in, curr_user):
         'grading': round(prof.grading, 1) if prof.grading != None else None,
         'numRatings': prof.num_ratings
     }
+
     return prof_rating, review_list
 
 def get_prof_courses(prof):
@@ -378,18 +423,27 @@ def get_prof_courses(prof):
                 'eCIS' (float): ecis prof score
             }
     """
+    # obtain list of all courses taught by the prof
     course_list = []
     course_prof = prof.prof_course
+
+    # iterate through prof course instances and add to prof course list
     for prof_course in course_prof:
+
         course = prof_course.course
         course_ecis, prof_ecis = get_ecis(course, prof)
+
         prof_reviews = prof.reviews
         course_reviews = course.reviews
         review_ids = [prof_review.review_id for prof_review in prof_reviews]
+
+        # iterate through all prof reviews and calculate average metrics
         reviews = []
         for course_review in course_reviews:
             if(course_review.review_id in review_ids):
                 reviews.append(course_review.review)
+        
+        # calculate average metrics  
         if(len(reviews) == 0):
             percentLiked = None
             difficulty = None
@@ -400,6 +454,8 @@ def get_prof_courses(prof):
             difficulty = 0
             usefulness = 0
             workload = 0
+
+            # iterate through all the reviews
             for review in reviews:
                 course_review = review.course_review[0]
                 if(course_review.approval):
@@ -407,10 +463,13 @@ def get_prof_courses(prof):
                 difficulty += course_review.difficulty
                 usefulness += course_review.usefulness
                 workload += course_review.workload
+
             percentLiked = round(percentLiked/len(reviews), 2) * 100
             difficulty = round(difficulty/len(reviews), 1)
             usefulness = round(usefulness/len(reviews), 1)
             workload = round(workload/len(reviews), 1)
+
+        # return object containing course information
         course_obj = {
             'id': course.id,
             'courseDept': course.dept.abr,
