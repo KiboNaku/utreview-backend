@@ -576,6 +576,7 @@ def get_review_info(review, logged_in, curr_user):
         'numLiked': num_liked,
         'grade': review.grade,
         'numDisliked': num_disliked,
+        'writtenByUser': user.email == curr_user.email,
         'likePressed': like_pressed,
         'dislikePressed': dislike_pressed,
         'dateString': timeago.format(review.date_posted, datetime.datetime.utcnow()),
@@ -718,7 +719,7 @@ def get_course_profs(course, is_parent):
                 clear += prof_review.clear
                 engaging += prof_review.engaging
                 grading += prof_review.grading
-                
+
             percentLiked = round(percentLiked/len(reviews), 2) * 100
             clear = round(clear/len(reviews), 1)
             engaging = round(engaging/len(reviews), 1)
