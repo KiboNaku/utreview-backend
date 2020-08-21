@@ -576,7 +576,7 @@ def get_review_info(review, logged_in, curr_user):
         'numLiked': num_liked,
         'grade': review.grade,
         'numDisliked': num_disliked,
-        'writtenByUser': user.email == curr_user.email,
+        'writtenByUser': user.email == curr_user.email if logged_in else False,
         'likePressed': like_pressed,
         'dislikePressed': dislike_pressed,
         'dateString': timeago.format(review.date_posted, datetime.datetime.utcnow()),
