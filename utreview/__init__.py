@@ -87,7 +87,7 @@ SUMMER_SEM = 6
 FALL_SEM = 9
 
 sem_current, sem_next, sem_future = None, None, None
-update_sem_vals('semester.txt')
+update_sem_vals('input_data/semester.txt')
 
 app, db = create_app()
 bcrypt = Bcrypt(app)
