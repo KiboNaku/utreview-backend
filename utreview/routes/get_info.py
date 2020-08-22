@@ -18,25 +18,6 @@ from utreview.models import *
 from utreview import app, db
 from whoosh.fields import *
 
-
-@app.route('/api/get_course_num', methods=['GET'])
-def get_course_num():
-    courses = Course.query.all()
-    results = dict.fromkeys((range(len(courses))))
-    i = 0
-    for course in courses:
-        dept = course.dept
-        results[i] = {
-            'id': course.id,
-            'dept': dept.abr,
-            'num': course.num,
-            'title': course.title,
-        }
-        i = i+1
-
-    result = jsonify({"courses": results})
-    return result
-
 @app.route('/api/get_courses', methods=['POST'])
 def get_courses():
     """
@@ -56,19 +37,32 @@ def get_courses():
             'topicNum' (int): course topic number
         }
     """
+    # get arg from front end
     prof_id = request.get_json()['profId']
     
+    # find prof and get list of courses taught by the prof
     prof = Prof.query.filter_by(id=prof_id).first()
     prof_course = prof.prof_course
 
+    # iterate through courses and add to list if not a child topic course
     courses = []
+    course_ids = []
     for listing in prof_course:
+
+        # if the course is a child topic, add the parent topic to the list
         course = listing.course
         if(course.topic_num > 0):
             topic_courses = course.topic.courses
             for topic_course in topic_courses:
                 if(topic_course.topic_num == 0):
                     course = topic_course
+
+        # skip if the course is already in the list
+        if(course.id in course_ids):
+            continue
+        course_ids.append(course.id)
+
+        # create course object and append to list if not already in list
         dept = course.dept
         course_obj = {
             'id': course.id,
@@ -104,17 +98,24 @@ def get_topics():
             'topicId' (int): course topic id (if applicable)
         }
     """
+    # get args from front end
     topic_id = request.get_json()['topicId']
     prof_id = request.get_json()['profId']
 
+    # find prof and get list of courses taught by the prof
     prof = Prof.query.filter_by(id=prof_id).first()
     prof_course = prof.prof_course
 
+    # iterate through all courses and add to list if the topic ids match
     topics = []
     for listing in prof_course:
+
+        # skip if topic id doesn't match
         course = listing.course
         if(course.topic_id != topic_id):
             continue
+
+        # create topic object and append to list
         topic_obj = {
             'id': course.id,
             'topicTitle': course.title,
@@ -123,14 +124,28 @@ def get_topics():
         topics.append(topic_obj)
 
     result = jsonify({"topics": topics})
+
     return result
 
 
 @app.route('/api/get_major', methods=['GET'])
 def get_major():
+    """
+    Gathers list of all majors/departments and returns it to the front end
+
+    Returns:
+        results (list): list of all majors/departments
+        results[i] = {
+            'id' (int): major id,
+            'abr' (string): major abr,
+            'name' (string): major name
+        }
+    """
+
     majors = Dept.query.all()
     majors = sorted(majors, key=lambda major: major.name)
     results = dict.fromkeys((range(len(majors))))
+
     i = 0
     for m in majors:
         results[i] = {
@@ -141,6 +156,7 @@ def get_major():
         i = i+1
 
     result = jsonify({"majors": results})
+
     return result
 
 
@@ -178,10 +194,14 @@ def get_profs():
             'lastName' (string): prof last name,
         }
     """
+    # get arg from front end
     course_id = request.get_json()['courseId']
+
+    # find course and get list of profs that teach the course
     course = Course.query.filter_by(id=course_id).first()
     prof_course = course.prof_course
 
+    # iterate through all profs and add to list
     profs =[]
     for listing in prof_course:
         prof = listing.prof
@@ -193,6 +213,7 @@ def get_profs():
         profs.append(prof_obj)
     
     result = jsonify({"profs": profs})
+
     return result
 
 @app.route('/api/get_semesters', methods=['GET'])
@@ -210,8 +231,11 @@ def get_semesters():
     """
     semesters = Semester.query.all()
     results = dict.fromkeys((range(len(semesters))))
+
+    # iterate through semester list and append each semester to list
     i = 0
     for sem in semesters:
+        
         sem_string = ""
         if(sem.semester == 6):
             sem_string = "Summer"
@@ -228,6 +252,7 @@ def get_semesters():
         i = i+1
 
     result = jsonify({"semesters": results})
+
     return result
 
 
