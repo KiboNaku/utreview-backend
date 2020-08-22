@@ -10,13 +10,15 @@ This file contains get request routes to fetch various lists from the database
 
 """
 
-import timeago, datetime
+import timeago
+import datetime
 import json
 from flask import request, jsonify
 from flask_jwt_extended import (create_access_token)
 from utreview.models import *
 from utreview import app, db
 from whoosh.fields import *
+
 
 @app.route('/api/get_courses', methods=['POST'])
 def get_courses():
@@ -39,7 +41,7 @@ def get_courses():
     """
     # get arg from front end
     prof_id = request.get_json()['profId']
-    
+
     # find prof and get list of courses taught by the prof
     prof = Prof.query.filter_by(id=prof_id).first()
     prof_course = prof.prof_course
@@ -71,9 +73,9 @@ def get_courses():
             'title': course.title,
             'topicId': course.topic_id,
             'topicNum': course.topic_num
-        } 
+        }
         courses.append(course_obj)
-    
+
     result = jsonify({"courses": courses})
 
     return result
@@ -162,17 +164,46 @@ def get_major():
 
 @app.route('/api/get_semester', methods=['GET'])
 def get_semester():
+    """
+    Fetch current, next, and future semester values
+
+    Returns:
+        semesters (dict): Returns a mapping from current, next, and future to the corresponding semester
+    """
     with open('semester.txt') as f:
         semesters = json.load(f)
         for key, value in semesters.items():
-            if value is not None:
-                year = value[0:-1]
-                if value[-1] == '2':
-                    semesters[key] = f'Spring {year}'
-                elif value[-1] == '6':
-                    semesters[key] = f'Summer {year}'
-                elif value[-1] == '9':
-                    semesters[key] = f'Fall {year}'
+            if key == "current" or key == "future":
+                if value is not None:
+                    year = value[0:-1]
+                    if value[-1] == '2':
+                        semesters[key] = f'Spring {year}'
+                    elif value[-1] == '6':
+                        semesters[key] = f'Summer {year}'
+                    elif value[-1] == '9':
+                        semesters[key] = f'Fall {year}'
+                else:
+                    semesters[key] = None
+            elif key == "next":
+                if semesters["current"] is None:
+                    semesters[key] = None
+                else:
+                    current_sem = semesters["current"].split()
+
+                    future_sem_year = ""
+                    future_sem_sem = ""
+                    if(current_sem[0] == "Fall"):
+                        future_sem_year = str(int(current_sem[1]) + 1)
+                        future_sem_sem = "Spring"
+                    elif(current_sem['sem'] == "Spring"):
+                        future_sem_year = current_sem[1]
+                        future_sem_sem = "Summer"
+                    elif(current_sem['sem'] == "Summer"):
+                        future_sem_year = current_sem[1]
+                        future_sem_sem = "Fall"
+                    
+                    semesters[key] = future_sem_sem + " " + future_sem_year
+
         return semesters
 
     return None
@@ -202,7 +233,7 @@ def get_profs():
     prof_course = course.prof_course
 
     # iterate through all profs and add to list
-    profs =[]
+    profs = []
     for listing in prof_course:
         prof = listing.prof
         prof_obj = {
@@ -211,10 +242,11 @@ def get_profs():
             'lastName': prof.last_name,
         }
         profs.append(prof_obj)
-    
+
     result = jsonify({"profs": profs})
 
     return result
+
 
 @app.route('/api/get_semesters', methods=['GET'])
 def get_semesters():
@@ -235,7 +267,7 @@ def get_semesters():
     # iterate through semester list and append each semester to list
     i = 0
     for sem in semesters:
-        
+
         sem_string = ""
         if(sem.semester == 6):
             sem_string = "Summer"
@@ -254,7 +286,3 @@ def get_semesters():
     result = jsonify({"semesters": results})
 
     return result
-
-
-
-

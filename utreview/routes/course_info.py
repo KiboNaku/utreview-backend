@@ -435,13 +435,30 @@ def get_course_schedule(course, is_parent):
         }
     """
     # current and future semester, as labeled by FTP, update manually
+    with open('semester.txt') as f:
+        semesters = json.load(f)
+        
     current_sem = {
-        'year': 2020,
-        'sem': 6
+        'year': int(semesters['current'][0:-1]) if semesters['current'] is not None else None,
+        'sem': int(semesters['current'][-1]) if semesters['current'] is not None else None
     }
+
+    future_sem_year = None
+    future_sem_sem = None
+    if(current_sem['year'] is not None):
+        if(current_sem['sem'] == 9):
+            future_sem_year = current_sem['year'] + 1
+            future_sem_sem = 2
+        elif(current_sem['sem'] == 2):
+            future_sem_year = current_sem['year']
+            future_sem_sem = 6
+        elif(current_sem['sem'] == 6):
+            future_sem_year = current_sem['year']
+            future_sem_sem = 9
+
     future_sem = {
-        'year': 2020,
-        'sem': 9
+        'year': future_sem_year,
+        'sem': future_sem_sem
     }
 
     # obtain list of scheduled courses for current and future semesters
@@ -472,6 +489,11 @@ def get_course_schedule(course, is_parent):
         scheduled_course.semester.semester == future_sem['sem']):
             future_list.append(scheduled_obj)
 
+    if(current_sem['year'] == None):
+        current_list = None
+    if(future_sem['year'] == None):
+        future_list = None
+        
     course_schedule = {
         "currentSem": current_list,
         "futureSem": future_list
