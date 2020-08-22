@@ -2,7 +2,7 @@
 import sys
 import threading
 
-from utreview import db
+from utreview import db, app
 from utreview.routes import *
 from utreview.services.automate_backend import automate_backend
 from utreview.services.logger import logger
