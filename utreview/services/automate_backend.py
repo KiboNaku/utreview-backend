@@ -55,7 +55,7 @@ def automate_backend(run_once):
         # task 1: fetch ftp files and update scheduled course info
         logger.info("Fetching new ftp files")
         fetch_ftp_files('input_data')
-        semester_path = fetch_sem_values("input_data", "")
+        semester_path = fetch_sem_values("input_data", "input_data")
         update_sem_vals(semester_path)
 
         logger.info("Updating scheduled course database info")
