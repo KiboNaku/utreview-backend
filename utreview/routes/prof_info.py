@@ -7,6 +7,7 @@ This file contains routes to fetch information needed on the professor details p
 """
 
 import timeago, datetime
+import json
 from flask import request, jsonify
 from utreview.models import *
 from .course_info import get_ecis, time_to_string
@@ -218,14 +219,31 @@ def get_prof_schedule(prof):
             "futureSem" (list): list of scheduled prof for the future semester
         }
     """
-     # current and future semester, as labeled by FTP, update manually
+    # current and future semester, as labeled by FTP, update manually
+    with open('input_data/semester.txt') as f:
+        semesters = json.load(f)
+        
     current_sem = {
-        'year': 2020,
-        'sem': 6
+        'year': int(semesters['current'][0:-1]) if semesters['current'] is not None else None,
+        'sem': int(semesters['current'][-1]) if semesters['current'] is not None else None
     }
+
+    future_sem_year = None
+    future_sem_sem = None
+    if(current_sem['year'] is not None):
+        if(current_sem['sem'] == 9):
+            future_sem_year = current_sem['year'] + 1
+            future_sem_sem = 2
+        elif(current_sem['sem'] == 2):
+            future_sem_year = current_sem['year']
+            future_sem_sem = 6
+        elif(current_sem['sem'] == 6):
+            future_sem_year = current_sem['year']
+            future_sem_sem = 9
+
     future_sem = {
-        'year': 2020,
-        'sem': 9
+        'year': future_sem_year,
+        'sem': future_sem_sem
     }
 
     # obtain list of scheduled profs for current and future semesters
@@ -242,6 +260,11 @@ def get_prof_schedule(prof):
         elif(scheduled_prof.semester.year == future_sem['year']  and
         scheduled_prof.semester.semester == future_sem['sem'] ):
             future_list.append(scheduled_obj)
+    
+    if(semesters['current'] == None):
+        current_list = None
+    if(semesters['next'] == None):
+        future_list = None
 
     prof_schedule = {
         "currentSem": current_list,
