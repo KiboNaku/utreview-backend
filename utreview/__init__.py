@@ -62,13 +62,17 @@ def create_ix():
 
 
 def update_sem_vals(sem_path):
+    global sem_current
+    global sem_next
+    global sem_future
 
     with open(sem_path, 'r') as f:
         sem_dict = json.load(f) 
     
-    if sem_dict is None:
-        return None, None, None
-    return int_or_none(sem_dict[key_current]), int_or_none(sem_dict[key_next]), int_or_none(sem_dict[key_future])
+    if sem_dict is not None:
+        sem_current = int_or_none(sem_dict[key_current]) 
+        sem_next = int_or_none(sem_dict[key_next])
+        sem_future = int_or_none(sem_dict[key_future])
 
 
 def int_or_none(obj):
@@ -82,7 +86,8 @@ SPRING_SEM = 2
 SUMMER_SEM = 6
 FALL_SEM = 9
 
-sem_current, sem_next, sem_future = update_sem_vals('semester.txt')
+sem_current, sem_next, sem_future = None, None, None
+update_sem_vals('semester.txt')
 
 app, db = create_app()
 bcrypt = Bcrypt(app)
