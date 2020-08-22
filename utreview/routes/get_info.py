@@ -162,7 +162,7 @@ def get_major():
 
 @app.route('/api/get_semester', methods=['GET'])
 def get_semester():
-    with open('semester.txt') as f:
+    with open('input_data/semester.txt') as f:
         semesters = json.load(f)
         for key, value in semesters.items():
             if value is not None:
