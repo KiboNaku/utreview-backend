@@ -117,13 +117,80 @@ def update_profile_pic():
 
 @app.route('/api/review_list', methods=['POST'])
 def review_list():
+    """
+    Returns a formatted list of all the reviews associated with a user, course, or prof
+
+    Args:
+        type (string): Either user, prof, or course depending on what subject reviews are being fetched for
+        name (string): Either the user email, prof name, or course name
+
+    Returns:
+        results (list): list of reviews
+            {
+            'id': review id,
+            'timeAgo': time elapsed since the review was posted,
+            'date': date review was posted,
+            'grade': grade user obtained in the course,
+
+            'user': {
+                'major': {
+                    'abr': user major abbreviation,
+                    'name': user major name
+                }
+            },
+
+            'semester': {
+                'id': semester id,
+                'year': semester year,
+                'semester': semester season,
+                'num': semester num
+            },
+
+            'prof': {
+                'id': prof id,
+                'firstName': prof first name,
+                'lastName': prof last name
+            },
+
+            'course': {
+                'id': course id,
+                'dept': {
+                    'abr': course dept abr,
+                    'name': course dept name
+                },
+                'num': course num,
+                'title': course title,
+                'topicNum': course topic num,
+                'topicId': course topic id,
+                'parentId': course parent id
+            },
+
+            'courseRating': {
+                'approval': course approval,
+                'usefulness': course usefulness,
+                'difficulty': course difficulty,
+                'workload': course workload,
+                'comments': course comments
+            },
+
+            'profRating': {
+                'approval': prof approval,
+                'clear': prof clear,
+                'engaging': prof engaging,
+                'grading': prof grading,
+                'comments': prof comments
+            },
+        }
+    """
     # TODO: add user liked and disliked
 
+    # get args from front end
     rtype = request.get_json()['type']
     name = request.get_json()['name']
 
     reviews = []
 
+    # determine the subject of the reviews and query the reviews from the databaes
     if rtype == 'user':
         reviews = User.query.filter_by(email=name).first().reviews_posted
     elif rtype == 'prof':
@@ -132,6 +199,7 @@ def review_list():
         dept_id = Dept.query.filter_by(abr=name[0]).first().id
         reviews = Course.query.filter_by(dept_id=dept_id, num=name[1])
 
+    # populate the results list with information for each review
     results = [
         {
             'id': result.id,
@@ -197,6 +265,15 @@ def review_list():
     return result
 
 def semester_string(semester_num):
+    """
+    Given a semester number, return the string representation of the semester
+
+    Args:
+        semester_num (int): Either 2, 6, 9 representing the semester
+
+    Returns:
+        (string): String representation of semester, either Spring, Summer, or Fall
+    """
     if(semester_num == 6):
         return "Summer"
     elif(semester_num == 9):
@@ -207,17 +284,38 @@ def semester_string(semester_num):
         return ""
 
 def get_parent_id(topic_id):
+    """
+    Given a topic id, return the parent id of the topic associated with the topic id
+
+    Args:
+        topic_id (int): topic id
+
+    Returns:
+        course.id (int): id of the parent course
+    """
+
+    # check if topic id is None
     if(topic_id == None): 
         return None
+
     topic = Topic.query.filter_by(id=topic_id).first()
+
+    # find course where topic number is 0
     for course in topic.courses:
         if(course.topic_num == 0):
             return course.id
 
 @app.route('/api/get_profile_pic', methods=['GET'])
 def get_profile_pic():
+    """
+    Gathers list of all profile pic file names and returns it to the front end
+
+    Returns:
+        profile_pics (list): list of all profile pic file names
+    """
     profile_pics = ProfilePic.query.all()
     results = dict.fromkeys((range(len(profile_pics))))
+
     i = 0
     for profile_pic in profile_pics:
         results[i] = {
@@ -226,6 +324,7 @@ def get_profile_pic():
         i = i+1
 
     result = jsonify({"profile_pics": results})
+
     return result
 
 @app.route('/api/has_password', methods=['POST'])
