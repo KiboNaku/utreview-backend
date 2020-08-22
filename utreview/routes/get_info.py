@@ -170,7 +170,7 @@ def get_semester():
     Returns:
         semesters (dict): Returns a mapping from current, next, and future to the corresponding semester
     """
-    with open('semester.txt') as f:
+    with open('input_data/semester.txt') as f:
         semesters = json.load(f)
         for key, value in semesters.items():
             if key == "current" or key == "future":

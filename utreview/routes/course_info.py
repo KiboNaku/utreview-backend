@@ -9,6 +9,7 @@ This file contains routes to fetch information needed on the course details page
 """
 
 import timeago, datetime
+import json
 from flask import request, jsonify
 from utreview.models import *
 from utreview import app
@@ -435,7 +436,7 @@ def get_course_schedule(course, is_parent):
         }
     """
     # current and future semester, as labeled by FTP, update manually
-    with open('semester.txt') as f:
+    with open('input_data/semester.txt') as f:
         semesters = json.load(f)
         
     current_sem = {
@@ -489,11 +490,11 @@ def get_course_schedule(course, is_parent):
         scheduled_course.semester.semester == future_sem['sem']):
             future_list.append(scheduled_obj)
 
-    if(current_sem['year'] == None):
+    if(semesters['current'] == None):
         current_list = None
-    if(future_sem['year'] == None):
+    if(semesters['next'] == None):
         future_list = None
-        
+
     course_schedule = {
         "currentSem": current_list,
         "futureSem": future_list
