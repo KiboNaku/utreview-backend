@@ -487,7 +487,6 @@ def populate_scheduled_course(course_info):
 			'unique': scheduled.unique_no,
 			'xlist': scheduled.x_listings,
 		})
-
 	update_scheduled_courses(s_course_queue)	
 
 
