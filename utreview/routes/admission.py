@@ -22,7 +22,6 @@ mail = Mail(app)
 
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
-
 @app.route('/api/signup', methods=['POST'])
 def register():
     """
