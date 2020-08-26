@@ -63,6 +63,9 @@ class ScheduledCourse(db.Model):
     max_enrollement = db.Column(db.Integer)
     seats_taken = db.Column(db.Integer)
 
+    # deletion field
+    mark_deletion = db.Column(db.Boolean, nullable=True, default=None)
+
     # id fields
     sem_id = db.Column(db.Integer, db.ForeignKey("semester.id"), nullable=False)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)

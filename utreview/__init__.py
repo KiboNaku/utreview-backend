@@ -19,7 +19,7 @@ def create_app():
     new_db = SQLAlchemy(new_app)
 
     new_app.config['SECRET_KEY'] = config("SECRET_KEY")
-    new_app.config['SQLALCHEMY_DATABASE_URI'] = config("AWS_DATABASE_URI")
+    new_app.config['SQLALCHEMY_DATABASE_URI'] = config("LOCAL_DATABASE_URI")
 
     new_app.config.from_pyfile('mail.cfg')
 

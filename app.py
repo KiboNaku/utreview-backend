@@ -8,7 +8,7 @@ from utreview.services.automate_backend import automate_backend
 from utreview.services.logger import logger
 
 
-ARG_RUN_ONCE = '--one'
+ARG_RUN_ONCE = '--once'
 
 #  initiate backend thread for automation
 run_once = ARG_RUN_ONCE in sys.argv
@@ -20,4 +20,4 @@ if not automate_thread.is_alive():
 
 
 if __name__ == '__main__':    
-    app.run(debug=True)
+    app.run(debug=False)

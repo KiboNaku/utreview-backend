@@ -35,6 +35,8 @@ def automate_backend(run_once):
     """
     while True:
 
+        logger.info("Automation task in backend")
+
         dt_today = datetime.datetime.now(pytz.timezone('America/Chicago'))
         dt_tmr = dt_today + datetime.timedelta(days=1)
         dt_tmr = dt_tmr.replace(hour=1, minute=0)
@@ -53,14 +55,14 @@ def automate_backend(run_once):
                 time.sleep(1)
 
         # task 1: fetch ftp files and update scheduled course info
-        logger.info("Fetching new ftp files")
-        fetch_ftp_files('input_data')
-        semester_path = fetch_sem_values("input_data", "input_data")
-        update_sem_vals(semester_path)
+        # logger.info("Fetching new ftp files")
+        # fetch_ftp_files('input_data')
+        # semester_path = fetch_sem_values("input_data", "input_data")
+        # update_sem_vals(semester_path)
 
-        logger.info("Updating scheduled course database info")
+        # logger.info("Updating scheduled course database info")
         ftp_info = parse_ftp("input_data")
-        reset_scheduled_info()
+        # reset_scheduled_info()
         populate_scheduled_course(ftp_info)
 
         # task 2: read maintenance.txt and perform task as necessary
@@ -68,6 +70,7 @@ def automate_backend(run_once):
 
         # task 3: organize log files
         organize_log_files()
+        logger.info("Finished automation")
 
 
 def run_maintenance():
