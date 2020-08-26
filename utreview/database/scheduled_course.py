@@ -100,7 +100,7 @@ class ScheduledCourseInfo:
 		scheduled_course.sem_id = semester.id
 		scheduled_course.course_id = course.id
 		scheduled_course.prof_id = prof.id if prof else None
-		scheduled_course.cross_listed = x_list.id
+		scheduled_course.cross_listed = None if x_list is None else x_list.id
 		return scheduled_course
 
 	def build_scheduled_course(self, semester, course, prof, x_list):
