@@ -466,9 +466,23 @@ def get_course_schedule(course, is_parent):
     current_list = []
     future_list = []
     courses_scheduled_ids = []
-    courses_scheduled = course.scheduled.copy()
+    courses_scheduled_list = []
+
+    # decide to whether to display courses that have mark_deletion = False or mark_deletion = None
+    mark_false = True
+    scheduled = ScheduledCourse.query.filter_by(mark_deletion=None, course_id=course.id)
+    if(scheduled.count() > 0):
+        mark_false = False
+
     for i in range(len(course.scheduled)):
+        if(mark_false):
+            if(course.scheduled[i].mark_deletion != False):
+                continue
+        else:
+            if(course.scheduled[i].mark_deletion != None):
+                continue
         courses_scheduled_ids.append(course.scheduled[i].id)
+        courses_scheduled_list.append(course.scheduled[i])
     
     # if course is a parent topic, get list of scheduled instances for children topics
     if(is_parent):
@@ -477,11 +491,17 @@ def get_course_schedule(course, is_parent):
             for topic_scheduled in topic_course.scheduled:
                 if(topic_scheduled.id in courses_scheduled_ids):
                     continue
+                if(mark_false):
+                    if(topic_scheduled.mark_deletion != False):
+                        continue
+                else:
+                    if(topic_scheduled.mark_deletion != None):
+                        continue
                 courses_scheduled_ids.append(topic_scheduled.id)
-                courses_scheduled.append(topic_scheduled)
+                courses_scheduled_list.append(topic_scheduled)
 
     # for each scheduled course instance, get scheduled course information and append it to corresponding list
-    for scheduled_course in courses_scheduled:
+    for scheduled_course in courses_scheduled_list:
         scheduled_obj = get_scheduled_course(scheduled_course, is_parent)
         if(scheduled_course.semester.year == current_sem['year'] and
         scheduled_course.semester.semester == current_sem['sem']):
