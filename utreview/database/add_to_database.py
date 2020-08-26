@@ -150,6 +150,9 @@ def check_or_add_xlist(x_listings, semester):
         x_course = ScheduledCourse.query.filter_by(unique_no=x_list_str, sem_id=semester.id).first()
         if x_course is not None and x_course.xlist is not None:
             x_list = x_course.xlist
+    if x_list is None:
+        x_list = CrossListed.query.filter(~CrossListed.courses.any()).first()
+        logger.debug(f"Using empty CrossListed: {x_list.id}")
 
     if x_list is None:
         logger.debug(f"Adding new CrossListed for semester {semester.year} {semester.semester}")
@@ -159,7 +162,7 @@ def check_or_add_xlist(x_listings, semester):
     return x_list
 
 
-def check_or_add_scheduled_course(scheduled_info,  course, prof, x_list, semester):
+def check_or_add_scheduled_course(scheduled_info,  course, prof, x_list, semester, add=True):
     """
     Checks the database for the existence of the scheduled_course
     If it does, nothing happens.
@@ -188,6 +191,7 @@ def check_or_add_scheduled_course(scheduled_info,  course, prof, x_list, semeste
                     prof={repr(prof)}""")
 
         cur_schedule = scheduled_info.build_scheduled_course(semester, course, prof, x_list)
-        db.session.add(cur_schedule)
-        db.session.commit()
+        if add:
+            db.session.add(cur_schedule)
+            db.session.commit()
     return num_results, cur_schedule
