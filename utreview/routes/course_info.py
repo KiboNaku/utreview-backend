@@ -28,7 +28,9 @@ def course_id():
     """
     # get args from front end and split by _
     course_string = request.get_json()['courseString']
+    # m_427j
     course_parsed = course_string.split("_")
+    # [m, 426j]
 
     # check to see if input is valid and parse out the course dept, course num, and topic num
     invalid_input = False
@@ -720,11 +722,12 @@ def get_course_profs(course, is_parent):
     if(is_parent):
         topic = course.topic
         for topic_course in topic.courses:
-            for i in range(len(topic_course.prof_course)):
-                if(topic_course.prof_course[i].id in course_prof_ids):
+            topic_prof_course = topic_course.prof_course.copy()
+            for i in range(len(topic_prof_course)):
+                if(topic_prof_course[i].id in course_prof_ids):
                     continue
-                course_prof_ids.append(topic_course.prof_course[i].id)
-                course_prof.append(topic_course.prof_course[i])
+                course_prof_ids.append(topic_prof_course[i].id)
+                course_prof.append(topic_prof_course[i])
     
     # iterate through course prof instances and add to course prof list
     for prof_course in course_prof:
