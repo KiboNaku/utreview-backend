@@ -131,6 +131,7 @@ def review_list():
             'timeAgo': time elapsed since the review was posted,
             'date': date review was posted,
             'grade': grade user obtained in the course,
+            'anonymous': anonymous status user chose,
 
             'user': {
                 'major': {
@@ -206,6 +207,7 @@ def review_list():
             'timeAgo': timeago.format(result.date_posted, datetime.datetime.utcnow()),
             'date': str(result.date_posted),
             'grade': result.grade,
+            'anonymous' : result.anonymous,
 
             'user': {
                 'major': {

@@ -53,6 +53,7 @@ def save_review():
         course_difficulty (int): difficulty rating
         course_workload (int): workload rating
         grade (string): grade (A - F)
+        anonymous (boolean): anonymous review
         prof_clear (int): clear rating
         prof_engaging (int): engaging rating
         prof_grading (int): grading rating
@@ -81,6 +82,7 @@ def save_review():
     course_difficulty = int(request.get_json()['course_difficulty'])
     course_workload = int(request.get_json()['course_workload'])
     grade = request.get_json()['grade']
+    anonymous = request.get_json()['anonymous']
     prof_clear = int(request.get_json()['prof_clear'])
     prof_engaging = int(request.get_json()['prof_engaging'])
     prof_grading = int(request.get_json()['prof_grading'])
@@ -92,6 +94,9 @@ def save_review():
     course = Course.query.filter_by(id=course_id).first()
     user = User.query.filter_by(email=user_email).first()
     prof = Prof.query.filter_by(id=prof_id).first()
+
+    # update anonymous status for review
+
 
     # create new semester instance if it doesn't already exist
     semester = Semester.query.filter_by(semester=sem, year=year).first()
@@ -109,7 +114,7 @@ def save_review():
         db.session.delete(prev_prof_review)
         db.session.commit()
     else:
-        review = Review(user_id=user.id, sem_id=semester.id, grade=grade, date_posted=datetime.utcnow(), submitted=False)
+        review = Review(user_id=user.id, sem_id=semester.id, grade=grade, anonymous=anonymous, date_posted=datetime.utcnow(), submitted=False)
         db.session.add(review)
         db.session.commit()
 
@@ -155,6 +160,7 @@ def new_review():
         course_difficulty (int): difficulty rating
         course_workload (int): workload rating
         grade (string): grade (A - F)
+        anonymous (boolean): anonymous review
         prof_clear (int): clear rating
         prof_engaging (int): engaging rating
         prof_grading (int): grading rating
@@ -183,6 +189,7 @@ def new_review():
     course_difficulty = int(request.get_json()['course_difficulty'])
     course_workload = int(request.get_json()['course_workload'])
     grade = request.get_json()['grade']
+    anonymous = request.get_json()['anonymous']
     prof_clear = int(request.get_json()['prof_clear'])
     prof_engaging = int(request.get_json()['prof_engaging'])
     prof_grading = int(request.get_json()['prof_grading'])
@@ -195,6 +202,7 @@ def new_review():
     user = User.query.filter_by(email=user_email).first()
     prof = Prof.query.filter_by(id=prof_id).first()
 
+
     # create new semester instance if it doesn't already exist
     semester = Semester.query.filter_by(semester=sem, year=year).first()
     if(semester == None):
@@ -206,7 +214,7 @@ def new_review():
     update_course_stats(course, course_approval, course_difficulty, course_usefulness, course_workload, False, None)
     update_prof_stats(prof, prof_approval, prof_clear, prof_engaging, prof_grading, False, None)
 
-    review = Review(user_id=user.id, sem_id=semester.id, grade=grade, date_posted=datetime.datetime.utcnow(), submitted=True)
+    review = Review(user_id=user.id, sem_id=semester.id, grade=grade, anonymous=anonymous, date_posted=datetime.datetime.utcnow(), submitted=True)
     db.session.add(review)
     db.session.commit()
 
@@ -436,6 +444,7 @@ def edit_review():
         course_difficulty (int): difficulty rating
         course_workload (int): workload rating
         grade (string): grade
+        anonymous (boolean): anonymous review
         prof_clear (int): clear rating
         prof_engaging (int): engaging rating
         prof_grading (int): grading rating
@@ -462,6 +471,7 @@ def edit_review():
     course_difficulty = int(request.get_json()['course_difficulty'])
     course_workload = int(request.get_json()['course_workload'])
     grade = request.get_json()['grade']
+    anonymous = request.get_json()['anonymous']
     prof_clear = int(request.get_json()['prof_clear'])
     prof_engaging = int(request.get_json()['prof_engaging'])
     prof_grading = int(request.get_json()['prof_grading'])
@@ -475,6 +485,9 @@ def edit_review():
     review = Review.query.filter_by(id=review_id).first()
     review.grade = grade
     review.date_posted = datetime.datetime.utcnow()
+
+    # update anonymous status for review
+    review.anonymous = anonymous
 
     # find old course review and prof review
     course_review = CourseReview.query.filter_by(review_id=review.id).first()

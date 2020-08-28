@@ -13,6 +13,7 @@ class Review(db.Model):
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow())
     grade = db.Column(db.String(2))
     submitted = db.Column(db.Boolean, nullable=False, default=False)
+    anonymous = db.Column(db.Boolean, nullable=False, default=True)
 
     # relationship fields
     course_review = db.relationship('CourseReview', backref='review', lazy=True)
