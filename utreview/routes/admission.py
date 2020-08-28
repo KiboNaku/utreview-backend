@@ -22,7 +22,6 @@ mail = Mail(app)
 
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
-
 @app.route('/api/signup', methods=['POST'])
 def register():
     """
@@ -443,7 +442,7 @@ def send_confirmation_email(email, name=None):
 
     # send confirmation email
     msg.html = render_template(
-        'confirm_email.html', name=name, link=link, email=email)
+        'confirm_email_referral.html', name=name, link=link, email=email)
     mail.send(msg)
 
     return r_val

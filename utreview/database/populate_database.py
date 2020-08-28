@@ -367,19 +367,9 @@ def populate_dept_info(dept_info):
 
 
 def reset_scheduled_info():
-	"""
-	Reset professor and course fields: current_sem, next_sem, and future_sem to False
-	"""
 	logger.info("Resetting scheduled info")
-	ScheduledCourse.query.delete()
-	db.session.commit()
-	query_lst = (Course.query.all(), Prof.query.all())
-	for queries in query_lst:
-		for query in queries:
-			query.current_sem = False
-			query.next_sem = False
-			query.future_sem = False
-			db.session.commit()
+	for scheduled_course in ScheduledCourse.query.all():
+		scheduled_course.mark_deletion = False
 		db.session.commit()
 
 
@@ -443,6 +433,7 @@ def populate_scheduled_course(course_info):
 	"""
 
 	logger.info("Populating database with scheduled course info")
+	s_course_queue = []
 
 	for s_course in course_info:
 
@@ -479,43 +470,180 @@ def populate_scheduled_course(course_info):
 		# check to see if semester exists else add semester
 		_, semester = check_or_add_semester(yr=scheduled.yr, sem=scheduled.sem)
 
-		# check to see if cross_listings exist else create new
-		x_list = check_or_add_xlist(scheduled.x_listings, semester)
-
 		# check to see if scheduled course exists else create new
-		num_results, cur_schedule = check_or_add_scheduled_course(scheduled, cur_course, cur_prof, x_list, semester)
+		num_results, cur_schedule = check_or_add_scheduled_course(scheduled, cur_course, cur_prof, None, semester, add=False)
 		if num_results > 0:
 			logger.debug(f"""Updating scheduled course. Unique = {scheduled.unique_no}
 					semester={repr(semester)}
 					course={repr(cur_course)}
 					prof={repr(cur_prof)}""")
-			scheduled.to_scheduled_course(cur_schedule, semester, cur_course, cur_prof, x_list)
+			cur_schedule = scheduled.to_scheduled_course(cur_schedule, semester, cur_course, cur_prof, None)
+		
+		s_course_queue.append({
+			'scheduled': cur_schedule,
+			'prof': cur_prof,
+			'course': cur_course,
+			'semester': semester, 
+			'unique': scheduled.unique_no,
+			'xlist': scheduled.x_listings,
+		})
+	update_scheduled_courses(s_course_queue)	
+
+
+def update_scheduled_courses(s_course_queue):
+
+	logger.info("Updating scheduled course information")
+	semesters = {
+		'current': {
+			'courses': {},
+			'profs': {}
+		},
+		'next': {
+			'courses': {},
+			'profs': {}
+		},
+		'future': {
+			'courses': {},
+			'profs': {}
+		}
+	}
+	cur_s_courses = ScheduledCourse.query.all()
+
+	for i in range(min(len(cur_s_courses), len(s_course_queue))):
+
+		cur_s_course = cur_s_courses[i]
+		s_course = s_course_queue[i]
+
+		cur_schedule = s_course['scheduled']
+		cur_prof = s_course['prof']
+		cur_course = s_course['course']
+		semester = s_course['semester']
+		unique_no = s_course['unique']
+		xlist_str = s_course['xlist']
+		
+		# check to see if cross_listings exist else create new
+		x_list = check_or_add_xlist(xlist_str, semester)
+
+		update_scheduled_course(cur_s_course, cur_schedule, x_list)
 		db.session.commit()
 
 		# add prof course and prof course semester relationship if doesnt exist
 		if cur_prof:
 			_, prof_course = check_or_add_prof_course(cur_prof, cur_course)
-			check_or_add_prof_course_semester(scheduled.unique_no, prof_course, semester)	
+			check_or_add_prof_course_semester(unique_no, prof_course, semester)	
 
 		# update course and prof semester fields (whether they are teaching the respective semesters)
 		full_semester = int(str(semester.year) + str(semester.semester))
 
 		if full_semester == sem_current:
 			if cur_course:
-				cur_course.current_sem = True
+				semesters['current']['courses'][cur_course.id] = True
 			if cur_prof:
-				cur_prof.current_sem = True
+				semesters['current']['profs'][cur_prof.id] = True
 		elif full_semester == sem_next:
 			if cur_course:
-				cur_course.next_sem = True
+				semesters['next']['courses'][cur_course.id] = True
 			if cur_prof:
-				cur_prof.next_sem = True
+				semesters['next']['profs'][cur_prof.id] = True
 		elif full_semester == sem_future:
 			if cur_course:
-				cur_course.future_sem = True
+				semesters['future']['courses'][cur_course.id] = True
 			if cur_prof:
-				cur_prof.future_sem = True
-		db.session.commit()
+				semesters['future']['profs'][cur_prof.id] = True
+
+	logger.info("Checking scheduled data for uneven sizings")
+	if len(s_course_queue) > len(cur_s_courses):
+		logger.info("Have additional new schedueled courses")
+		for s_course in s_course_queue[len(cur_s_courses):]:
+
+			cur_schedule = s_course['scheduled']
+			cur_prof = s_course['prof']
+			cur_course = s_course['course']
+			semester = s_course['semester']
+			unique_no = s_course['unique']
+			xlist_str = s_course['xlist']
+		
+			# check to see if cross_listings exist else create new
+			x_list = check_or_add_xlist(xlist_str, semester)
+			cur_schedule.cross_listed = x_list.id
+
+			db.session.add(cur_schedule)
+			db.session.commit()
+
+			# add prof course and prof course semester relationship if doesnt exist
+			if cur_prof:
+				_, prof_course = check_or_add_prof_course(cur_prof, cur_course)
+				check_or_add_prof_course_semester(unique_no, prof_course, semester)	
+
+			# update course and prof semester fields (whether they are teaching the respective semesters)
+			full_semester = int(str(semester.year) + str(semester.semester))
+
+			if full_semester == sem_current:
+				if cur_course:
+					semesters['current']['courses'][cur_course.id] = True
+				if cur_prof:
+					semesters['current']['profs'][cur_prof.id] = True
+			elif full_semester == sem_next:
+				if cur_course:
+					semesters['next']['courses'][cur_course.id] = True
+				if cur_prof:
+					semesters['next']['profs'][cur_prof.id] = True
+			elif full_semester == sem_future:
+				if cur_course:
+					semesters['future']['courses'][cur_course.id] = True
+				if cur_prof:
+					semesters['future']['profs'][cur_prof.id] = True
+	
+	for s_course in ScheduledCourse.query.all():
+		if s_course.mark_deletion is not None:
+			s_course.mark_deletion = True
+			db.session.commit()
+
+	logger.info("Updating course and professor semesters")
+	all_profs = Prof.query.all()
+	all_courses = Course.query.all()
+
+	for prof in all_profs:
+		if (
+			(prof.current_sem != semesters['current']['profs'].get(prof.id, False)) or 
+			(prof.next_sem != semesters['next']['profs'].get(prof.id, False)) or 
+			(prof.future_sem != semesters['future']['profs'].get(prof.id, False))
+		):
+			prof.current_sem = semesters['current']['profs'].get(prof.id, False)
+			prof.next_sem = semesters['next']['profs'].get(prof.id, False)
+			prof.future_sem = semesters['future']['profs'].get(prof.id, False)
+			db.session.commit()
+
+	for course in all_courses:
+		if (
+			(course.current_sem != semesters['current']['courses'].get(course.id, False)) or
+			(course.next_sem != semesters['next']['courses'].get(course.id, False)) or 
+			(course.future_sem != semesters['future']['courses'].get(course.id, False))
+		):
+			course.current_sem = semesters['current']['courses'].get(course.id, False)
+			course.next_sem = semesters['next']['courses'].get(course.id, False)
+			course.future_sem = semesters['future']['courses'].get(course.id, False)
+			db.session.commit()
+
+
+def update_scheduled_course(old, new, x_list):
+
+	old.unique_no = new.unique_no
+	old.session = new.session
+
+	old.days = new.days
+	old.time_from = new.time_from
+	old.time_to = new.time_to
+	old.location = new.location
+	old.max_enrollement = new.max_enrollement
+	old.seats_taken = new.seats_taken
+
+	old.mark_deletion = None
+
+	old.sem_id = new.sem_id
+	old.course_id = new.course_id
+	old.prof_id = new.prof_id
+	old.cross_listed = x_list.id
 
 
 def populate_prof(prof_info):

@@ -11,6 +11,9 @@ from utreview import app
 def home():
     return render_template('confirm_email.html', name='Andy', link='https://www.google.com')
 
+@app.route("/confirm_email_referral")
+def referral():
+    return render_template('confirm_email_referral.html', name='Andy', link='https://www.google.com')
 
 @app.route("/reset_password")
 def password():

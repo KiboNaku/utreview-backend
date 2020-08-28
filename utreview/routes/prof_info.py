@@ -246,13 +246,28 @@ def get_prof_schedule(prof):
         'sem': future_sem_sem
     }
 
+    # decide to whether to display courses that have mark_deletion = False or mark_deletion = None
+    mark_false = True
+    scheduled = ScheduledCourse.query.filter_by(mark_deletion=None, prof_id=prof.id)
+    if(scheduled.count() > 0):
+        mark_false = False
+
     # obtain list of scheduled profs for current and future semesters
     current_list = []
     future_list = []
-    profs_scheduled = prof.scheduled
+    profs_scheduled_list = []
+
+    for i in range(len(prof.scheduled)):
+        if(mark_false):
+            if(prof.scheduled[i].mark_deletion != False):
+                continue
+        else:
+            if(prof.scheduled[i].mark_deletion != None):
+                continue
+        profs_scheduled_list.append(prof.scheduled[i])
 
     # for each scheduled prof instance, get scheduled prof information and append it to corresponding list
-    for scheduled_prof in profs_scheduled:
+    for scheduled_prof in profs_scheduled_list:
         scheduled_obj = get_scheduled_prof(scheduled_prof)
         if(scheduled_prof.semester.year == current_sem['year'] and
         scheduled_prof.semester.semester == current_sem['sem']):

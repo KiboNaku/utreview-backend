@@ -35,6 +35,8 @@ def automate_backend(run_once):
     """
     while True:
 
+        logger.info("Automation task in backend")
+
         dt_today = datetime.datetime.now(pytz.timezone('America/Chicago'))
         dt_tmr = dt_today + datetime.timedelta(days=1)
         dt_tmr = dt_tmr.replace(hour=1, minute=0)
@@ -58,7 +60,7 @@ def automate_backend(run_once):
         semester_path = fetch_sem_values("input_data", "input_data")
         update_sem_vals(semester_path)
 
-        logger.info("Updating scheduled course database info")
+        # logger.info("Updating scheduled course database info")
         ftp_info = parse_ftp("input_data")
         reset_scheduled_info()
         populate_scheduled_course(ftp_info)
@@ -68,6 +70,7 @@ def automate_backend(run_once):
 
         # task 3: organize log files
         organize_log_files()
+        logger.info("Finished automation")
 
 
 def run_maintenance():
