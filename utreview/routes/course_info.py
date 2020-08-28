@@ -537,6 +537,7 @@ def get_review_info(review, logged_in, curr_user):
             'date' (string): date the review was posted converted to string format: ("%Y-%m-%d"),
             'year' (int): year user took the course
             'semester' (string): string representation of semester
+            'anonymous' (boolean): whether the user chose to remain anonymous or show their name
         }
     """
     
@@ -559,6 +560,8 @@ def get_review_info(review, logged_in, curr_user):
     prof = review.prof_review[0].prof
     user_major = user.major
     profile_pic = user.pic
+    user_first_name = user.first_name
+    user_last_name = user.last_name
 
     num_liked = 0
     num_disliked = 0
@@ -605,7 +608,10 @@ def get_review_info(review, logged_in, curr_user):
         'dateString': timeago.format(review.date_posted, datetime.datetime.utcnow()),
         'date': str(review.date_posted),
         'year': review.semester.year,
-        'semester': semester
+        'semester': semester,
+        'firstName' : user_first_name,
+        'lastName' : user_last_name,
+        'anonymous' : review.anonymous
     }
 
     return review_object
