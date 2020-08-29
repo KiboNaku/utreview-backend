@@ -9,3 +9,4 @@ from .populate import *
 from .prof_info import *
 from .review_info import *
 from .user_communication import *
+from .utplus_info import *
