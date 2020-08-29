@@ -670,11 +670,12 @@ def get_course_reviews(course, logged_in, curr_user, is_parent):
     if(is_parent):
         topic = course.topic
         for topic_course in topic.courses:
-            for i in range(len(topic_course.reviews)):
-                if(topic_course.reviews[i].id in course_reviews_ids):
+            topic_course_reviews = topic_course.reviews.copy()
+            for i in range(len(topic_course_reviews)):
+                if(topic_course_reviews[i].id in course_reviews_ids):
                     continue
-                course_reviews_ids.append(topic_course.reviews[i].id)
-                course_reviews.append(topic_course.reviews[i])
+                course_reviews_ids.append(topic_course_reviews[i].id)
+                course_reviews.append(topic_course_reviews[i])
 
     # iterate through all course reviews and add to review list
     review_list = []
