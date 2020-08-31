@@ -6,6 +6,11 @@ from utreview.models.prof import *
 from utreview.services.logger import logger
 
 
+"""
+This .py file contains functions for checking and adding objects to the database (if not exist).
+"""
+
+
 def check_or_add_prof(first_name, last_name):
     """
     Checks if the provided professor exists in the database.
@@ -174,9 +179,11 @@ def check_or_add_scheduled_course(scheduled_info,  course, prof, x_list, semeste
     :param prof: model object containing prof id related to scheduled course
     :type prof: Prof
     :param x_list: model object containing cross_listed id related to scheduled course
-    :type x_list: CrossListed
+    :type x_list: CrossListed or None
     :param semester: model object containing semester id related to scheduled course
     :type semester: Semester
+    :param add: add the object to database if doesn't exist
+    :type add: bool
     :return: results of the search as a tuple(number of results, ScheduledCourse object containing the info)
     :rtype: tuple(int, ScheduledCourse)
     """

@@ -7,7 +7,6 @@ from titlecase import titlecase
 
 from .add_to_database import (
 	check_or_add_course,
-	check_or_add_prof,
 	check_or_add_scheduled_course,
 	check_or_add_semester,
 	check_or_add_prof_course,
@@ -178,7 +177,6 @@ def populate_prof_course(in_file):
 		last_words = [word.strip() for word in last.split(' ') if len(word.strip()) > 0]
 		first_words = [word.strip() for word in first.split(' ') if len(word.strip()) > 0]
 
-  
 		target_prof = None
 		for cur_prof in cur_profs:
 			found = True
@@ -205,7 +203,7 @@ def populate_prof_course(in_file):
 		if target_prof is None:
 			logger.debug(f"Cannot find prof: {prof_course[KEY_PROF]}. Skipping...")
 			continue
-  
+
 		# check for existence of department -> skip if does not exist
 		abr = prof_course[KEY_DEPT].strip().upper()
 		dept = Dept.query.filter_by(abr=abr).first()
@@ -222,7 +220,7 @@ def populate_prof_course(in_file):
 				if c.topic_num <= 0:
 					course = c
 		db.session.commit()
-  
+
 		# check if prof_course exists -> add if it doesn't
 		_, prof_course_obj = check_or_add_prof_course(target_prof, course)
 		db.session.commit()
@@ -250,6 +248,11 @@ def populate_prof_course(in_file):
 
 
 def populate_prof_eid(profs):
+	"""
+	Populate database with prof eid info or add prof if doesn't exist
+	:param profs: list of prof data sorted in incrementing order of semester.
+	:type profs: list(tuple(semester, name, eid))
+	"""
 	# profs must be sorted in order of semester
 	# NOTE: professors sometimes have different names by semester -> take most recent (check by eid)]
 
@@ -491,6 +494,23 @@ def populate_scheduled_course(course_info):
 
 
 def update_scheduled_courses(s_course_queue):
+	"""
+	Update scheduled_course data in the database with the new information listed in queue.
+	NOTE: minimize add/delete to prevent the database taking too long.
+	Details: this function will set "extra" scheduled_course entries' mark_deletion to True.
+			DO NOT use scheduled_course entries with mark_deletion set to True (no need to actually delete)
+	:param s_course_queue: data to populate the database with
+	:type s_course_queue: list(
+		dict{
+			"scheduled": ScheduledCourse object containing the data,
+			"prof": Prof object containing related prof data,
+			"course": Course object containing related course data,
+			"semester": Semester object containing related semester data,
+			"unique": str or int containing the unique number for the scheduled_course,
+			"xlist": list of str or int of the unique numbers for schedule_course entries that are crosslisted.
+		}
+	)
+	"""
 
 	logger.info("Updating scheduled course information")
 	semesters = {
@@ -627,6 +647,15 @@ def update_scheduled_courses(s_course_queue):
 
 
 def update_scheduled_course(old, new, x_list):
+	"""
+	Updated ScheduledCourse entry with the updated data. NOT committed.
+	:param old: old ScheduledCourse entry with outdated data
+	:type old: ScheduledCourse
+	:param new: new ScheduledCourse entry with new data
+	:type new: ScheduledCourse
+	:param x_list: list containing unique numbers of ScheduledCourse entries that are crosslisted
+	:type x_list: list(str or int)
+	"""
 
 	old.unique_no = new.unique_no
 	old.session = new.session
