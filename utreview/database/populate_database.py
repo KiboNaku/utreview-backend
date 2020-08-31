@@ -1,6 +1,6 @@
 
-import re
 import json
+import re
 
 from string import ascii_lowercase
 from titlecase import titlecase

@@ -58,6 +58,13 @@ def fetch_prof(query):
 
 
 def parse_prof_csv(file_path):
+    """
+    Parse .csv file containing prof data
+    :param file_path: path to prof file
+    :type file_path: str
+    :return: sorted list of prof data
+    :rtype: list(tuple(str, str, str))
+    """
 
     __key_sem = 'CCYYS'
     __key_prof_name = 'INSTR_NAME'

@@ -12,6 +12,11 @@ DEFAULT_LOG_FILE_NAME = "daily_backend_flask_app.log"
 
 
 def init_log():
+    """
+    initialize a logger
+    :return: initialized logger to use for logging purposes
+    :rtype: RootLogger
+    """
     from pytz import utc
 
     def custom_time(*args):
@@ -48,6 +53,9 @@ def init_log():
 
 
 def error_log_handler(type, value, tb):
+    """
+    Function used for overriding the error_handler in the system.
+    """
     logger.exception(f"Uncaught exception: {str(value)}")
 
 

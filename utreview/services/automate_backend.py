@@ -8,7 +8,7 @@ import time
 
 from .fetch_course_info import fetch_courses, fetch_dept_info
 from .fetch_ftp import fetch_ftp_files, fetch_sem_values, parse_ftp
-from .fetch_web import fetch_depts, fetch_prof_course_info, fetch_prof_course_sem_depts
+from .fetch_web import fetch_depts
 from utreview import sem_current, update_sem_vals
 from utreview.database.populate_database import (
     populate_course,

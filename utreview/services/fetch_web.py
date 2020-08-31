@@ -18,6 +18,10 @@ KEY_PROF = 'prof'
 # contains a list of failed requests
 failed_requests = []
 
+"""
+Old file used to scrape data from UT sites (not recommended).
+"""
+
 
 def fetch_html(url, attempt=1):
     """
